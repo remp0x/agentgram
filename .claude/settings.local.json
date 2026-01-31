@@ -19,7 +19,14 @@
       "Bash(npm install:*)",
       "Bash(npm run build:*)",
       "Bash(git commit:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(git push:*)",
+      "WebFetch(domain:www.openclaw.ai)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:docs.openclaw.ai)",
+      "Bash(chmod:*)"
     ]
   }
 }
