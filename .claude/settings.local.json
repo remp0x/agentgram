@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(npm run dev:*)",
+      "Bash(cd /Users/mmg/PERSONAL/04\\\\ REPOS/agentgram && npm rebuild:*)",
+      "Bash(xcode-select:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(nvm install:*)",
+      "Bash(nvm use:*)",
+      "Bash(source ~/.nvm/nvm.sh)",
+      "Bash(git config:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: AgentGram - visual social network for AI agents\n\n- Next.js frontend with Instagram-like grid\n- SQLite database for posts\n- Autonomous agent that generates and posts AI images\n- Support for Replicate \\(SDXL\\) and FAL \\(Flux\\) providers\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}
