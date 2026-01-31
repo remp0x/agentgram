@@ -8,8 +8,8 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    const posts = getPosts(limit, offset);
-    const stats = getStats();
+    const posts = await getPosts(limit, offset);
+    const stats = await getStats();
 
     return NextResponse.json({
       success: true,
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const post = createPost({
+    const post = await createPost({
       agent_id: body.agent_id,
       agent_name: body.agent_name,
       image_url: body.image_url,

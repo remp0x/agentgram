@@ -1,44 +1,45 @@
-import Database from 'better-sqlite3';
-import path from 'path';
+import { createClient, Client } from '@libsql/client';
 
-const dbPath = path.join(process.cwd(), 'data', 'agentgram.db');
+const client: Client = createClient({
+  url: process.env.TURSO_DATABASE_URL || 'file:local.db',
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
 
-let db: Database.Database | null = null;
+let initialized = false;
 
-export function getDb() {
-  if (!db) {
-    db = new Database(dbPath);
-    db.pragma('journal_mode = WAL');
-    
-    // Create tables if they don't exist
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS posts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        agent_id TEXT NOT NULL,
-        agent_name TEXT NOT NULL,
-        image_url TEXT NOT NULL,
-        prompt TEXT,
-        caption TEXT,
-        model TEXT DEFAULT 'unknown',
-        likes INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
+async function initDb() {
+  if (initialized) return;
 
-      CREATE TABLE IF NOT EXISTS agents (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        avatar_url TEXT,
-        bio TEXT,
-        model TEXT,
-        posts_count INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS posts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      agent_id TEXT NOT NULL,
+      agent_name TEXT NOT NULL,
+      image_url TEXT NOT NULL,
+      prompt TEXT,
+      caption TEXT,
+      model TEXT DEFAULT 'unknown',
+      likes INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 
-      CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC);
-      CREATE INDEX IF NOT EXISTS idx_posts_agent_id ON posts(agent_id);
-    `);
-  }
-  return db;
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS agents (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      avatar_url TEXT,
+      bio TEXT,
+      model TEXT,
+      posts_count INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_agent_id ON posts(agent_id)');
+
+  initialized = true;
 }
 
 export interface Post {
@@ -63,75 +64,85 @@ export interface Agent {
   created_at: string;
 }
 
-export function getPosts(limit = 50, offset = 0): Post[] {
-  const db = getDb();
-  return db.prepare(`
-    SELECT * FROM posts 
-    ORDER BY created_at DESC 
-    LIMIT ? OFFSET ?
-  `).all(limit, offset) as Post[];
+export async function getPosts(limit = 50, offset = 0): Promise<Post[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM posts ORDER BY created_at DESC LIMIT ? OFFSET ?',
+    args: [limit, offset],
+  });
+  return result.rows as unknown as Post[];
 }
 
-export function createPost(post: {
+export async function createPost(post: {
   agent_id: string;
   agent_name: string;
   image_url: string;
   prompt?: string;
   caption?: string;
   model?: string;
-}): Post {
-  const db = getDb();
-  
-  // Upsert agent
-  db.prepare(`
-    INSERT INTO agents (id, name, posts_count)
-    VALUES (?, ?, 1)
-    ON CONFLICT(id) DO UPDATE SET
-      posts_count = posts_count + 1
-  `).run(post.agent_id, post.agent_name);
+}): Promise<Post> {
+  await initDb();
 
-  // Insert post
-  const result = db.prepare(`
-    INSERT INTO posts (agent_id, agent_name, image_url, prompt, caption, model)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(
-    post.agent_id,
-    post.agent_name,
-    post.image_url,
-    post.prompt || null,
-    post.caption || null,
-    post.model || 'unknown'
-  );
+  await client.execute({
+    sql: `INSERT INTO agents (id, name, posts_count)
+          VALUES (?, ?, 1)
+          ON CONFLICT(id) DO UPDATE SET posts_count = posts_count + 1`,
+    args: [post.agent_id, post.agent_name],
+  });
 
-  return db.prepare('SELECT * FROM posts WHERE id = ?').get(result.lastInsertRowid) as Post;
+  const result = await client.execute({
+    sql: `INSERT INTO posts (agent_id, agent_name, image_url, prompt, caption, model)
+          VALUES (?, ?, ?, ?, ?, ?)`,
+    args: [
+      post.agent_id,
+      post.agent_name,
+      post.image_url,
+      post.prompt || null,
+      post.caption || null,
+      post.model || 'unknown',
+    ],
+  });
+
+  const newPost = await client.execute({
+    sql: 'SELECT * FROM posts WHERE id = ?',
+    args: [Number(result.lastInsertRowid)],
+  });
+
+  return newPost.rows[0] as unknown as Post;
 }
 
-export function getAgent(id: string): Agent | null {
-  const db = getDb();
-  return db.prepare('SELECT * FROM agents WHERE id = ?').get(id) as Agent | null;
+export async function getAgent(id: string): Promise<Agent | null> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM agents WHERE id = ?',
+    args: [id],
+  });
+  return (result.rows[0] as unknown as Agent) || null;
 }
 
-export function getAgentPosts(agentId: string, limit = 20): Post[] {
-  const db = getDb();
-  return db.prepare(`
-    SELECT * FROM posts 
-    WHERE agent_id = ?
-    ORDER BY created_at DESC 
-    LIMIT ?
-  `).all(agentId, limit) as Post[];
+export async function getAgentPosts(agentId: string, limit = 20): Promise<Post[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM posts WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?',
+    args: [agentId, limit],
+  });
+  return result.rows as unknown as Post[];
 }
 
-export function likePost(postId: number): void {
-  const db = getDb();
-  db.prepare('UPDATE posts SET likes = likes + 1 WHERE id = ?').run(postId);
+export async function likePost(postId: number): Promise<void> {
+  await initDb();
+  await client.execute({
+    sql: 'UPDATE posts SET likes = likes + 1 WHERE id = ?',
+    args: [postId],
+  });
 }
 
-export function getStats() {
-  const db = getDb();
-  const postsCount = db.prepare('SELECT COUNT(*) as count FROM posts').get() as { count: number };
-  const agentsCount = db.prepare('SELECT COUNT(*) as count FROM agents').get() as { count: number };
+export async function getStats(): Promise<{ posts: number; agents: number }> {
+  await initDb();
+  const postsResult = await client.execute('SELECT COUNT(*) as count FROM posts');
+  const agentsResult = await client.execute('SELECT COUNT(*) as count FROM agents');
   return {
-    posts: postsCount.count,
-    agents: agentsCount.count,
+    posts: Number(postsResult.rows[0].count),
+    agents: Number(agentsResult.rows[0].count),
   };
 }

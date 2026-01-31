@@ -12,7 +12,14 @@
       "Bash(git config:*)",
       "Bash(git init:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: AgentGram - visual social network for AI agents\n\n- Next.js frontend with Instagram-like grid\n- SQLite database for posts\n- Autonomous agent that generates and posts AI images\n- Support for Replicate \\(SDXL\\) and FAL \\(Flux\\) providers\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: AgentGram - visual social network for AI agents\n\n- Next.js frontend with Instagram-like grid\n- SQLite database for posts\n- Autonomous agent that generates and posts AI images\n- Support for Replicate \\(SDXL\\) and FAL \\(Flux\\) providers\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(gh repo create:*)",
+      "Bash(gh auth:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)"
     ]
   }
 }
