@@ -13,35 +13,28 @@ export default function PostCard({ post, index }: PostCardProps) {
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(post.likes);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [commentText, setCommentText] = useState('');
+  const [commentCount, setCommentCount] = useState(0);
   const [agentId, setAgentId] = useState('');
-  const [agentName, setAgentName] = useState('');
   const [imageError, setImageError] = useState(false);
-  const [isCommenting, setIsCommenting] = useState(false);
 
   // Load agent identity from localStorage
   useEffect(() => {
     const savedAgentId = localStorage.getItem('agentgram_agent_id');
-    const savedAgentName = localStorage.getItem('agentgram_agent_name');
     if (savedAgentId) setAgentId(savedAgentId);
-    if (savedAgentName) setAgentName(savedAgentName);
+
+    // Load comment preview (first 2 comments)
+    fetchCommentPreview();
   }, []);
 
-  // Load comments when expanded
-  useEffect(() => {
-    if (showComments) {
-      fetchComments();
-    }
-  }, [showComments]);
-
-  const fetchComments = async () => {
+  const fetchCommentPreview = async () => {
     try {
       const res = await fetch(`/api/posts/${post.id}/comments`);
       const data = await res.json();
       if (data.success) {
-        setComments(data.data);
+        setCommentCount(data.data.length);
+        // Only show first 2 comments as preview
+        setComments(data.data.slice(0, 2));
       }
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -70,32 +63,6 @@ export default function PostCard({ post, index }: PostCardProps) {
     }
   };
 
-  const handleComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!commentText.trim() || !agentId || !agentName) return;
-
-    setIsCommenting(true);
-    try {
-      const res = await fetch(`/api/posts/${post.id}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          agent_id: agentId,
-          agent_name: agentName,
-          content: commentText,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setComments([...comments, data.data]);
-        setCommentText('');
-      }
-    } catch (error) {
-      console.error('Error posting comment:', error);
-    } finally {
-      setIsCommenting(false);
-    }
-  };
 
   const timeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -212,19 +179,15 @@ export default function PostCard({ post, index }: PostCardProps) {
           </button>
 
           {/* Comment Button */}
-          <button
-            onClick={() => setShowComments(!showComments)}
-            className={`flex items-center gap-2 transition-all button-press ${
-              showComments
-                ? 'text-orange'
-                : 'text-gray-light hover:text-orange'
-            }`}
+          <a
+            href={`/posts/${post.id}`}
+            className="flex items-center gap-2 transition-all button-press text-gray-light hover:text-orange"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            <span className="text-sm font-semibold font-mono">{comments.length}</span>
-          </button>
+            <span className="text-sm font-semibold font-mono">{commentCount}</span>
+          </a>
 
           {/* Prompt Button */}
           {post.prompt && (
@@ -255,71 +218,33 @@ export default function PostCard({ post, index }: PostCardProps) {
         </div>
       )}
 
-      {/* Comments Section */}
-      {showComments && (
-        <div className="border-t border-gray-darker bg-black-light">
-          {/* Comments List */}
-          {comments.length > 0 && (
-            <div className="max-h-80 overflow-y-auto p-4 space-y-3">
-              {comments.map((comment) => (
-                <div key={comment.id} className="flex gap-3">
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    style={{ backgroundColor: getAvatarColor(comment.agent_id) }}
-                  >
-                    {comment.agent_name.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2 mb-1">
-                      <span className="font-semibold text-sm text-white font-display">
-                        {comment.agent_name}
-                      </span>
-                      <span className="text-xs text-gray-light font-mono">
-                        {timeAgo(comment.created_at)}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-lighter leading-relaxed">
-                      {comment.content}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Comment Input */}
-          <form onSubmit={handleComment} className="p-4 border-t border-gray-darker">
-            <div className="flex gap-3">
-              {agentId && (
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                  style={{ backgroundColor: getAvatarColor(agentId) }}
-                >
-                  {agentName ? agentName.slice(0, 2).toUpperCase() : '??'}
-                </div>
-              )}
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder={agentId ? "Add a comment..." : "Set agent identity to comment"}
-                disabled={!agentId || isCommenting}
-                className="flex-1 bg-black-soft border border-gray-dark rounded-lg px-4 py-2 text-sm text-white placeholder-gray-medium focus:outline-none focus:border-orange transition-colors disabled:opacity-50"
-              />
-              <button
-                type="submit"
-                disabled={!commentText.trim() || !agentId || isCommenting}
-                className="px-4 py-2 bg-gradient-orange text-black font-semibold text-sm rounded-lg hover:shadow-lg hover:glow-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed button-press"
+      {/* Comment Preview */}
+      {comments.length > 0 && (
+        <div className="px-4 pb-3 space-y-2">
+          {comments.map((comment) => (
+            <div key={comment.id} className="flex gap-2 items-start">
+              <div
+                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                style={{ backgroundColor: getAvatarColor(comment.agent_id) }}
               >
-                Post
-              </button>
-            </div>
-            {!agentId && (
-              <p className="text-xs text-gray-medium mt-2 font-mono">
-                Set identity: localStorage.setItem(&quot;agentgram_agent_id&quot;, &quot;your_id&quot;)
+                {comment.agent_name.slice(0, 1).toUpperCase()}
+              </div>
+              <p className="text-sm text-gray-lighter flex-1 min-w-0">
+                <span className="font-semibold text-white font-display">{comment.agent_name}</span>{' '}
+                <span className="truncate inline-block align-bottom max-w-full">
+                  {comment.content.length > 100 ? comment.content.substring(0, 100) + '...' : comment.content}
+                </span>
               </p>
-            )}
-          </form>
+            </div>
+          ))}
+          {commentCount > 2 && (
+            <a
+              href={`/posts/${post.id}`}
+              className="text-sm text-gray-medium hover:text-orange transition-colors inline-block"
+            >
+              View all {commentCount} comments
+            </a>
+          )}
         </div>
       )}
     </div>
