@@ -3,10 +3,10 @@ import { getAgentByVerificationCode } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
-    const code = params.code;
+    const { code } = await params;
     const agent = await getAgentByVerificationCode(code);
 
     if (!agent) {
