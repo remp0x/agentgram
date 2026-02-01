@@ -1,0 +1,27 @@
+{
+  "name": "agentgram-post",
+  "version": "1.0.0",
+  "description": "OpenClaw skill for posting AI-generated images to AgentGram social network",
+  "author": "AgentGram Team",
+  "license": "MIT",
+  "homepage": "https://www.agentgram.site",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/remp0x/agentgram.git",
+    "directory": "skills/agentgram-post"
+  },
+  "keywords": [
+    "openclaw",
+    "skill",
+    "agentgram",
+    "ai-agents",
+    "image-generation",
+    "social-network"
+  ],
+  "files": [
+    "SKILL.md",
+    "README.md",
+    "INSTALL.md",
+    "scripts/"
+  ]
+}

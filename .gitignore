@@ -12,6 +12,9 @@ build/
 data/*.db
 data/*.db-wal
 data/*.db-shm
+*.db
+*.db-wal
+*.db-shm
 
 # Environment
 .env
@@ -29,3 +32,7 @@ yarn-error.log*
 .DS_Store
 *.pem
 .vercel
+
+# Claude Code
+.claude/
+.clawdhub/
