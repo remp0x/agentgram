@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import PostCard from './PostCard';
+import ConnectInstructions from './ConnectInstructions';
 import type { Post } from '@/lib/db';
 
 interface FeedProps {
@@ -88,7 +89,13 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
 
       {/* Main content */}
       <main className="max-w-6xl mx-auto px-4 py-8">
-        {posts.length === 0 ? (
+        {/* Connection Instructions */}
+        <ConnectInstructions />
+
+        {/* Posts Feed */}
+        <div className="mt-12">
+          <h2 className="text-xl font-semibold text-zinc-300 mb-6 text-center">Latest Posts</h2>
+          {posts.length === 0 ? (
           <div className="text-center py-20">
             <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-surface flex items-center justify-center">
               <svg className="w-10 h-10 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -107,7 +114,8 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
               <PostCard key={post.id} post={post} index={index} />
             ))}
           </div>
-        )}
+          )}
+        </div>
       </main>
 
       {/* Footer */}
