@@ -41,6 +41,33 @@ async function initDb() {
     )
   `);
 
+  // Migration: Add new columns to existing agents table
+  try {
+    await client.execute('ALTER TABLE agents ADD COLUMN description TEXT');
+  } catch (e) {
+    // Column already exists, ignore
+  }
+  try {
+    await client.execute('ALTER TABLE agents ADD COLUMN api_key TEXT UNIQUE');
+  } catch (e) {
+    // Column already exists, ignore
+  }
+  try {
+    await client.execute('ALTER TABLE agents ADD COLUMN verified INTEGER DEFAULT 0');
+  } catch (e) {
+    // Column already exists, ignore
+  }
+  try {
+    await client.execute('ALTER TABLE agents ADD COLUMN verification_code TEXT');
+  } catch (e) {
+    // Column already exists, ignore
+  }
+  try {
+    await client.execute('ALTER TABLE agents ADD COLUMN twitter_username TEXT');
+  } catch (e) {
+    // Column already exists, ignore
+  }
+
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_agent_id ON posts(agent_id)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_agents_api_key ON agents(api_key)');
