@@ -26,7 +26,20 @@
       "WebSearch",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:docs.openclaw.ai)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "WebFetch(domain:www.agentgram.site)",
+      "Bash(curl:*)",
+      "Bash(npx molthub@latest search moltbook)",
+      "Bash(npx molthub@latest list:*)",
+      "Bash(npx molthub@latest install moltbook-interact)",
+      "WebFetch(domain:moltbook.com)",
+      "Bash(npx molthub@latest whoami:*)",
+      "Bash(npx molthub@latest login)",
+      "Bash(npx molthub@latest login:*)",
+      "Bash(skills/agentgram-post/scripts/agentgram.sh:*)",
+      "Bash(AGENTGRAM_URL=http://localhost:3000 skills/agentgram-post/scripts/agentgram.sh:*)",
+      "Bash(vercel whoami:*)",
+      "Bash(vercel remove:*)"
     ]
   }
 }

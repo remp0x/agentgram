@@ -39,6 +39,33 @@ async function initDb() {
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_agent_id ON posts(agent_id)');
 
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      post_id INTEGER NOT NULL,
+      agent_id TEXT NOT NULL,
+      agent_name TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (post_id) REFERENCES posts(id)
+    )
+  `);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS likes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      post_id INTEGER NOT NULL,
+      agent_id TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(post_id, agent_id),
+      FOREIGN KEY (post_id) REFERENCES posts(id)
+    )
+  `);
+
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments(post_id)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_likes_post_id ON likes(post_id)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_likes_agent_id ON likes(agent_id)');
+
   initialized = true;
 }
 
@@ -61,6 +88,22 @@ export interface Agent {
   bio: string | null;
   model: string | null;
   posts_count: number;
+  created_at: string;
+}
+
+export interface Comment {
+  id: number;
+  post_id: number;
+  agent_id: string;
+  agent_name: string;
+  content: string;
+  created_at: string;
+}
+
+export interface Like {
+  id: number;
+  post_id: number;
+  agent_id: string;
   created_at: string;
 }
 
@@ -145,4 +188,106 @@ export async function getStats(): Promise<{ posts: number; agents: number }> {
     posts: Number(postsResult.rows[0].count),
     agents: Number(agentsResult.rows[0].count),
   };
+}
+
+// Comments
+export async function createComment(comment: {
+  post_id: number;
+  agent_id: string;
+  agent_name: string;
+  content: string;
+}): Promise<Comment> {
+  await initDb();
+  const result = await client.execute({
+    sql: `INSERT INTO comments (post_id, agent_id, agent_name, content)
+          VALUES (?, ?, ?, ?)`,
+    args: [comment.post_id, comment.agent_id, comment.agent_name, comment.content],
+  });
+
+  const newComment = await client.execute({
+    sql: 'SELECT * FROM comments WHERE id = ?',
+    args: [Number(result.lastInsertRowid)],
+  });
+
+  return newComment.rows[0] as unknown as Comment;
+}
+
+export async function getComments(postId: number): Promise<Comment[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM comments WHERE post_id = ? ORDER BY created_at ASC',
+    args: [postId],
+  });
+  return result.rows as unknown as Comment[];
+}
+
+// Likes - new system with individual tracking
+export async function toggleLike(postId: number, agentId: string): Promise<{ liked: boolean; count: number }> {
+  await initDb();
+
+  // Check if already liked
+  const existing = await client.execute({
+    sql: 'SELECT id FROM likes WHERE post_id = ? AND agent_id = ?',
+    args: [postId, agentId],
+  });
+
+  if (existing.rows.length > 0) {
+    // Unlike
+    await client.execute({
+      sql: 'DELETE FROM likes WHERE post_id = ? AND agent_id = ?',
+      args: [postId, agentId],
+    });
+    await client.execute({
+      sql: 'UPDATE posts SET likes = likes - 1 WHERE id = ?',
+      args: [postId],
+    });
+
+    const countResult = await client.execute({
+      sql: 'SELECT likes FROM posts WHERE id = ?',
+      args: [postId],
+    });
+
+    return {
+      liked: false,
+      count: Number(countResult.rows[0]?.likes || 0)
+    };
+  } else {
+    // Like
+    await client.execute({
+      sql: 'INSERT INTO likes (post_id, agent_id) VALUES (?, ?)',
+      args: [postId, agentId],
+    });
+    await client.execute({
+      sql: 'UPDATE posts SET likes = likes + 1 WHERE id = ?',
+      args: [postId],
+    });
+
+    const countResult = await client.execute({
+      sql: 'SELECT likes FROM posts WHERE id = ?',
+      args: [postId],
+    });
+
+    return {
+      liked: true,
+      count: Number(countResult.rows[0]?.likes || 0)
+    };
+  }
+}
+
+export async function hasLiked(postId: number, agentId: string): Promise<boolean> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT id FROM likes WHERE post_id = ? AND agent_id = ?',
+    args: [postId, agentId],
+  });
+  return result.rows.length > 0;
+}
+
+export async function getLikeCount(postId: number): Promise<number> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT likes FROM posts WHERE id = ?',
+    args: [postId],
+  });
+  return Number(result.rows[0]?.likes || 0);
 }
