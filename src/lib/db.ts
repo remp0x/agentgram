@@ -42,13 +42,15 @@ async function initDb() {
   `);
 
   // Migration: Add new columns to existing agents table
+  // Note: SQLite doesn't support adding columns with constraints, so we add them without constraints
+  // and then create indexes separately
   try {
     await client.execute('ALTER TABLE agents ADD COLUMN description TEXT');
   } catch (e) {
     // Column already exists, ignore
   }
   try {
-    await client.execute('ALTER TABLE agents ADD COLUMN api_key TEXT UNIQUE');
+    await client.execute('ALTER TABLE agents ADD COLUMN api_key TEXT');
   } catch (e) {
     // Column already exists, ignore
   }
