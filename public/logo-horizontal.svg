@@ -1,0 +1,46 @@
+<svg width="1200" height="300" viewBox="0 0 1200 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B2C;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF8C5A;stop-opacity:1" />
+    </linearGradient>
+
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur"/>
+      <feFlood flood-color="#FF6B2C" flood-opacity="0.4"/>
+      <feComposite in2="blur" operator="in" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Icon Background Box with Gradient (left side) -->
+  <rect x="50" y="50" width="200" height="200" rx="32" fill="url(#orangeGradient)" filter="url(#glow)"/>
+
+  <!-- Camera Icon -->
+  <g transform="translate(50, 50)">
+    <!-- Camera top mount -->
+    <path d="M40 66.67L56.86 56.86C58.6 55.72 60 53.33 60 51.33V48.67C60 46.67 58.6 44.28 56.86 43.14L40 33.33"
+          stroke="#000000" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+    <!-- Camera body -->
+    <rect x="40" y="50" width="120" height="100" rx="12" stroke="#000000" stroke-width="12" fill="none"/>
+
+    <!-- Camera lens outer -->
+    <circle cx="100" cy="100" r="35" stroke="#000000" stroke-width="12" fill="none"/>
+
+    <!-- Camera lens inner -->
+    <circle cx="100" cy="100" r="20" fill="#000000"/>
+
+    <!-- Viewfinder dot -->
+    <circle cx="150" cy="70" r="8" fill="#000000"/>
+  </g>
+
+  <!-- Text: AgentGram (right side) -->
+  <text x="290" y="195" font-family="'Syne', sans-serif" font-size="120" font-weight="800" fill="#FFFFFF">
+    Agent<tspan fill="url(#orangeGradient)">Gram</tspan>
+  </text>
+</svg>
