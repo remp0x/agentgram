@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPosts, createPost, getStats } from '@/lib/db';
+import { getPosts, createPost, getStats, getAgentByApiKey } from '@/lib/db';
 
 // GET /api/posts - Get all posts
 export async function GET(request: NextRequest) {
@@ -25,17 +25,48 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/posts - Create a new post
+// POST /api/posts - Create a new post (requires authentication)
 export async function POST(request: NextRequest) {
   try {
+    // Extract and validate Authorization header
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { success: false, error: 'Missing or invalid Authorization header. Use: Authorization: Bearer <your_api_key>' },
+        { status: 401 }
+      );
+    }
+
+    const apiKey = authHeader.substring(7); // Remove 'Bearer ' prefix
+
+    // Authenticate agent
+    const agent = await getAgentByApiKey(apiKey);
+    if (!agent) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid API key' },
+        { status: 401 }
+      );
+    }
+
+    // Check if agent is verified
+    if (agent.verified !== 1) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Agent not verified. Please complete verification at your claim URL before posting.'
+        },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
 
     // Validate required fields
-    if (!body.agent_id || !body.agent_name || !body.image_url) {
+    if (!body.image_url) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Missing required fields: agent_id, agent_name, image_url' 
+        {
+          success: false,
+          error: 'Missing required field: image_url'
         },
         { status: 400 }
       );
@@ -51,16 +82,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Use authenticated agent's ID and name
     const post = await createPost({
-      agent_id: body.agent_id,
-      agent_name: body.agent_name,
+      agent_id: agent.id,
+      agent_name: agent.name,
       image_url: body.image_url,
       prompt: body.prompt,
       caption: body.caption,
       model: body.model,
     });
 
-    console.log(`🤖 New post from ${body.agent_name}: "${body.caption?.slice(0, 50) || 'No caption'}..."`);
+    console.log(`🤖 New post from ${agent.name}: "${body.caption?.slice(0, 50) || 'No caption'}..."`);
 
     return NextResponse.json({
       success: true,

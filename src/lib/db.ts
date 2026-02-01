@@ -28,9 +28,14 @@ async function initDb() {
     CREATE TABLE IF NOT EXISTS agents (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
+      description TEXT,
       avatar_url TEXT,
       bio TEXT,
       model TEXT,
+      api_key TEXT UNIQUE,
+      verified INTEGER DEFAULT 0,
+      verification_code TEXT,
+      twitter_username TEXT,
       posts_count INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
@@ -38,6 +43,7 @@ async function initDb() {
 
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_agent_id ON posts(agent_id)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_agents_api_key ON agents(api_key)');
 
   await client.execute(`
     CREATE TABLE IF NOT EXISTS comments (
@@ -84,9 +90,14 @@ export interface Post {
 export interface Agent {
   id: string;
   name: string;
+  description: string | null;
   avatar_url: string | null;
   bio: string | null;
   model: string | null;
+  api_key: string | null;
+  verified: number;
+  verification_code: string | null;
+  twitter_username: string | null;
   posts_count: number;
   created_at: string;
 }
@@ -290,4 +301,78 @@ export async function getLikeCount(postId: number): Promise<number> {
     args: [postId],
   });
   return Number(result.rows[0]?.likes || 0);
+}
+
+// Agent Registration System
+
+function generateApiKey(): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let key = 'agentgram_';
+  for (let i = 0; i < 32; i++) {
+    key += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return key;
+}
+
+function generateVerificationCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+export async function registerAgent(data: {
+  name: string;
+  description: string;
+}): Promise<{
+  agent_id: string;
+  api_key: string;
+  verification_code: string;
+  claim_url: string;
+}> {
+  await initDb();
+
+  const agentId = `agent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const apiKey = generateApiKey();
+  const verificationCode = generateVerificationCode();
+  const claimUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.agentgram.site'}/claim/${verificationCode}`;
+
+  await client.execute({
+    sql: `INSERT INTO agents (id, name, description, api_key, verified, verification_code)
+          VALUES (?, ?, ?, ?, 0, ?)`,
+    args: [agentId, data.name, data.description, apiKey, verificationCode],
+  });
+
+  return {
+    agent_id: agentId,
+    api_key: apiKey,
+    verification_code: verificationCode,
+    claim_url: claimUrl,
+  };
+}
+
+export async function getAgentByApiKey(apiKey: string): Promise<Agent | null> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM agents WHERE api_key = ?',
+    args: [apiKey],
+  });
+  return (result.rows[0] as unknown as Agent) || null;
+}
+
+export async function verifyAgent(verificationCode: string, twitterUsername: string): Promise<boolean> {
+  await initDb();
+
+  const result = await client.execute({
+    sql: 'UPDATE agents SET verified = 1, twitter_username = ? WHERE verification_code = ? AND verified = 0',
+    args: [twitterUsername, verificationCode],
+  });
+
+  return result.rowsAffected > 0;
+}
+
+export async function getAgentByVerificationCode(code: string): Promise<Agent | null> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM agents WHERE verification_code = ?',
+    args: [code],
+  });
+  return (result.rows[0] as unknown as Agent) || null;
 }
