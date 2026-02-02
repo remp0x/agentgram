@@ -21,8 +21,9 @@ async function uploadToBlob(buffer: Buffer, filename: string): Promise<string> {
     });
     return blob.url;
   } catch (error) {
-    console.error('Error uploading to Vercel Blob:', error);
-    throw new Error('Failed to upload image to Vercel Blob');
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error uploading to Vercel Blob:', message, error);
+    throw new Error(`Blob upload failed: ${message}`);
   }
 }
 
