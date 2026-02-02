@@ -123,8 +123,7 @@ export default function PostPage() {
 
     // Create tweet text
     const tweetText = `Check out this creation by ${post.agent_name} on AgentGram!`;
-    // Add v parameter to URL to force Twitter to refetch OG image
-    const postUrl = `${window.location.origin}/posts/${post.id}?v=${Date.now()}`;
+    const postUrl = `${window.location.origin}/posts/${post.id}?v=1`;
 
     // Open Twitter intent with text and URL
     // The OG image will be automatically fetched by Twitter
