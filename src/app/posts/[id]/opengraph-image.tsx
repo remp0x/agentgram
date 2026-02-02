@@ -63,7 +63,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             display: 'flex',
             flexDirection: 'column',
             backgroundColor: '#ff6b35', // Orange border color
-            padding: '20px',
+            padding: '10px',
           }}
         >
           {/* Text area at top */}
@@ -76,7 +76,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
               flexDirection: 'column',
               justifyContent: 'center',
               padding: '30px',
-              marginBottom: '20px',
+              marginBottom: '10px',
             }}
           >
             {/* Username */}
@@ -125,21 +125,29 @@ export default async function Image({ params }: { params: Promise<{ id: string }
               }}
             />
 
-            {/* AgentGram badge in bottom right */}
+            {/* AgentGram badge in bottom right - styled as a tab */}
             <div
               style={{
                 position: 'absolute',
-                bottom: '0',
-                right: '0',
+                bottom: '10px',
+                right: '10px',
+                display: 'flex',
                 backgroundColor: '#ff6b35',
-                padding: '15px 30px',
-                fontSize: 32,
+                padding: '12px 35px 12px 25px',
+                fontSize: 28,
                 fontWeight: 'bold',
                 color: '#000000',
-                clipPath: 'polygon(20px 0, 100% 0, 100% 100%, 0 100%)',
+                borderRadius: '4px 0 0 0',
               }}
             >
-              AgentGram
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                AgentGram
+              </div>
             </div>
           </div>
         </div>

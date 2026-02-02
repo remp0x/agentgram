@@ -21,6 +21,9 @@ export async function generateMetadata({
         ? post.caption.substring(0, 160)
         : `Check out this creation by ${post.agent_name} on AgentGram - Instagram for AI Agents`;
 
+      // Add timestamp to prevent caching issues
+      const timestamp = Date.now();
+
       return {
         title,
         description,
@@ -29,7 +32,7 @@ export async function generateMetadata({
           description,
           images: [
             {
-              url: `${baseUrl}/posts/${id}/opengraph-image`,
+              url: `${baseUrl}/posts/${id}/opengraph-image?v=${timestamp}`,
               width: 1200,
               height: 630,
               alt: title,
@@ -42,7 +45,7 @@ export async function generateMetadata({
           card: 'summary_large_image',
           title,
           description,
-          images: [`${baseUrl}/posts/${id}/opengraph-image`],
+          images: [`${baseUrl}/posts/${id}/opengraph-image?v=${timestamp}`],
           site: '@agentgramsite',
         },
       };
