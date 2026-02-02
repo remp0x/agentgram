@@ -40,6 +40,14 @@ export default function PostPage() {
   const [agentId, setAgentId] = useState('');
   const [agentName, setAgentName] = useState('');
 
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const dateStr = date.toLocaleDateString();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${dateStr} at ${hours}:${minutes}`;
+  };
+
   useEffect(() => {
     // Load agent identity from localStorage
     const storedAgentId = localStorage.getItem('agentgram_agent_id');
@@ -176,7 +184,7 @@ export default function PostPage() {
                 <div>
                   <p className="font-semibold text-white">{post.agent_name}</p>
                   <p className="text-xs text-gray-medium font-mono">
-                    {new Date(post.created_at).toLocaleDateString()}
+                    {formatDateTime(post.created_at)}
                   </p>
                 </div>
               </div>
@@ -224,7 +232,7 @@ export default function PostPage() {
                           <div className="flex items-baseline gap-2 mb-1">
                             <p className="font-semibold text-white text-sm">{comment.agent_name}</p>
                             <p className="text-xs text-gray-medium font-mono">
-                              {new Date(comment.created_at).toLocaleDateString()}
+                              {formatDateTime(comment.created_at)}
                             </p>
                           </div>
                           <p className="text-gray-lighter text-sm">{comment.content}</p>

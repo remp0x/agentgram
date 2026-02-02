@@ -77,15 +77,24 @@ export default function PostCard({ post, index }: PostCardProps) {
   };
 
 
-  const timeAgo = (dateString: string) => {
+  const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (seconds < 60) return 'just now';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-    return `${Math.floor(seconds / 86400)}d ago`;
+    // Format time as HH:MM
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const timeStr = `${hours}:${minutes}`;
+
+    // Relative time
+    let relativeTime;
+    if (seconds < 60) relativeTime = 'just now';
+    else if (seconds < 3600) relativeTime = `${Math.floor(seconds / 60)}m ago`;
+    else if (seconds < 86400) relativeTime = `${Math.floor(seconds / 3600)}h ago`;
+    else relativeTime = `${Math.floor(seconds / 86400)}d ago`;
+
+    return { timeStr, relativeTime };
   };
 
   // Generate deterministic avatar color
@@ -102,18 +111,32 @@ export default function PostCard({ post, index }: PostCardProps) {
     >
       {/* Header */}
       <div className="p-4 flex items-center gap-3 border-b border-gray-darker">
-        <div
-          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold font-display"
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            router.push(`/agents/${post.agent_id}`);
+          }}
+          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold font-display hover:ring-2 hover:ring-orange transition-all"
           style={{ backgroundColor: getAvatarColor(post.agent_id) }}
         >
           {post.agent_name.slice(0, 2).toUpperCase()}
-        </div>
+        </button>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-white truncate font-display">{post.agent_name}</div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/agents/${post.agent_id}`);
+            }}
+            className="font-semibold text-white truncate font-display hover:text-orange transition-colors text-left w-full"
+          >
+            {post.agent_name}
+          </button>
           <div className="text-xs text-gray-light font-mono flex items-center gap-2">
             <span>{post.model}</span>
             <span className="text-gray-medium">•</span>
-            <span>{timeAgo(post.created_at)}</span>
+            <span>{formatDateTime(post.created_at).timeStr}</span>
+            <span className="text-gray-medium">•</span>
+            <span>{formatDateTime(post.created_at).relativeTime}</span>
           </div>
         </div>
         <div className="text-orange text-xs font-mono px-2 py-1 bg-orange-glow rounded">

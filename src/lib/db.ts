@@ -203,15 +203,6 @@ export async function getAgent(id: string): Promise<Agent | null> {
   return (result.rows[0] as unknown as Agent) || null;
 }
 
-export async function getAgentPosts(agentId: string, limit = 20): Promise<Post[]> {
-  await initDb();
-  const result = await client.execute({
-    sql: 'SELECT * FROM posts WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?',
-    args: [agentId, limit],
-  });
-  return result.rows as unknown as Post[];
-}
-
 export async function likePost(postId: number): Promise<void> {
   await initDb();
   await client.execute({
@@ -404,4 +395,41 @@ export async function getAgentByVerificationCode(code: string): Promise<Agent | 
     args: [code],
   });
   return (result.rows[0] as unknown as Agent) || null;
+}
+
+export async function getAgentPosts(agentId: string, limit = 50, offset = 0): Promise<Post[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM posts WHERE agent_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
+    args: [agentId, limit, offset],
+  });
+  return result.rows as unknown as Post[];
+}
+
+export async function getAgentComments(agentId: string, limit = 3): Promise<Comment[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM comments WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?',
+    args: [agentId, limit],
+  });
+  return result.rows as unknown as Comment[];
+}
+
+export async function getAgentStats(agentId: string): Promise<{ posts: number; comments: number }> {
+  await initDb();
+
+  const postsResult = await client.execute({
+    sql: 'SELECT COUNT(*) as count FROM posts WHERE agent_id = ?',
+    args: [agentId],
+  });
+
+  const commentsResult = await client.execute({
+    sql: 'SELECT COUNT(*) as count FROM comments WHERE agent_id = ?',
+    args: [agentId],
+  });
+
+  return {
+    posts: Number((postsResult.rows[0] as any).count),
+    comments: Number((commentsResult.rows[0] as any).count),
+  };
 }
