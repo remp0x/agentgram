@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { Post, Comment } from '@/lib/db';
 
@@ -10,6 +11,7 @@ interface PostCardProps {
 }
 
 export default function PostCard({ post, index }: PostCardProps) {
+  const router = useRouter();
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(post.likes);
   const [showPrompt, setShowPrompt] = useState(false);
@@ -41,7 +43,12 @@ export default function PostCard({ post, index }: PostCardProps) {
     }
   };
 
-  const handleLike = async () => {
+  const handleCardClick = () => {
+    router.push(`/posts/${post.id}`);
+  };
+
+  const handleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
     if (!agentId) {
       alert('Please set your agent identity first (in browser console: localStorage.setItem("agentgram_agent_id", "your_id"))');
       return;
@@ -61,6 +68,11 @@ export default function PostCard({ post, index }: PostCardProps) {
     } catch (error) {
       console.error('Error toggling like:', error);
     }
+  };
+
+  const handlePromptClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    setShowPrompt(!showPrompt);
   };
 
 
@@ -83,7 +95,8 @@ export default function PostCard({ post, index }: PostCardProps) {
 
   return (
     <div
-      className="bg-black-soft border border-gray-dark rounded-lg overflow-hidden hover-lift opacity-0 animate-slide-up"
+      onClick={handleCardClick}
+      className="bg-black-soft border border-gray-dark rounded-lg overflow-hidden opacity-0 animate-slide-up cursor-pointer transition-all duration-200 hover:border-orange/50 hover:shadow-lg hover:shadow-orange/10 hover:scale-[1.02]"
       style={{ animationDelay: `${index * 0.05}s`, animationFillMode: 'forwards' }}
     >
       {/* Header */}
@@ -131,13 +144,19 @@ export default function PostCard({ post, index }: PostCardProps) {
 
         {/* Prompt overlay */}
         {post.prompt && showPrompt && (
-          <div className="absolute inset-0 bg-black/95 backdrop-blur-sm p-6 overflow-auto">
+          <div
+            className="absolute inset-0 bg-black/95 backdrop-blur-sm p-6 overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between mb-4">
               <div className="text-xs font-bold font-display text-orange uppercase tracking-wider">
                 Generation Prompt
               </div>
               <button
-                onClick={() => setShowPrompt(false)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowPrompt(false);
+                }}
                 className="text-gray-light hover:text-white transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -179,20 +198,20 @@ export default function PostCard({ post, index }: PostCardProps) {
           </button>
 
           {/* Comment Button */}
-          <a
-            href={`/posts/${post.id}`}
+          <button
+            onClick={(e) => e.stopPropagation()}
             className="flex items-center gap-2 transition-all button-press text-gray-light hover:text-orange"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
             <span className="text-sm font-semibold font-mono">{commentCount}</span>
-          </a>
+          </button>
 
           {/* Prompt Button */}
           {post.prompt && (
             <button
-              onClick={() => setShowPrompt(!showPrompt)}
+              onClick={handlePromptClick}
               className={`flex items-center gap-2 transition-all button-press ${
                 showPrompt
                   ? 'text-orange'
@@ -238,12 +257,15 @@ export default function PostCard({ post, index }: PostCardProps) {
             </div>
           ))}
           {commentCount > 2 && (
-            <a
-              href={`/posts/${post.id}`}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/posts/${post.id}`);
+              }}
               className="text-sm text-gray-medium hover:text-orange transition-colors inline-block"
             >
               View all {commentCount} comments
-            </a>
+            </button>
           )}
         </div>
       )}
