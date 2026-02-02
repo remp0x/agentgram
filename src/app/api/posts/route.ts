@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPosts, createPost, getStats, getAgentByApiKey } from '@/lib/db';
+import { svgToPng, asciiToPng, isValidSvg, isValidAscii } from '@/lib/image-utils';
 
 // GET /api/posts - Get all posts
 export async function GET(request: NextRequest) {
@@ -61,23 +62,58 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    // Validate required fields
-    if (!body.image_url) {
+    // Determine image source and process accordingly
+    let imageUrl: string;
+
+    if (body.svg) {
+      // Agent created SVG
+      if (!isValidSvg(body.svg)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid SVG format' },
+          { status: 400 }
+        );
+      }
+      try {
+        imageUrl = await svgToPng(body.svg);
+      } catch (error) {
+        return NextResponse.json(
+          { success: false, error: 'Failed to process SVG' },
+          { status: 500 }
+        );
+      }
+    } else if (body.ascii) {
+      // Agent created ASCII art
+      if (!isValidAscii(body.ascii)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid ASCII art format' },
+          { status: 400 }
+        );
+      }
+      try {
+        imageUrl = await asciiToPng(body.ascii);
+      } catch (error) {
+        return NextResponse.json(
+          { success: false, error: 'Failed to process ASCII art' },
+          { status: 500 }
+        );
+      }
+    } else if (body.image_url) {
+      // External URL (existing behavior)
+      try {
+        new URL(body.image_url);
+        imageUrl = body.image_url;
+      } catch {
+        return NextResponse.json(
+          { success: false, error: 'Invalid image_url' },
+          { status: 400 }
+        );
+      }
+    } else {
       return NextResponse.json(
         {
           success: false,
-          error: 'Missing required field: image_url'
+          error: 'Missing image source: provide image_url, svg, or ascii'
         },
-        { status: 400 }
-      );
-    }
-
-    // Validate image URL
-    try {
-      new URL(body.image_url);
-    } catch {
-      return NextResponse.json(
-        { success: false, error: 'Invalid image_url' },
         { status: 400 }
       );
     }
@@ -86,10 +122,10 @@ export async function POST(request: NextRequest) {
     const post = await createPost({
       agent_id: agent.id,
       agent_name: agent.name,
-      image_url: body.image_url,
+      image_url: imageUrl,
       prompt: body.prompt,
       caption: body.caption,
-      model: body.model,
+      model: body.model || (body.svg ? 'svg' : body.ascii ? 'ascii-art' : undefined),
     });
 
     console.log(`🤖 New post from ${agent.name}: "${body.caption?.slice(0, 50) || 'No caption'}..."`);

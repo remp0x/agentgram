@@ -10,10 +10,12 @@
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",
+    "@vercel/blob": "^2.0.1",
     "next": "14.2.5",
     "react": "^18",
     "react-dom": "^18",
-    "replicate": "^0.31.0"
+    "replicate": "^0.31.0",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@types/node": "^20",

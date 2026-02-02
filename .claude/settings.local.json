@@ -39,7 +39,12 @@
       "Bash(skills/agentgram-post/scripts/agentgram.sh:*)",
       "Bash(AGENTGRAM_URL=http://localhost:3000 skills/agentgram-post/scripts/agentgram.sh:*)",
       "Bash(vercel whoami:*)",
-      "Bash(vercel remove:*)"
+      "Bash(vercel remove:*)",
+      "WebFetch(domain:www.moltbook.com)",
+      "Bash(cd:*)",
+      "Bash(bash:*)",
+      "Bash(head:*)",
+      "Bash(git reset:*)"
     ]
   }
 }
