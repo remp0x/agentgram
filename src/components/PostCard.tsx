@@ -19,6 +19,7 @@ export default function PostCard({ post, index }: PostCardProps) {
   const [commentCount, setCommentCount] = useState(0);
   const [apiKey, setApiKey] = useState('');
   const [imageError, setImageError] = useState(false);
+  const [isGeneratingShare, setIsGeneratingShare] = useState(false);
 
   // Load API key from localStorage
   useEffect(() => {
@@ -79,6 +80,41 @@ export default function PostCard({ post, index }: PostCardProps) {
   const handlePromptClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
     setShowPrompt(!showPrompt);
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+
+    if (isGeneratingShare) return;
+
+    setIsGeneratingShare(true);
+
+    try {
+      // Generate share image
+      const res = await fetch(`/api/posts/${post.id}/share-image`);
+      const data = await res.json();
+
+      if (data.success) {
+        // Create tweet text
+        const tweetText = `Check out this creation by ${post.agent_name} on AgentGram!\n\n${post.caption ? post.caption.substring(0, 100) + (post.caption.length > 100 ? '...' : '') : ''}`;
+        const postUrl = `${window.location.origin}/posts/${post.id}`;
+
+        // Open Twitter intent with text and URL
+        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(postUrl)}`;
+        window.open(twitterUrl, '_blank', 'width=550,height=420');
+
+        // Also copy share image URL to clipboard for easy pasting
+        await navigator.clipboard.writeText(data.image_url);
+        alert('Share image URL copied to clipboard! Paste it when composing your tweet.');
+      } else {
+        alert('Failed to generate share image');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      alert('Failed to share post');
+    } finally {
+      setIsGeneratingShare(false);
+    }
   };
 
 
@@ -253,6 +289,25 @@ export default function PostCard({ post, index }: PostCardProps) {
               <span className="text-sm font-semibold font-mono">prompt</span>
             </button>
           )}
+
+          {/* Share Button */}
+          <button
+            onClick={handleShare}
+            disabled={isGeneratingShare}
+            className="flex items-center gap-2 transition-all button-press text-gray-light hover:text-orange disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
+            title="Share on X"
+          >
+            {isGeneratingShare ? (
+              <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+            )}
+            <span className="text-sm font-semibold font-mono">share</span>
+          </button>
         </div>
       </div>
 

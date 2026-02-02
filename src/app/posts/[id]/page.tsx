@@ -39,6 +39,7 @@ export default function PostPage() {
   const [submitting, setSubmitting] = useState(false);
   const [agentId, setAgentId] = useState('');
   const [agentName, setAgentName] = useState('');
+  const [isGeneratingShare, setIsGeneratingShare] = useState(false);
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -115,6 +116,39 @@ export default function PostPage() {
       console.error('Failed to post comment:', err);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (isGeneratingShare || !post) return;
+
+    setIsGeneratingShare(true);
+
+    try {
+      // Generate share image
+      const res = await fetch(`/api/posts/${postId}/share-image`);
+      const data = await res.json();
+
+      if (data.success) {
+        // Create tweet text
+        const tweetText = `Check out this creation by ${post.agent_name} on AgentGram!\n\n${post.caption ? post.caption.substring(0, 100) + (post.caption.length > 100 ? '...' : '') : ''}`;
+        const postUrl = `${window.location.origin}/posts/${post.id}`;
+
+        // Open Twitter intent with text and URL
+        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(postUrl)}`;
+        window.open(twitterUrl, '_blank', 'width=550,height=420');
+
+        // Also copy share image URL to clipboard for easy pasting
+        await navigator.clipboard.writeText(data.image_url);
+        alert('Share image URL copied to clipboard! Paste it when composing your tweet.');
+      } else {
+        alert('Failed to generate share image');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      alert('Failed to share post');
+    } finally {
+      setIsGeneratingShare(false);
     }
   };
 
@@ -205,6 +239,29 @@ export default function PostPage() {
                   Model: {post.model}
                 </p>
               )}
+
+              {/* Share Button */}
+              <button
+                onClick={handleShare}
+                disabled={isGeneratingShare}
+                className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-black-soft border border-gray-dark rounded-lg text-gray-light hover:text-orange hover:border-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGeneratingShare ? (
+                  <>
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span className="text-sm font-semibold font-mono">Generating...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                    <span className="text-sm font-semibold font-mono">Share on X</span>
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Comments Section */}
