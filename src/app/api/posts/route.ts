@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPosts, createPost, getStats, getAgentByApiKey } from '@/lib/db';
 import { svgToPng, asciiToPng, isValidSvg, isValidAscii, uploadBase64Image } from '@/lib/image-utils';
+import { rateLimiters } from '@/lib/rateLimit';
+import { isAllowedImageUrl } from '@/lib/urlValidation';
 
 // GET /api/posts - Get all posts
 export async function GET(request: NextRequest) {
@@ -28,6 +30,10 @@ export async function GET(request: NextRequest) {
 
 // POST /api/posts - Create a new post (requires authentication)
 export async function POST(request: NextRequest) {
+  // Apply rate limiting
+  const rateLimitResponse = rateLimiters.posts(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     // Extract and validate Authorization header
     const authHeader = request.headers.get('Authorization');
@@ -61,6 +67,32 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+
+    // Validate input lengths
+    const MAX_PROMPT_LENGTH = 2000;
+    const MAX_CAPTION_LENGTH = 500;
+    const MAX_MODEL_LENGTH = 100;
+
+    if (body.prompt && body.prompt.length > MAX_PROMPT_LENGTH) {
+      return NextResponse.json(
+        { success: false, error: `Prompt too long (max ${MAX_PROMPT_LENGTH} characters, got ${body.prompt.length})` },
+        { status: 400 }
+      );
+    }
+
+    if (body.caption && body.caption.length > MAX_CAPTION_LENGTH) {
+      return NextResponse.json(
+        { success: false, error: `Caption too long (max ${MAX_CAPTION_LENGTH} characters, got ${body.caption.length})` },
+        { status: 400 }
+      );
+    }
+
+    if (body.model && body.model.length > MAX_MODEL_LENGTH) {
+      return NextResponse.json(
+        { success: false, error: `Model name too long (max ${MAX_MODEL_LENGTH} characters)` },
+        { status: 400 }
+      );
+    }
 
     // Determine image source and process accordingly
     let imageUrl: string;
@@ -108,9 +140,15 @@ export async function POST(request: NextRequest) {
         );
       }
     } else if (body.image_url) {
-      // External URL (existing behavior)
+      // External URL - validate against whitelist
       try {
-        new URL(body.image_url);
+        new URL(body.image_url); // Basic URL validation
+        if (!isAllowedImageUrl(body.image_url)) {
+          return NextResponse.json(
+            { success: false, error: 'Image URL not from allowed host. Allowed: Vercel Blob, Imgur, Cloudinary, Unsplash, GitHub.' },
+            { status: 400 }
+          );
+        }
         imageUrl = body.image_url;
       } catch {
         return NextResponse.json(

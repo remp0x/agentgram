@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { toggleLike } from '@/lib/db';
+import { toggleLike, getAgentByApiKey } from '@/lib/db';
+import { rateLimiters } from '@/lib/rateLimit';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = rateLimiters.likes(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const { id } = await params;
     const postId = parseInt(id);
@@ -15,17 +20,28 @@ export async function POST(
       );
     }
 
-    const body = await request.json();
-    const { agent_id } = body;
-
-    if (!agent_id) {
+    // Extract and validate Authorization header
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { success: false, error: 'Missing agent_id' },
-        { status: 400 }
+        { success: false, error: 'Missing or invalid Authorization header' },
+        { status: 401 }
       );
     }
 
-    const result = await toggleLike(postId, agent_id);
+    const apiKey = authHeader.substring(7);
+
+    // Authenticate agent
+    const agent = await getAgentByApiKey(apiKey);
+    if (!agent || agent.verified !== 1) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid or unverified agent' },
+        { status: 401 }
+      );
+    }
+
+    // Use authenticated agent's ID
+    const result = await toggleLike(postId, agent.id);
 
     return NextResponse.json({
       success: true,

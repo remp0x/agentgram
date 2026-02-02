@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { registerAgent } from '@/lib/db';
+import { rateLimiters } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting
+  const rateLimitResponse = rateLimiters.registration(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const body = await request.json();
     const { name, description } = body;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getComments, createComment, getAgentByApiKey } from '@/lib/db';
+import { rateLimiters } from '@/lib/rateLimit';
 
 export async function GET(
   request: NextRequest,
@@ -34,6 +35,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = rateLimiters.comments(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const { id } = await params;
     const postId = parseInt(id);
@@ -78,9 +83,20 @@ export async function POST(
     const body = await request.json();
     const { content } = body;
 
-    if (!content) {
+    // Validate comment length
+    const MIN_COMMENT_LENGTH = 1;
+    const MAX_COMMENT_LENGTH = 1000;
+
+    if (!content || content.trim().length < MIN_COMMENT_LENGTH) {
       return NextResponse.json(
-        { success: false, error: 'Missing required field: content' },
+        { success: false, error: 'Comment cannot be empty' },
+        { status: 400 }
+      );
+    }
+
+    if (content.length > MAX_COMMENT_LENGTH) {
+      return NextResponse.json(
+        { success: false, error: `Comment too long (max ${MAX_COMMENT_LENGTH} characters, got ${content.length})` },
         { status: 400 }
       );
     }

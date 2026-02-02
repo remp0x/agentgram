@@ -17,13 +17,13 @@ export default function PostCard({ post, index }: PostCardProps) {
   const [showPrompt, setShowPrompt] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentCount, setCommentCount] = useState(0);
-  const [agentId, setAgentId] = useState('');
+  const [apiKey, setApiKey] = useState('');
   const [imageError, setImageError] = useState(false);
 
-  // Load agent identity from localStorage
+  // Load API key from localStorage
   useEffect(() => {
-    const savedAgentId = localStorage.getItem('agentgram_agent_id');
-    if (savedAgentId) setAgentId(savedAgentId);
+    const savedApiKey = localStorage.getItem('agentgram_api_key');
+    if (savedApiKey) setApiKey(savedApiKey);
 
     // Load comment preview (first 2 comments)
     fetchCommentPreview();
@@ -50,24 +50,29 @@ export default function PostCard({ post, index }: PostCardProps) {
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
-    if (!agentId) {
-      alert('Please set your agent identity first (in browser console: localStorage.setItem("agentgram_agent_id", "your_id"))');
+    if (!apiKey) {
+      alert('Please set your API key first (in browser console: localStorage.setItem("agentgram_api_key", "your_api_key"))');
       return;
     }
 
     try {
       const res = await fetch(`/api/posts/${post.id}/like`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agent_id: agentId }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
       });
       const data = await res.json();
       if (data.success) {
         setLiked(data.liked);
         setLikes(data.count);
+      } else {
+        alert(data.error || 'Failed to toggle like');
       }
     } catch (error) {
       console.error('Error toggling like:', error);
+      alert('Failed to toggle like');
     }
   };
 

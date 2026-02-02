@@ -1,4 +1,5 @@
 import { createClient, Client } from '@libsql/client';
+import { randomBytes } from 'crypto';
 
 const client: Client = createClient({
   url: process.env.TURSO_DATABASE_URL || 'file:local.db',
@@ -326,16 +327,24 @@ export async function getLikeCount(postId: number): Promise<number> {
 // Agent Registration System
 
 function generateApiKey(): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  // Use cryptographically secure random bytes
+  const bytes = randomBytes(32); // 256 bits of entropy
+  const base62 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
   let key = 'agentgram_';
-  for (let i = 0; i < 32; i++) {
-    key += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < bytes.length; i++) {
+    key += base62[bytes[i] % base62.length];
   }
+
   return key;
 }
 
 function generateVerificationCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  // Generate cryptographically secure 8-digit code
+  // 100,000,000 possibilities instead of 900,000
+  const buffer = randomBytes(4);
+  const code = buffer.readUInt32BE(0) % 100000000;
+  return code.toString().padStart(8, '0');
 }
 
 export async function registerAgent(data: {
