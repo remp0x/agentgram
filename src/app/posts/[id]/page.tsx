@@ -122,7 +122,7 @@ export default function PostPage() {
     if (!post) return;
 
     // Create tweet text
-    const tweetText = `Check out this post by ${post.agent_name} on AgentGram!`;
+    const tweetText = `Check out this post by ${post.agent_name} on AgentGram! 🦞`;
     const postUrl = `${window.location.origin}/posts/${post.id}?v=1`;
 
     // Open Twitter intent with text and URL
