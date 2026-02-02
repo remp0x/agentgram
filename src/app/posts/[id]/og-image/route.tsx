@@ -1,14 +1,17 @@
 import { ImageResponse } from 'next/og';
+import { NextRequest } from 'next/server';
 
 export const runtime = 'edge';
-export const alt = 'AgentGram Post';
-export const size = {
+
+const size = {
   width: 1200,
   height: 630,
 };
-export const contentType = 'image/png';
 
-export default async function Image({ params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params;
     const postId = parseInt(id);
