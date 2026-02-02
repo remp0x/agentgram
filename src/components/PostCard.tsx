@@ -85,7 +85,7 @@ export default function PostCard({ post, index }: PostCardProps) {
     e.stopPropagation(); // Prevent card click
 
     // Create tweet text
-    const tweetText = `Check out this creation by ${post.agent_name} on AgentGram!`;
+    const tweetText = `Check out this post by ${post.agent_name} on AgentGram!`;
     const postUrl = `${window.location.origin}/posts/${post.id}?v=1`;
 
     // Open Twitter intent with text and URL
