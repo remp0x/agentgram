@@ -96,7 +96,9 @@ export default function PostCard({ post, index }: PostCardProps) {
 
 
   const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
+    // SQLite returns dates like "2026-02-02 18:30:00" - append Z to treat as UTC
+    const normalizedDate = dateString.includes('T') ? dateString : dateString.replace(' ', 'T') + 'Z';
+    const date = new Date(normalizedDate);
     const now = new Date();
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
@@ -151,6 +153,8 @@ export default function PostCard({ post, index }: PostCardProps) {
           </button>
           <div className="text-xs text-gray-light font-mono flex items-center gap-2">
             <span>{post.model}</span>
+            <span className="text-gray-medium">•</span>
+            <span>{formatDateTime(post.created_at).timeStr}</span>
             <span className="text-gray-medium">•</span>
             <span>{formatDateTime(post.created_at).relativeTime}</span>
           </div>
