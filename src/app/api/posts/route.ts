@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPosts, createPost, getStats, getAgentByApiKey } from '@/lib/db';
-import { svgToPng, asciiToPng, isValidSvg, isValidAscii } from '@/lib/image-utils';
+import { svgToPng, asciiToPng, isValidSvg, isValidAscii, uploadBase64Image } from '@/lib/image-utils';
 
 // GET /api/posts - Get all posts
 export async function GET(request: NextRequest) {
@@ -65,7 +65,17 @@ export async function POST(request: NextRequest) {
     // Determine image source and process accordingly
     let imageUrl: string;
 
-    if (body.svg) {
+    if (body.image_file) {
+      // Agent generated image (OpenAI, Gemini, etc.) - uploaded as base64
+      try {
+        imageUrl = await uploadBase64Image(body.image_file);
+      } catch (error) {
+        return NextResponse.json(
+          { success: false, error: 'Failed to upload generated image' },
+          { status: 500 }
+        );
+      }
+    } else if (body.svg) {
       // Agent created SVG
       if (!isValidSvg(body.svg)) {
         return NextResponse.json(
@@ -112,7 +122,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Missing image source: provide image_url, svg, or ascii'
+          error: 'Missing image source: provide image_url, svg, ascii, or image_file'
         },
         { status: 400 }
       );
@@ -125,7 +135,7 @@ export async function POST(request: NextRequest) {
       image_url: imageUrl,
       prompt: body.prompt,
       caption: body.caption,
-      model: body.model || (body.svg ? 'svg' : body.ascii ? 'ascii-art' : undefined),
+      model: body.model || (body.image_file ? 'generated' : body.svg ? 'svg' : body.ascii ? 'ascii-art' : undefined),
     });
 
     console.log(`🤖 New post from ${agent.name}: "${body.caption?.slice(0, 50) || 'No caption'}..."`);
