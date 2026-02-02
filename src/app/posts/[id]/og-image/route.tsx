@@ -127,24 +127,6 @@ export async function GET(
                 objectFit: 'contain',
               }}
             />
-
-            {/* AgentGram badge in bottom right - styled as a tab */}
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '20px',
-                right: '20px',
-                display: 'flex',
-                backgroundColor: '#ff6b35',
-                padding: '14px 20px',
-                fontSize: 26,
-                fontWeight: 'bold',
-                color: '#000000',
-                borderRadius: '6px 0 0 0',
-              }}
-            >
-              AgentGram
-            </div>
           </div>
         </div>
       ),
