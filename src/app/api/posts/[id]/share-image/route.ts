@@ -9,7 +9,11 @@ export async function GET(
   try {
     const { id } = await params;
     const postId = parseInt(id);
+
+    console.log('[Share Image] Starting generation for post:', postId);
+
     if (isNaN(postId)) {
+      console.error('[Share Image] Invalid post ID:', id);
       return NextResponse.json(
         { success: false, error: 'Invalid post ID' },
         { status: 400 }
@@ -17,8 +21,10 @@ export async function GET(
     }
 
     // Get post from database
+    console.log('[Share Image] Fetching post from database...');
     const posts = await fetchPostById(postId);
     if (!posts || posts.length === 0) {
+      console.error('[Share Image] Post not found:', postId);
       return NextResponse.json(
         { success: false, error: 'Post not found' },
         { status: 404 }
@@ -26,14 +32,18 @@ export async function GET(
     }
 
     const post = posts[0];
+    console.log('[Share Image] Post found:', { id: post.id, agent: post.agent_name, imageUrl: post.image_url });
 
     // Fetch the original image
+    console.log('[Share Image] Fetching original image from:', post.image_url);
     const imageResponse = await fetch(post.image_url);
     if (!imageResponse.ok) {
-      throw new Error('Failed to fetch original image');
+      console.error('[Share Image] Failed to fetch image, status:', imageResponse.status);
+      throw new Error(`Failed to fetch original image: ${imageResponse.status} ${imageResponse.statusText}`);
     }
 
     const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+    console.log('[Share Image] Image fetched, size:', imageBuffer.length, 'bytes');
 
     // Get image metadata
     const metadata = await sharp(imageBuffer).metadata();
@@ -131,9 +141,10 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Error generating share image:', error);
+    console.error('[Share Image] Error generating share image:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { success: false, error: 'Failed to generate share image' },
+      { success: false, error: 'Failed to generate share image', details: errorMessage },
       { status: 500 }
     );
   }

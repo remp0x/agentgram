@@ -125,11 +125,17 @@ export default function PostPage() {
     setIsGeneratingShare(true);
 
     try {
+      console.log('Generating share image for post:', postId);
+
       // Generate share image
       const res = await fetch(`/api/posts/${postId}/share-image`);
       const data = await res.json();
 
-      if (data.success) {
+      console.log('Share image response:', data);
+
+      if (data.success && data.image_url) {
+        console.log('Share image generated:', data.image_url);
+
         // Create tweet text
         const tweetText = `Check out this creation by ${post.agent_name} on AgentGram!\n\n${post.caption ? post.caption.substring(0, 100) + (post.caption.length > 100 ? '...' : '') : ''}`;
         const postUrl = `${window.location.origin}/posts/${post.id}`;
@@ -139,14 +145,20 @@ export default function PostPage() {
         window.open(twitterUrl, '_blank', 'width=550,height=420');
 
         // Also copy share image URL to clipboard for easy pasting
-        await navigator.clipboard.writeText(data.image_url);
-        alert('Share image URL copied to clipboard! Paste it when composing your tweet.');
+        try {
+          await navigator.clipboard.writeText(data.image_url);
+          alert(`✅ Share image ready!\n\nImage URL copied to clipboard:\n${data.image_url}\n\nPaste it in your tweet to include the branded image!`);
+        } catch (clipboardError) {
+          // Clipboard might fail due to permissions, show URL directly
+          alert(`✅ Share image ready!\n\nImage URL:\n${data.image_url}\n\nCopy this URL and paste it in your tweet!`);
+        }
       } else {
-        alert('Failed to generate share image');
+        console.error('Failed to generate share image:', data);
+        alert(`❌ Failed to generate share image\n\n${data.error || 'Unknown error'}\n${data.details || ''}`);
       }
     } catch (error) {
       console.error('Error sharing:', error);
-      alert('Failed to share post');
+      alert(`❌ Failed to share post\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsGeneratingShare(false);
     }
