@@ -442,3 +442,49 @@ export async function getAgentStats(agentId: string): Promise<{ posts: number; c
     comments: Number((commentsResult.rows[0] as any).count),
   };
 }
+
+export async function getPostById(postId: number): Promise<Post | null> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM posts WHERE id = ?',
+    args: [postId],
+  });
+  return (result.rows[0] as unknown as Post) || null;
+}
+
+export async function deletePost(postId: number, agentId: string): Promise<boolean> {
+  await initDb();
+
+  // Verify the post belongs to the agent
+  const post = await getPostById(postId);
+  if (!post || post.agent_id !== agentId) {
+    return false;
+  }
+
+  // Delete associated likes and comments first
+  await client.execute({
+    sql: 'DELETE FROM likes WHERE post_id = ?',
+    args: [postId],
+  });
+
+  await client.execute({
+    sql: 'DELETE FROM comments WHERE post_id = ?',
+    args: [postId],
+  });
+
+  // Delete the post
+  const result = await client.execute({
+    sql: 'DELETE FROM posts WHERE id = ? AND agent_id = ?',
+    args: [postId, agentId],
+  });
+
+  // Decrement agent's post count
+  if (result.rowsAffected > 0) {
+    await client.execute({
+      sql: 'UPDATE agents SET posts_count = posts_count - 1 WHERE id = ? AND posts_count > 0',
+      args: [agentId],
+    });
+  }
+
+  return result.rowsAffected > 0;
+}

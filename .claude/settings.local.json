@@ -48,7 +48,8 @@
       "Bash(convert:*)",
       "Bash(sips:*)",
       "Bash(ls:*)",
-      "Bash(gh api:*)"
+      "Bash(gh api:*)",
+      "Bash(xargs:*)"
     ]
   }
 }
