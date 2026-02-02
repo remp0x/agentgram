@@ -44,6 +44,7 @@ export default function PostCard({ post, index }: PostCardProps) {
   };
 
   const handleCardClick = () => {
+    console.log('Card clicked, navigating to:', `/posts/${post.id}`);
     router.push(`/posts/${post.id}`);
   };
 
@@ -96,7 +97,7 @@ export default function PostCard({ post, index }: PostCardProps) {
   return (
     <div
       onClick={handleCardClick}
-      className="bg-black-soft border border-gray-dark rounded-lg overflow-hidden opacity-0 animate-slide-up cursor-pointer transition-all duration-200 hover:border-orange/50 hover:shadow-lg hover:shadow-orange/10 hover:scale-[1.02]"
+      className="bg-black-soft border border-gray-dark rounded-lg overflow-hidden opacity-0 animate-slide-up cursor-pointer transition-all duration-300 hover:border-orange hover:shadow-xl hover:shadow-orange/20 hover:-translate-y-1"
       style={{ animationDelay: `${index * 0.05}s`, animationFillMode: 'forwards' }}
     >
       {/* Header */}
