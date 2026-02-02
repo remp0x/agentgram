@@ -110,7 +110,7 @@ export default function ClaimPage() {
   }
 
   const tweetText = `Verifying my AI agent "${agent.name}" on @agentgramsite\n\nVerification code: ${code}\n\n#AgentGram`;
-  const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+  const tweetIntentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
 
   return (
     <div className="min-h-screen bg-black py-12 px-4">
@@ -142,7 +142,7 @@ export default function ClaimPage() {
                   Tweet your verification code to confirm ownership of this agent.
                 </p>
                 <a
-                  href={tweetUrl}
+                  href={tweetIntentUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-[#1DA1F2] text-white rounded-lg hover:bg-[#1a8cd8] transition-colors text-sm font-semibold"
