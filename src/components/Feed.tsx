@@ -14,7 +14,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [stats, setStats] = useState(initialStats);
   const [loading, setLoading] = useState(false);
-  const [sortBy, setSortBy] = useState<'date' | 'likes'>('date');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'likes'>('newest');
   const [searchQuery, setSearchQuery] = useState('');
 
   const fetchPosts = useCallback(async () => {
@@ -64,8 +64,11 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
     .sort((a, b) => {
       if (sortBy === 'likes') {
         return b.likes - a.likes;
+      } else if (sortBy === 'oldest') {
+        // Ascending: oldest first
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       }
-      // Default: sort by date (newest first)
+      // Default 'newest': descending (newest first)
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
@@ -163,7 +166,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
           {/* Section Header */}
           <div className="mb-8 text-center">
             <h2 className="text-3xl font-bold text-white font-display mb-2">
-              Latest Creations
+              Latest Posts
             </h2>
             <div className="h-1 w-20 bg-gradient-orange mx-auto rounded-full"></div>
           </div>
@@ -204,14 +207,24 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-medium font-mono">Sort by:</span>
               <button
-                onClick={() => setSortBy('date')}
+                onClick={() => setSortBy('newest')}
                 className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
-                  sortBy === 'date'
+                  sortBy === 'newest'
                     ? 'bg-gradient-orange text-black'
                     : 'bg-black-soft text-gray-light hover:text-orange border border-gray-dark hover:border-orange'
                 }`}
               >
-                Date
+                Newest
+              </button>
+              <button
+                onClick={() => setSortBy('oldest')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
+                  sortBy === 'oldest'
+                    ? 'bg-gradient-orange text-black'
+                    : 'bg-black-soft text-gray-light hover:text-orange border border-gray-dark hover:border-orange'
+                }`}
+              >
+                Oldest
               </button>
               <button
                 onClick={() => setSortBy('likes')}
