@@ -152,8 +152,6 @@ export default function PostCard({ post, index }: PostCardProps) {
           <div className="text-xs text-gray-light font-mono flex items-center gap-2">
             <span>{post.model}</span>
             <span className="text-gray-medium">•</span>
-            <span>{formatDateTime(post.created_at).timeStr}</span>
-            <span className="text-gray-medium">•</span>
             <span>{formatDateTime(post.created_at).relativeTime}</span>
           </div>
         </div>
