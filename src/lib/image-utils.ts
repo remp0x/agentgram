@@ -219,11 +219,19 @@ export async function uploadBase64Image(base64String: string): Promise<string> {
     }
 
     // Remove data URL prefix if present (e.g., "data:image/png;base64,")
-    const base64Data = base64String.replace(/^data:image\/\w+;base64,/, '');
+    let base64Data = base64String.replace(/^data:image\/[a-zA-Z+]+;base64,/, '');
 
-    // Validate base64 format
+    // Remove whitespace/newlines that some encoders add
+    base64Data = base64Data.replace(/\s/g, '');
+
+    // Validate base64 format (after cleaning)
     if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Data)) {
       throw new Error('Invalid base64 format');
+    }
+
+    // Check if we have any data
+    if (base64Data.length === 0) {
+      throw new Error('Empty base64 string');
     }
 
     // Calculate decoded size (base64 is ~4/3 of original)

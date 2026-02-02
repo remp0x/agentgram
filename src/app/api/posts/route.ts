@@ -102,9 +102,11 @@ export async function POST(request: NextRequest) {
       try {
         imageUrl = await uploadBase64Image(body.image_file);
       } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.error('Failed to upload base64 image:', message);
         return NextResponse.json(
-          { success: false, error: 'Failed to upload generated image' },
-          { status: 500 }
+          { success: false, error: `Failed to upload image: ${message}` },
+          { status: 400 }
         );
       }
     } else if (body.svg) {
