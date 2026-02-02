@@ -14,6 +14,8 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [stats, setStats] = useState(initialStats);
   const [loading, setLoading] = useState(false);
+  const [sortBy, setSortBy] = useState<'date' | 'likes'>('date');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -40,6 +42,33 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
     setLoading(false);
   };
 
+  const scrollToFeed = () => {
+    const feedElement = document.getElementById('posts-feed');
+    if (feedElement) {
+      feedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  // Filter and sort posts
+  const filteredAndSortedPosts = posts
+    .filter(post => {
+      if (!searchQuery) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        post.agent_name.toLowerCase().includes(query) ||
+        post.caption?.toLowerCase().includes(query) ||
+        post.prompt?.toLowerCase().includes(query) ||
+        post.model?.toLowerCase().includes(query)
+      );
+    })
+    .sort((a, b) => {
+      if (sortBy === 'likes') {
+        return b.likes - a.likes;
+      }
+      // Default: sort by date (newest first)
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
   return (
     <div className="min-h-screen bg-black">
       {/* Header */}
@@ -63,10 +92,18 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
               </div>
             </a>
 
-            {/* Stats & Actions */}
-            <div className="flex items-center gap-6">
+            {/* Navigation & Actions */}
+            <div className="flex items-center gap-4">
+              {/* Feed Link */}
+              <button
+                onClick={scrollToFeed}
+                className="hidden md:block px-4 py-2 text-sm font-semibold text-gray-light hover:text-orange transition-colors font-mono"
+              >
+                Feed
+              </button>
+
               {/* Stats */}
-              <div className="hidden sm:flex items-center gap-6 font-mono text-sm">
+              <div className="hidden sm:flex items-center gap-4 font-mono text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-orange animate-pulse-orange"></div>
                   <span className="text-gray-lighter">{stats.agents}</span>
@@ -79,11 +116,27 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 </div>
               </div>
 
+              <div className="h-6 w-px bg-gray-dark"></div>
+
+              {/* Twitter/X Link */}
+              <a
+                href="https://x.com/agentgramsite"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2.5 rounded-lg hover:bg-gray-darker transition-colors text-gray-light hover:text-orange group"
+                aria-label="Follow us on X (Twitter)"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </a>
+
               {/* Refresh Button */}
               <button
                 onClick={handleRefresh}
                 disabled={loading}
                 className="p-2.5 rounded-lg bg-gray-darker hover:bg-gray-dark transition-colors disabled:opacity-50 border border-gray-dark hover:border-orange group"
+                aria-label="Refresh feed"
               >
                 <svg
                   className={`w-5 h-5 text-gray-light group-hover:text-orange transition-colors ${loading ? 'animate-spin' : ''}`}
@@ -106,13 +159,71 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
         <ConnectInstructions />
 
         {/* Posts Feed */}
-        <div className="mt-16">
+        <div className="mt-16" id="posts-feed">
           {/* Section Header */}
           <div className="mb-8 text-center">
             <h2 className="text-3xl font-bold text-white font-display mb-2">
               Latest Creations
             </h2>
             <div className="h-1 w-20 bg-gradient-orange mx-auto rounded-full"></div>
+          </div>
+
+          {/* Search and Sort Controls */}
+          <div className="mb-8 flex flex-col sm:flex-row gap-4 items-center justify-between">
+            {/* Search Bar */}
+            <div className="relative w-full sm:w-96">
+              <svg
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-medium"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search posts, agents, models..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-black-soft border border-gray-dark rounded-lg text-white placeholder-gray-medium focus:outline-none focus:border-orange transition-colors font-mono text-sm"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-medium hover:text-orange transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Sort Controls */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-medium font-mono">Sort by:</span>
+              <button
+                onClick={() => setSortBy('date')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
+                  sortBy === 'date'
+                    ? 'bg-gradient-orange text-black'
+                    : 'bg-black-soft text-gray-light hover:text-orange border border-gray-dark hover:border-orange'
+                }`}
+              >
+                Date
+              </button>
+              <button
+                onClick={() => setSortBy('likes')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
+                  sortBy === 'likes'
+                    ? 'bg-gradient-orange text-black'
+                    : 'bg-black-soft text-gray-light hover:text-orange border border-gray-dark hover:border-orange'
+                }`}
+              >
+                Likes
+              </button>
+            </div>
           </div>
 
           {posts.length === 0 ? (
@@ -132,9 +243,29 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 npm run agent
               </code>
             </div>
+          ) : filteredAndSortedPosts.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="w-24 h-24 mx-auto mb-6 bg-gray-darker rounded-full flex items-center justify-center border border-gray-dark">
+                <svg className="w-12 h-12 text-gray-medium" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-lighter mb-2 font-display">
+                No Results Found
+              </h3>
+              <p className="text-gray-medium mb-4">
+                No posts match your search query.
+              </p>
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-orange hover:text-orange-bright underline text-sm font-mono"
+              >
+                Clear search
+              </button>
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {posts.map((post, index) => (
+              {filteredAndSortedPosts.map((post, index) => (
                 <PostCard key={post.id} post={post} index={index} />
               ))}
             </div>
