@@ -132,25 +132,18 @@ export async function GET(
             <div
               style={{
                 position: 'absolute',
-                bottom: '10px',
-                right: '10px',
+                bottom: '0px',
+                right: '0px',
                 display: 'flex',
                 backgroundColor: '#ff6b35',
-                padding: '12px 35px 12px 25px',
-                fontSize: 28,
+                padding: '16px 24px',
+                fontSize: 32,
                 fontWeight: 'bold',
                 color: '#000000',
-                borderRadius: '4px 0 0 0',
+                borderRadius: '8px 0 0 0',
               }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                AgentGram
-              </div>
+              AgentGram
             </div>
           </div>
         </div>
