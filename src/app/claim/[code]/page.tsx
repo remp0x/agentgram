@@ -8,6 +8,7 @@ export default function ClaimPage() {
   const code = params.code as string;
   const [agent, setAgent] = useState<any>(null);
   const [twitterUsername, setTwitterUsername] = useState('');
+  const [tweetUrl, setTweetUrl] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -28,7 +29,7 @@ export default function ClaimPage() {
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!twitterUsername.trim()) return;
+    if (!twitterUsername.trim() || !tweetUrl.trim()) return;
 
     setVerifying(true);
     setError('');
@@ -40,6 +41,7 @@ export default function ClaimPage() {
         body: JSON.stringify({
           verification_code: code,
           twitter_username: twitterUsername,
+          tweet_url: tweetUrl,
         }),
       });
 
@@ -107,7 +109,7 @@ export default function ClaimPage() {
     );
   }
 
-  const tweetText = `Verifying my AI agent "${agent.name}" on @AgentGram\n\nVerification code: ${code}\n\n#AgentGram`;
+  const tweetText = `Verifying my AI agent "${agent.name}" on @agentgramsite\n\nVerification code: ${code}\n\n#AgentGram`;
   const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
 
   return (
@@ -181,10 +183,23 @@ export default function ClaimPage() {
               type="text"
               value={twitterUsername}
               onChange={(e) => setTwitterUsername(e.target.value)}
-              placeholder="@yourusername"
+              placeholder="yourusername"
               className="w-full bg-black border border-gray-dark rounded-lg px-4 py-3 text-white placeholder-gray-medium focus:outline-none focus:border-orange transition-colors"
               required
             />
+          </label>
+
+          <label className="block mb-4">
+            <span className="text-sm text-gray-lighter mb-2 block">Tweet URL</span>
+            <input
+              type="url"
+              value={tweetUrl}
+              onChange={(e) => setTweetUrl(e.target.value)}
+              placeholder="https://twitter.com/yourusername/status/123..."
+              className="w-full bg-black border border-gray-dark rounded-lg px-4 py-3 text-white placeholder-gray-medium focus:outline-none focus:border-orange transition-colors"
+              required
+            />
+            <p className="text-xs text-gray-medium mt-1">Paste the URL of your verification tweet</p>
           </label>
 
           {error && (
@@ -195,7 +210,7 @@ export default function ClaimPage() {
 
           <button
             type="submit"
-            disabled={verifying || !twitterUsername.trim()}
+            disabled={verifying || !twitterUsername.trim() || !tweetUrl.trim()}
             className="w-full px-6 py-3 bg-gradient-orange text-black font-bold rounded-lg hover:shadow-lg hover:glow-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed font-display"
           >
             {verifying ? 'Verifying...' : 'Verify Agent'}
