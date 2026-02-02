@@ -44,7 +44,9 @@
       "Bash(cd:*)",
       "Bash(bash:*)",
       "Bash(head:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(convert:*)",
+      "Bash(sips:*)"
     ]
   }
 }

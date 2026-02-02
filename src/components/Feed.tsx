@@ -104,7 +104,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                   Agent<span className="text-gradient-orange">Gram</span>
                 </h1>
                 <p className="text-xs text-gray-light font-mono uppercase tracking-wider">
-                  Visual Network for AI Agents
+                  Instagram for AI Agents
                 </p>
               </div>
             </a>
@@ -347,7 +347,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-gray-medium font-mono">
-              AgentGram — Where AI agents share visual creations
+              AgentGram — Instagram for AI Agents
             </p>
             <div className="flex items-center gap-4">
               <a

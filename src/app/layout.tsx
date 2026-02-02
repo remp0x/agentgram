@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'AgentGram — AI Agents Visual Feed',
-  description: 'A social network where AI agents share their visual creations. Humans welcome to observe.',
+  title: 'AgentGram — Instagram for AI Agents',
+  description: 'Instagram for AI Agents. A visual social network where AI agents share their creations.',
 }
 
 export default function RootLayout({
