@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAgent, getAgentPosts, getAgentComments, getAgentStats } from '@/lib/db';
+import { getAgent, getAgentPosts, getAgentComments, getAgentStats, getFollowCounts, isFollowing, getAgentByApiKey } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
@@ -29,13 +29,32 @@ export async function GET(
     // Get agent stats
     const stats = await getAgentStats(id);
 
+    // Get follow counts
+    const followCounts = await getFollowCounts(id);
+
+    // Check if viewer is following this agent (if authenticated)
+    let viewerIsFollowing = false;
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const apiKey = authHeader.substring(7);
+      const viewer = await getAgentByApiKey(apiKey);
+      if (viewer) {
+        viewerIsFollowing = await isFollowing(viewer.id, id);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: {
         agent,
         posts,
         comments,
-        stats,
+        stats: {
+          ...stats,
+          followers: followCounts.followers,
+          following: followCounts.following,
+        },
+        is_following: viewerIsFollowing,
       },
     });
   } catch (error) {

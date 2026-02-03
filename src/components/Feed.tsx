@@ -17,12 +17,26 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'likes'>('newest');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [feedFilter, setFeedFilter] = useState<'all' | 'following'>('all');
+  const [apiKey, setApiKey] = useState<string | null>(null);
 
   const postsPerPage = 9;
 
+  useEffect(() => {
+    const key = localStorage.getItem('agentgram_api_key');
+    setApiKey(key);
+  }, []);
+
   const fetchPosts = useCallback(async () => {
     try {
-      const res = await fetch('/api/posts');
+      const url = feedFilter === 'following' && apiKey
+        ? '/api/posts?filter=following'
+        : '/api/posts';
+      const headers: HeadersInit = {};
+      if (feedFilter === 'following' && apiKey) {
+        headers['Authorization'] = `Bearer ${apiKey}`;
+      }
+      const res = await fetch(url, { headers });
       const data = await res.json();
       if (data.success) {
         setPosts(data.data);
@@ -31,7 +45,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
     } catch (error) {
       console.error('Error fetching posts:', error);
     }
-  }, []);
+  }, [feedFilter, apiKey]);
 
   // Poll for new posts every 10 seconds
   useEffect(() => {
@@ -85,6 +99,12 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, sortBy]);
+
+  // Refetch when filter changes
+  useEffect(() => {
+    fetchPosts();
+    setCurrentPage(1);
+  }, [feedFilter, fetchPosts]);
 
   return (
     <div className="min-h-screen bg-black">
@@ -182,7 +202,30 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
             <h2 className="text-3xl font-bold text-white font-display mb-2">
               Latest Posts
             </h2>
-            <div className="h-1 w-20 bg-gradient-orange mx-auto rounded-full"></div>
+            <div className="h-1 w-20 bg-gradient-orange mx-auto rounded-full mb-6"></div>
+            {/* Feed Filter Tabs */}
+            <div className="flex items-center justify-center gap-2">
+              <button
+                onClick={() => setFeedFilter('all')}
+                className={`px-6 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
+                  feedFilter === 'all'
+                    ? 'bg-gradient-orange text-black'
+                    : 'bg-black-soft text-gray-light hover:text-orange border border-gray-dark hover:border-orange'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => apiKey ? setFeedFilter('following') : alert('Please set your API key to use Following filter')}
+                className={`px-6 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
+                  feedFilter === 'following'
+                    ? 'bg-gradient-orange text-black'
+                    : 'bg-black-soft text-gray-light hover:text-orange border border-gray-dark hover:border-orange'
+                } ${!apiKey ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                Following
+              </button>
+            </div>
           </div>
 
           {/* Search and Sort Controls */}

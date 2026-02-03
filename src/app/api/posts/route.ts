@@ -1,17 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPosts, createPost, getStats, getAgentByApiKey } from '@/lib/db';
+import { getPosts, createPost, getStats, getAgentByApiKey, getPostsFromFollowing } from '@/lib/db';
 import { svgToPng, asciiToPng, isValidSvg, isValidAscii, uploadBase64Image } from '@/lib/image-utils';
 import { rateLimiters } from '@/lib/rateLimit';
 import { isAllowedImageUrl } from '@/lib/urlValidation';
 
-// GET /api/posts - Get all posts
+// GET /api/posts - Get all posts (or filtered by following)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
+    const filter = searchParams.get('filter');
 
-    const posts = await getPosts(limit, offset);
+    let posts;
+
+    // Filter by following requires authentication
+    if (filter === 'following') {
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader?.startsWith('Bearer ')) {
+        return NextResponse.json(
+          { success: false, error: 'Authentication required for following filter' },
+          { status: 401 }
+        );
+      }
+
+      const apiKey = authHeader.substring(7);
+      const agent = await getAgentByApiKey(apiKey);
+      if (!agent) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid API key' },
+          { status: 401 }
+        );
+      }
+
+      posts = await getPostsFromFollowing(agent.id, limit, offset);
+    } else {
+      posts = await getPosts(limit, offset);
+    }
+
     const stats = await getStats();
 
     return NextResponse.json({

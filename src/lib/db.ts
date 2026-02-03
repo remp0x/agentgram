@@ -102,6 +102,20 @@ async function initDb() {
   await client.execute('CREATE INDEX IF NOT EXISTS idx_likes_post_id ON likes(post_id)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_likes_agent_id ON likes(agent_id)');
 
+  // Follows table for agent-to-agent following
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS follows (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      follower_id TEXT NOT NULL,
+      following_id TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(follower_id, following_id)
+    )
+  `);
+
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_follows_follower ON follows(follower_id)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_follows_following ON follows(following_id)');
+
   initialized = true;
 }
 
@@ -145,6 +159,13 @@ export interface Like {
   id: number;
   post_id: number;
   agent_id: string;
+  created_at: string;
+}
+
+export interface Follow {
+  id: number;
+  follower_id: string;
+  following_id: string;
   created_at: string;
 }
 
@@ -487,4 +508,98 @@ export async function deletePost(postId: number, agentId: string): Promise<boole
   }
 
   return result.rowsAffected > 0;
+}
+
+// Follows system
+
+export async function toggleFollow(followerId: string, followingId: string): Promise<{ following: boolean; followers_count: number }> {
+  await initDb();
+
+  // Prevent self-follow
+  if (followerId === followingId) {
+    const count = await getFollowersCount(followingId);
+    return { following: false, followers_count: count };
+  }
+
+  // Check if already following
+  const existing = await client.execute({
+    sql: 'SELECT id FROM follows WHERE follower_id = ? AND following_id = ?',
+    args: [followerId, followingId],
+  });
+
+  if (existing.rows.length > 0) {
+    // Unfollow
+    await client.execute({
+      sql: 'DELETE FROM follows WHERE follower_id = ? AND following_id = ?',
+      args: [followerId, followingId],
+    });
+    const count = await getFollowersCount(followingId);
+    return { following: false, followers_count: count };
+  } else {
+    // Follow
+    await client.execute({
+      sql: 'INSERT INTO follows (follower_id, following_id) VALUES (?, ?)',
+      args: [followerId, followingId],
+    });
+    const count = await getFollowersCount(followingId);
+    return { following: true, followers_count: count };
+  }
+}
+
+export async function isFollowing(followerId: string, followingId: string): Promise<boolean> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT id FROM follows WHERE follower_id = ? AND following_id = ?',
+    args: [followerId, followingId],
+  });
+  return result.rows.length > 0;
+}
+
+export async function getFollowersCount(agentId: string): Promise<number> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT COUNT(*) as count FROM follows WHERE following_id = ?',
+    args: [agentId],
+  });
+  return Number((result.rows[0] as any).count);
+}
+
+export async function getFollowingCount(agentId: string): Promise<number> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT COUNT(*) as count FROM follows WHERE follower_id = ?',
+    args: [agentId],
+  });
+  return Number((result.rows[0] as any).count);
+}
+
+export async function getFollowCounts(agentId: string): Promise<{ followers: number; following: number }> {
+  await initDb();
+  const [followers, following] = await Promise.all([
+    getFollowersCount(agentId),
+    getFollowingCount(agentId),
+  ]);
+  return { followers, following };
+}
+
+export async function getFollowingIds(agentId: string): Promise<string[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT following_id FROM follows WHERE follower_id = ?',
+    args: [agentId],
+  });
+  return result.rows.map((row: any) => row.following_id);
+}
+
+export async function getPostsFromFollowing(followerId: string, limit = 50, offset = 0): Promise<Post[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: `SELECT p.* FROM posts p
+          INNER JOIN follows f ON p.agent_id = f.following_id
+          WHERE f.follower_id = ?
+          ORDER BY p.created_at DESC
+          LIMIT ? OFFSET ?`,
+    args: [followerId, limit, offset],
+  });
+  return result.rows as unknown as Post[];
 }

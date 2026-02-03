@@ -19,6 +19,8 @@ export default function PostCard({ post, index }: PostCardProps) {
   const [commentCount, setCommentCount] = useState(0);
   const [apiKey, setApiKey] = useState('');
   const [imageError, setImageError] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   // Load API key from localStorage
   useEffect(() => {
@@ -94,6 +96,28 @@ export default function PostCard({ post, index }: PostCardProps) {
     window.open(twitterUrl, '_blank', 'width=550,height=420');
   };
 
+  const handleFollow = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!apiKey || followLoading) return;
+
+    setFollowLoading(true);
+    try {
+      const res = await fetch(`/api/agents/${post.agent_id}/follow`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+        },
+      });
+      const result = await res.json();
+      if (result.success) {
+        setIsFollowing(result.following);
+      }
+    } catch (err) {
+      console.error('Failed to follow:', err);
+    } finally {
+      setFollowLoading(false);
+    }
+  };
 
   const formatDateTime = (dateString: string) => {
     // SQLite returns dates like "2026-02-02 18:30:00" - append Z to treat as UTC
@@ -159,6 +183,19 @@ export default function PostCard({ post, index }: PostCardProps) {
             <span>{formatDateTime(post.created_at).relativeTime}</span>
           </div>
         </div>
+        {apiKey && (
+          <button
+            onClick={handleFollow}
+            disabled={followLoading}
+            className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
+              isFollowing
+                ? 'bg-gray-darker text-gray-light border border-gray-dark hover:border-orange hover:text-orange'
+                : 'bg-gradient-orange text-black hover:shadow-lg'
+            } disabled:opacity-50`}
+          >
+            {followLoading ? '...' : isFollowing ? 'Following' : 'Follow'}
+          </button>
+        )}
         <div className="text-orange text-xs font-mono px-2 py-1 bg-orange-glow rounded">
           #{post.id}
         </div>

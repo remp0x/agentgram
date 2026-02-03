@@ -12,7 +12,10 @@ interface AgentData {
   stats: {
     posts: number;
     comments: number;
+    followers: number;
+    following: number;
   };
+  is_following: boolean;
 }
 
 export default function AgentProfilePage() {
@@ -26,20 +29,35 @@ export default function AgentProfilePage() {
   const [postsPage, setPostsPage] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMorePosts, setHasMorePosts] = useState(true);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [apiKey, setApiKey] = useState<string | null>(null);
 
   const postsPerPage = 9;
 
   useEffect(() => {
+    const key = localStorage.getItem('agentgram_api_key');
+    setApiKey(key);
+  }, []);
+
+  useEffect(() => {
     fetchAgent();
-  }, [agentId]);
+  }, [agentId, apiKey]);
 
   const fetchAgent = async () => {
     try {
-      const res = await fetch(`/api/agents/${agentId}`);
+      const headers: HeadersInit = {};
+      if (apiKey) {
+        headers['Authorization'] = `Bearer ${apiKey}`;
+      }
+      const res = await fetch(`/api/agents/${agentId}`, { headers });
       const result = await res.json();
       if (result.success) {
         setData(result.data);
         setHasMorePosts(result.data.posts.length === postsPerPage);
+        setIsFollowing(result.data.is_following);
+        setFollowersCount(result.data.stats.followers);
       } else {
         setError(result.error);
       }
@@ -47,6 +65,29 @@ export default function AgentProfilePage() {
       setError('Failed to load agent');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!apiKey || followLoading) return;
+
+    setFollowLoading(true);
+    try {
+      const res = await fetch(`/api/agents/${agentId}/follow`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+        },
+      });
+      const result = await res.json();
+      if (result.success) {
+        setIsFollowing(result.following);
+        setFollowersCount(result.followers_count);
+      }
+    } catch (err) {
+      console.error('Failed to follow');
+    } finally {
+      setFollowLoading(false);
     }
   };
 
@@ -141,20 +182,41 @@ export default function AgentProfilePage() {
               {data.agent.name.slice(0, 2).toUpperCase()}
             </div>
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-white font-display mb-2">
-                {data.agent.name}
-              </h1>
-              {data.agent.description && (
-                <p className="text-gray-lighter mb-3">{data.agent.description}</p>
-              )}
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-white font-display mb-2">
+                    {data.agent.name}
+                  </h1>
+                  {data.agent.description && (
+                    <p className="text-gray-lighter mb-3">{data.agent.description}</p>
+                  )}
+                </div>
+                {apiKey && (
+                  <button
+                    onClick={handleFollow}
+                    disabled={followLoading}
+                    className={`px-6 py-2 rounded-lg font-semibold text-sm transition-all ${
+                      isFollowing
+                        ? 'bg-gray-darker text-gray-light border border-gray-dark hover:border-orange hover:text-orange'
+                        : 'bg-gradient-orange text-black hover:shadow-lg hover:glow-orange'
+                    } disabled:opacity-50`}
+                  >
+                    {followLoading ? '...' : isFollowing ? 'Following' : 'Follow'}
+                  </button>
+                )}
+              </div>
               <div className="flex items-center gap-6 text-sm font-mono">
                 <div>
                   <span className="text-orange font-semibold">{data.stats.posts}</span>
                   <span className="text-gray-medium ml-1">posts</span>
                 </div>
                 <div>
-                  <span className="text-orange font-semibold">{data.stats.comments}</span>
-                  <span className="text-gray-medium ml-1">comments</span>
+                  <span className="text-orange font-semibold">{followersCount}</span>
+                  <span className="text-gray-medium ml-1">followers</span>
+                </div>
+                <div>
+                  <span className="text-orange font-semibold">{data.stats.following}</span>
+                  <span className="text-gray-medium ml-1">following</span>
                 </div>
               </div>
             </div>
