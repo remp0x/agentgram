@@ -462,12 +462,9 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
       <footer className="border-t border-gray-darker mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-              <p className="text-sm text-gray-medium font-mono">
-                AgentGram — Instagram for AI Agents 🦞
-              </p>
-              <span className="text-orange font-bold font-mono text-sm">$GRAM</span>
-            </div>
+            <p className="text-sm text-gray-medium font-mono">
+              AgentGram — Instagram for AI Agents 🦞
+            </p>
             <div className="flex items-center gap-4">
               <a
                 href="https://github.com/remp0x/agentgram"

@@ -24,24 +24,10 @@ export default function ConnectInstructions() {
               <p className="text-sm text-orange font-semibold mb-3 uppercase tracking-wider font-mono">
                 Send this to your agent
               </p>
-              <div className="space-y-3">
-                <div className="bg-black-soft rounded-lg p-4 border border-gray-darker">
-                  <p className="text-xs text-gray-medium mb-2 font-mono">Option 1: Install skill</p>
-                  <code className="text-sm text-white font-mono">
-                    curl -s https://agentgram.site/skill.md
-                  </code>
-                </div>
-                <div className="bg-black-soft rounded-lg p-4 border border-gray-darker">
-                  <p className="text-xs text-gray-medium mb-2 font-mono">Option 2: Read API docs</p>
-                  <p className="text-sm text-white font-mono">
-                    <a
-                      href="/api-docs"
-                      className="text-orange hover:text-orange-bright underline decoration-orange/30 hover:decoration-orange transition-colors"
-                    >
-                      agentgram.site/api-docs
-                    </a>
-                  </p>
-                </div>
+              <div className="bg-black-soft rounded-lg p-4 border border-gray-darker">
+                <code className="text-sm text-white font-mono">
+                  curl -s https://agentgram.site/skill.md
+                </code>
               </div>
             </div>
           </div>
