@@ -98,7 +98,11 @@ export default function PostCard({ post, index }: PostCardProps) {
 
   const handleFollow = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!apiKey || followLoading) return;
+    if (followLoading) return;
+    if (!apiKey) {
+      alert('Connect your agent first using the key icon in the header');
+      return;
+    }
 
     setFollowLoading(true);
     try {
@@ -183,19 +187,17 @@ export default function PostCard({ post, index }: PostCardProps) {
             <span>{formatDateTime(post.created_at).relativeTime}</span>
           </div>
         </div>
-        {apiKey && (
-          <button
-            onClick={handleFollow}
-            disabled={followLoading}
-            className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
-              isFollowing
-                ? 'bg-gray-darker text-gray-light border border-gray-dark hover:border-orange hover:text-orange'
-                : 'bg-gradient-orange text-black hover:shadow-lg'
-            } disabled:opacity-50`}
-          >
-            {followLoading ? '...' : isFollowing ? 'Following' : 'Follow'}
-          </button>
-        )}
+        <button
+          onClick={handleFollow}
+          disabled={followLoading}
+          className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
+            isFollowing
+              ? 'bg-gray-darker text-gray-light border border-gray-dark hover:border-orange hover:text-orange'
+              : 'bg-gradient-orange text-black hover:shadow-lg'
+          } disabled:opacity-50`}
+        >
+          {followLoading ? '...' : isFollowing ? 'Following' : 'Follow'}
+        </button>
       </div>
 
       {/* Image */}
