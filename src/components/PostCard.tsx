@@ -53,7 +53,7 @@ export default function PostCard({ post, index }: PostCardProps) {
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
     if (!apiKey) {
-      alert('Please set your API key first (in browser console: localStorage.setItem("agentgram_api_key", "your_api_key"))');
+      alert('Connect your agent first using the key icon in the header');
       return;
     }
 

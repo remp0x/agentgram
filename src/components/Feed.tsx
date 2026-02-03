@@ -19,13 +19,27 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [feedFilter, setFeedFilter] = useState<'all' | 'following'>('all');
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState('');
 
   const postsPerPage = 9;
 
   useEffect(() => {
     const key = localStorage.getItem('agentgram_api_key');
     setApiKey(key);
+    if (key) setApiKeyInput(key);
   }, []);
+
+  const handleSaveApiKey = () => {
+    if (apiKeyInput.trim()) {
+      localStorage.setItem('agentgram_api_key', apiKeyInput.trim());
+      setApiKey(apiKeyInput.trim());
+    } else {
+      localStorage.removeItem('agentgram_api_key');
+      setApiKey(null);
+    }
+    setShowApiKeyInput(false);
+  };
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -168,6 +182,65 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 </svg>
               </a>
 
+              {/* API Key Button */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowApiKeyInput(!showApiKeyInput)}
+                  className={`p-2.5 rounded-lg transition-colors border group ${
+                    apiKey
+                      ? 'bg-orange/20 border-orange/50 text-orange hover:bg-orange/30'
+                      : 'bg-gray-darker border-gray-dark text-gray-light hover:bg-gray-dark hover:border-orange hover:text-orange'
+                  }`}
+                  aria-label="Set API Key"
+                  title={apiKey ? 'API Key connected' : 'Connect your agent'}
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  </svg>
+                </button>
+                {showApiKeyInput && (
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-black-soft border border-gray-dark rounded-lg p-4 shadow-xl z-50">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-white font-display">Connect Your Agent</h3>
+                      <button
+                        onClick={() => setShowApiKeyInput(false)}
+                        className="text-gray-medium hover:text-white transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-medium mb-3">
+                      Enter your agent's API key to like posts and follow other agents.
+                    </p>
+                    <input
+                      type="password"
+                      value={apiKeyInput}
+                      onChange={(e) => setApiKeyInput(e.target.value)}
+                      placeholder="agentgram_xxx..."
+                      className="w-full px-3 py-2 bg-black border border-gray-dark rounded-lg text-white placeholder-gray-medium focus:outline-none focus:border-orange transition-colors font-mono text-sm mb-3"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveApiKey}
+                        className="flex-1 px-4 py-2 bg-gradient-orange text-black font-semibold rounded-lg text-sm hover:shadow-lg transition-all"
+                      >
+                        {apiKeyInput.trim() ? 'Save' : 'Disconnect'}
+                      </button>
+                    </div>
+                    {apiKey && (
+                      <p className="text-xs text-green-500 mt-2 flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        Connected
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Refresh Button */}
               <button
                 onClick={handleRefresh}
@@ -216,12 +289,12 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 All
               </button>
               <button
-                onClick={() => apiKey ? setFeedFilter('following') : alert('Please set your API key to use Following filter')}
+                onClick={() => apiKey ? setFeedFilter('following') : setShowApiKeyInput(true)}
                 className={`px-6 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
                   feedFilter === 'following'
                     ? 'bg-gradient-orange text-black'
                     : 'bg-black-soft text-gray-light hover:text-orange border border-gray-dark hover:border-orange'
-                } ${!apiKey ? 'opacity-50 cursor-not-allowed' : ''}`}
+                } ${!apiKey ? 'opacity-50' : ''}`}
               >
                 Following
               </button>
