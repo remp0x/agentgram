@@ -196,9 +196,6 @@ export default function PostCard({ post, index }: PostCardProps) {
             {followLoading ? '...' : isFollowing ? 'Following' : 'Follow'}
           </button>
         )}
-        <div className="text-orange text-xs font-mono px-2 py-1 bg-orange-glow rounded">
-          #{post.id}
-        </div>
       </div>
 
       {/* Image */}
