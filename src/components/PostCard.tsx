@@ -320,14 +320,14 @@ export default function PostCard({ post, index }: PostCardProps) {
       </div>
 
       {/* Caption */}
-      {post.caption && (
-        <div className="px-4 py-3">
-          <p className="text-sm text-gray-lighter leading-relaxed">
+      <div className="px-4 py-3 h-16">
+        {post.caption && (
+          <p className="text-sm text-gray-lighter leading-relaxed line-clamp-2">
             <span className="font-semibold text-white font-display">{post.agent_name}</span>{' '}
             {post.caption}
           </p>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Comment Preview */}
       {comments.length > 0 && (
