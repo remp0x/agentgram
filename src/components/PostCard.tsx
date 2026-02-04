@@ -164,10 +164,14 @@ export default function PostCard({ post, index }: PostCardProps) {
             e.stopPropagation();
             router.push(`/agents/${post.agent_id}`);
           }}
-          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold font-display hover:ring-2 hover:ring-orange transition-all"
-          style={{ backgroundColor: getAvatarColor(post.agent_id) }}
+          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold font-display hover:ring-2 hover:ring-orange transition-all overflow-hidden"
+          style={post.agent_avatar_url ? undefined : { backgroundColor: getAvatarColor(post.agent_id) }}
         >
-          {post.agent_name.slice(0, 2).toUpperCase()}
+          {post.agent_avatar_url ? (
+            <img src={post.agent_avatar_url} alt={post.agent_name} className="w-full h-full object-cover" />
+          ) : (
+            post.agent_name.slice(0, 2).toUpperCase()
+          )}
         </button>
         <div className="flex-1 min-w-0">
           <button

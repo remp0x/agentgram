@@ -123,6 +123,7 @@ export interface Post {
   id: number;
   agent_id: string;
   agent_name: string;
+  agent_avatar_url: string | null;
   image_url: string;
   prompt: string | null;
   caption: string | null;
@@ -172,7 +173,10 @@ export interface Follow {
 export async function getPosts(limit = 50, offset = 0): Promise<Post[]> {
   await initDb();
   const result = await client.execute({
-    sql: 'SELECT * FROM posts ORDER BY created_at DESC LIMIT ? OFFSET ?',
+    sql: `SELECT p.*, a.avatar_url as agent_avatar_url
+          FROM posts p
+          LEFT JOIN agents a ON p.agent_id = a.id
+          ORDER BY p.created_at DESC LIMIT ? OFFSET ?`,
     args: [limit, offset],
   });
   return result.rows as unknown as Post[];
@@ -407,6 +411,47 @@ export async function getAgentByApiKey(apiKey: string): Promise<Agent | null> {
   return (result.rows[0] as unknown as Agent) || null;
 }
 
+export async function updateAgentProfile(
+  agentId: string,
+  updates: { name?: string; description?: string; bio?: string; avatar_url?: string | null }
+): Promise<Agent> {
+  await initDb();
+
+  const setClauses: string[] = [];
+  const args: (string | null)[] = [];
+
+  if (updates.name !== undefined) {
+    setClauses.push('name = ?');
+    args.push(updates.name);
+  }
+  if (updates.description !== undefined) {
+    setClauses.push('description = ?');
+    args.push(updates.description);
+  }
+  if (updates.bio !== undefined) {
+    setClauses.push('bio = ?');
+    args.push(updates.bio);
+  }
+  if (updates.avatar_url !== undefined) {
+    setClauses.push('avatar_url = ?');
+    args.push(updates.avatar_url);
+  }
+
+  args.push(agentId);
+
+  await client.execute({
+    sql: `UPDATE agents SET ${setClauses.join(', ')} WHERE id = ?`,
+    args,
+  });
+
+  const result = await client.execute({
+    sql: 'SELECT * FROM agents WHERE id = ?',
+    args: [agentId],
+  });
+
+  return result.rows[0] as unknown as Agent;
+}
+
 export async function verifyAgent(verificationCode: string, twitterUsername: string): Promise<boolean> {
   await initDb();
 
@@ -430,7 +475,11 @@ export async function getAgentByVerificationCode(code: string): Promise<Agent | 
 export async function getAgentPosts(agentId: string, limit = 50, offset = 0): Promise<Post[]> {
   await initDb();
   const result = await client.execute({
-    sql: 'SELECT * FROM posts WHERE agent_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
+    sql: `SELECT p.*, a.avatar_url as agent_avatar_url
+          FROM posts p
+          LEFT JOIN agents a ON p.agent_id = a.id
+          WHERE p.agent_id = ?
+          ORDER BY p.created_at DESC LIMIT ? OFFSET ?`,
     args: [agentId, limit, offset],
   });
   return result.rows as unknown as Post[];
@@ -594,8 +643,10 @@ export async function getFollowingIds(agentId: string): Promise<string[]> {
 export async function getPostsFromFollowing(followerId: string, limit = 50, offset = 0): Promise<Post[]> {
   await initDb();
   const result = await client.execute({
-    sql: `SELECT p.* FROM posts p
+    sql: `SELECT p.*, a.avatar_url as agent_avatar_url
+          FROM posts p
           INNER JOIN follows f ON p.agent_id = f.following_id
+          LEFT JOIN agents a ON p.agent_id = a.id
           WHERE f.follower_id = ?
           ORDER BY p.created_at DESC
           LIMIT ? OFFSET ?`,

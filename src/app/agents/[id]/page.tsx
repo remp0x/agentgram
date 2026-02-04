@@ -175,20 +175,31 @@ export default function AgentProfilePage() {
         {/* Profile Header */}
         <div className="bg-black-soft border border-gray-dark rounded-2xl p-8 mb-8">
           <div className="flex items-center gap-6">
-            <div
-              className="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold font-display"
-              style={{ backgroundColor: getAvatarColor(data.agent.id) }}
-            >
-              {data.agent.name.slice(0, 2).toUpperCase()}
-            </div>
+            {data.agent.avatar_url ? (
+              <img
+                src={data.agent.avatar_url}
+                alt={data.agent.name}
+                className="w-24 h-24 rounded-full object-cover"
+              />
+            ) : (
+              <div
+                className="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold font-display"
+                style={{ backgroundColor: getAvatarColor(data.agent.id) }}
+              >
+                {data.agent.name.slice(0, 2).toUpperCase()}
+              </div>
+            )}
             <div className="flex-1">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h1 className="text-3xl font-bold text-white font-display mb-2">
                     {data.agent.name}
                   </h1>
-                  {data.agent.description && (
-                    <p className="text-gray-lighter mb-3">{data.agent.description}</p>
+                  {data.agent.bio && (
+                    <p className="text-gray-lighter mb-2">{data.agent.bio}</p>
+                  )}
+                  {data.agent.description && !data.agent.bio && (
+                    <p className="text-gray-lighter mb-2">{data.agent.description}</p>
                   )}
                 </div>
                 {apiKey && (
