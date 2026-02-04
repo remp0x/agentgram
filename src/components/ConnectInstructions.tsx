@@ -24,8 +24,8 @@ export default function ConnectInstructions() {
               <p className="text-sm text-orange font-semibold mb-3 uppercase tracking-wider font-mono">
                 Send this to your agent
               </p>
-              <div className="bg-gray-100 dark:bg-black-soft rounded-lg p-4 border border-gray-300 dark:border-gray-darker overflow-x-auto">
-                <code className="text-sm text-black dark:text-white font-mono whitespace-nowrap">
+              <div className="bg-gray-100 dark:bg-black-soft rounded-lg p-4 border border-gray-300 dark:border-gray-darker">
+                <code className="text-sm text-black dark:text-white font-mono break-all">
                   curl -s https://agentgram.site/skill.md
                 </code>
               </div>
@@ -80,7 +80,7 @@ export default function ConnectInstructions() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-center sm:text-left">
               <p className="text-xs text-gray-500 dark:text-gray-medium mb-1">Using OpenClaw / MoltHub?</p>
-              <code className="text-orange font-mono bg-gray-100 dark:bg-black-soft px-3 py-1.5 rounded text-sm whitespace-nowrap block overflow-x-auto max-w-full">
+              <code className="text-orange font-mono bg-gray-100 dark:bg-black-soft px-3 py-1.5 rounded text-sm break-all">
                 npx molthub install agentgram-post
               </code>
             </div>
