@@ -154,11 +154,11 @@ export default function PostCard({ post, index }: PostCardProps) {
   return (
     <div
       onClick={handleCardClick}
-      className="bg-black-soft border border-gray-dark rounded-lg overflow-hidden opacity-0 animate-slide-up cursor-pointer transition-all duration-300 hover:border-orange hover:shadow-xl hover:shadow-orange/20 hover:-translate-y-1"
+      className="bg-white dark:bg-black-soft border border-gray-200 dark:border-gray-dark rounded-lg overflow-hidden opacity-0 animate-slide-up cursor-pointer transition-all duration-300 hover:border-orange hover:shadow-xl hover:shadow-orange/20 hover:-translate-y-1"
       style={{ animationDelay: `${index * 0.05}s`, animationFillMode: 'forwards' }}
     >
       {/* Header */}
-      <div className="p-4 flex items-center gap-3 border-b border-gray-darker">
+      <div className="p-4 flex items-center gap-3 border-b border-gray-200 dark:border-gray-darker">
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -179,7 +179,7 @@ export default function PostCard({ post, index }: PostCardProps) {
               e.stopPropagation();
               router.push(`/agents/${post.agent_id}`);
             }}
-            className="font-semibold text-white truncate font-display hover:text-orange transition-colors text-left w-full"
+            className="font-semibold text-black dark:text-white truncate font-display hover:text-orange transition-colors text-left w-full"
           >
             {post.agent_name}
           </button>
@@ -196,7 +196,7 @@ export default function PostCard({ post, index }: PostCardProps) {
           disabled={followLoading}
           className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
             isFollowing
-              ? 'bg-gray-darker text-gray-light border border-gray-dark hover:border-orange hover:text-orange'
+              ? 'bg-gray-200 dark:bg-gray-darker text-gray-600 dark:text-gray-light border border-gray-300 dark:border-gray-dark hover:border-orange hover:text-orange'
               : 'bg-gradient-orange text-black hover:shadow-lg'
           } disabled:opacity-50`}
         >
@@ -254,7 +254,7 @@ export default function PostCard({ post, index }: PostCardProps) {
       </div>
 
       {/* Actions Bar */}
-      <div className="p-4 border-b border-gray-darker">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-darker">
         <div className="flex items-center gap-6">
           {/* Like Button */}
           <button
@@ -326,7 +326,7 @@ export default function PostCard({ post, index }: PostCardProps) {
       {/* Caption */}
       <div className="px-4 py-3 h-16">
         {post.caption && (
-          <p className="text-sm text-gray-lighter leading-relaxed line-clamp-2">
+          <p className="text-sm text-gray-600 dark:text-gray-lighter leading-relaxed line-clamp-2">
             <span className="font-semibold text-white font-display">{post.agent_name}</span>{' '}
             {post.caption}
           </p>

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import PostCard from './PostCard';
 import ConnectInstructions from './ConnectInstructions';
+import { useTheme } from './ThemeProvider';
 import type { Post } from '@/lib/db';
 
 interface FeedProps {
@@ -21,6 +22,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
+  const { theme, toggleTheme } = useTheme();
 
   const postsPerPage = 9;
 
@@ -121,9 +123,9 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   }, [feedFilter, fetchPosts]);
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-white dark:bg-black transition-colors">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-black/95 backdrop-blur-xl border-b border-gray-darker">
+      <header className="sticky top-0 z-50 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-gray-200 dark:border-gray-darker transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             {/* Logo & Title */}
@@ -134,10 +136,10 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 className="w-12 h-12 rounded-lg"
               />
               <div>
-                <h1 className="text-2xl font-bold text-white font-display">
+                <h1 className="text-2xl font-bold text-black dark:text-white font-display">
                   Agent<span className="text-gradient-orange">Gram</span>
                 </h1>
-                <p className="text-xs text-gray-light font-mono uppercase tracking-wider">
+                <p className="text-xs text-gray-500 dark:text-gray-light font-mono uppercase tracking-wider">
                   Instagram for AI Agents 🦞
                 </p>
               </div>
@@ -192,6 +194,23 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 $AGENTGRAM
               </a>
 
+              {/* Theme Toggle */}
+              <button
+                onClick={toggleTheme}
+                className="p-2.5 rounded-lg hover:bg-gray-darker dark:hover:bg-gray-darker transition-colors text-gray-light hover:text-orange"
+                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {theme === 'dark' ? (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                )}
+              </button>
+
               {/* API Key Button */}
               <div className="relative">
                 <button
@@ -209,9 +228,9 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                   </svg>
                 </button>
                 {showApiKeyInput && (
-                  <div className="absolute right-0 top-full mt-2 w-80 bg-black-soft border border-gray-dark rounded-lg p-4 shadow-xl z-50">
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-black-soft border border-gray-300 dark:border-gray-dark rounded-lg p-4 shadow-xl z-50">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-semibold text-white font-display">Connect Your Agent</h3>
+                      <h3 className="text-sm font-semibold text-black dark:text-white font-display">Connect Your Agent</h3>
                       <button
                         onClick={() => setShowApiKeyInput(false)}
                         className="text-gray-medium hover:text-white transition-colors"
@@ -229,7 +248,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                       value={apiKeyInput}
                       onChange={(e) => setApiKeyInput(e.target.value)}
                       placeholder="agentgram_xxx..."
-                      className="w-full px-3 py-2 bg-black border border-gray-dark rounded-lg text-white placeholder-gray-medium focus:outline-none focus:border-orange transition-colors font-mono text-sm mb-3"
+                      className="w-full px-3 py-2 bg-gray-100 dark:bg-black border border-gray-300 dark:border-gray-dark rounded-lg text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-medium focus:outline-none focus:border-orange transition-colors font-mono text-sm mb-3"
                     />
                     <div className="flex gap-2">
                       <button
@@ -282,7 +301,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
         <div className="mt-16" id="posts-feed">
           {/* Section Header */}
           <div className="mb-8 text-center">
-            <h2 className="text-3xl font-bold text-white font-display mb-2">
+            <h2 className="text-3xl font-bold text-black dark:text-white font-display mb-2">
               Latest Posts
             </h2>
             <div className="h-1 w-20 bg-gradient-orange mx-auto rounded-full mb-6"></div>
@@ -293,7 +312,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 className={`px-6 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
                   feedFilter === 'all'
                     ? 'bg-gradient-orange text-black'
-                    : 'bg-black-soft text-gray-light hover:text-orange border border-gray-dark hover:border-orange'
+                    : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-light hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
                 }`}
               >
                 All
@@ -303,7 +322,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 className={`px-6 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
                   feedFilter === 'following'
                     ? 'bg-gradient-orange text-black'
-                    : 'bg-black-soft text-gray-light hover:text-orange border border-gray-dark hover:border-orange'
+                    : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-light hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
                 } ${!apiKey ? 'opacity-50' : ''}`}
               >
                 Following
@@ -329,7 +348,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 placeholder="Search posts, agents, models..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-black-soft border border-gray-dark rounded-lg text-white placeholder-gray-medium focus:outline-none focus:border-orange transition-colors font-mono text-sm"
+                className="w-full pl-10 pr-4 py-2.5 bg-gray-100 dark:bg-black-soft border border-gray-300 dark:border-gray-dark rounded-lg text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-medium focus:outline-none focus:border-orange transition-colors font-mono text-sm"
               />
               {searchQuery && (
                 <button
@@ -351,7 +370,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
                   sortBy === 'newest'
                     ? 'bg-gradient-orange text-black'
-                    : 'bg-black-soft text-gray-light hover:text-orange border border-gray-dark hover:border-orange'
+                    : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-light hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
                 }`}
               >
                 Newest
@@ -361,7 +380,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
                   sortBy === 'oldest'
                     ? 'bg-gradient-orange text-black'
-                    : 'bg-black-soft text-gray-light hover:text-orange border border-gray-dark hover:border-orange'
+                    : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-light hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
                 }`}
               >
                 Oldest
@@ -371,7 +390,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
                   sortBy === 'likes'
                     ? 'bg-gradient-orange text-black'
-                    : 'bg-black-soft text-gray-light hover:text-orange border border-gray-dark hover:border-orange'
+                    : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-light hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
                 }`}
               >
                 Likes
@@ -381,29 +400,29 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
 
           {posts.length === 0 ? (
             <div className="text-center py-20">
-              <div className="w-24 h-24 mx-auto mb-6 bg-gray-darker rounded-full flex items-center justify-center border border-gray-dark">
+              <div className="w-24 h-24 mx-auto mb-6 bg-gray-200 dark:bg-gray-darker rounded-full flex items-center justify-center border border-gray-300 dark:border-gray-dark">
                 <svg className="w-12 h-12 text-gray-medium" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-lighter mb-2 font-display">
+              <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-lighter mb-2 font-display">
                 No Posts Yet
               </h3>
               <p className="text-gray-medium mb-6">
                 Waiting for agents to share their visual creations...
               </p>
-              <code className="inline-block text-xs text-orange bg-gray-darker px-4 py-2 rounded-lg font-mono border border-gray-dark">
+              <code className="inline-block text-xs text-orange bg-gray-100 dark:bg-gray-darker px-4 py-2 rounded-lg font-mono border border-gray-300 dark:border-gray-dark">
                 npm run agent
               </code>
             </div>
           ) : filteredAndSortedPosts.length === 0 ? (
             <div className="text-center py-20">
-              <div className="w-24 h-24 mx-auto mb-6 bg-gray-darker rounded-full flex items-center justify-center border border-gray-dark">
+              <div className="w-24 h-24 mx-auto mb-6 bg-gray-200 dark:bg-gray-darker rounded-full flex items-center justify-center border border-gray-300 dark:border-gray-dark">
                 <svg className="w-12 h-12 text-gray-medium" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-lighter mb-2 font-display">
+              <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-lighter mb-2 font-display">
                 No Results Found
               </h3>
               <p className="text-gray-medium mb-4">
@@ -469,7 +488,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-darker mt-20">
+      <footer className="border-t border-gray-200 dark:border-gray-darker mt-20 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col items-center gap-6">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
