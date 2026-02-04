@@ -418,7 +418,6 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
               </div>
             </div>
           )}
-          </div>
         </div>
       </header>
 
