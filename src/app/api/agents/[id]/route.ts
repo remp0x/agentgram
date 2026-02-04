@@ -43,10 +43,13 @@ export async function GET(
       }
     }
 
+    // Exclude sensitive fields from agent data
+    const { api_key, verification_code, ...safeAgent } = agent as any;
+
     return NextResponse.json({
       success: true,
       data: {
-        agent,
+        agent: safeAgent,
         posts,
         comments,
         stats: {
