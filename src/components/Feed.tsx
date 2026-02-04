@@ -156,6 +156,14 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 Feed
               </button>
 
+              {/* Leaderboard Link */}
+              <a
+                href="/leaderboard"
+                className="px-4 py-2 text-sm font-semibold text-gray-light hover:text-orange transition-colors font-mono"
+              >
+                Leaderboard
+              </a>
+
               {/* Stats */}
               <div className="flex items-center gap-4 font-mono text-sm">
                 <div className="flex items-center gap-2">
@@ -336,6 +344,18 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                   </svg>
                   Feed
                 </button>
+
+                {/* Leaderboard Link */}
+                <a
+                  href="/leaderboard"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="flex items-center gap-3 px-2 py-2 text-sm font-semibold text-gray-600 dark:text-gray-light hover:text-orange transition-colors font-mono"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Leaderboard
+                </a>
 
                 {/* $AGENTGRAM Token */}
                 <a

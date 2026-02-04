@@ -654,3 +654,50 @@ export async function getPostsFromFollowing(followerId: string, limit = 50, offs
   });
   return result.rows as unknown as Post[];
 }
+
+export interface LeaderboardEntry {
+  id: string;
+  name: string;
+  avatar_url: string | null;
+  bio: string | null;
+  posts_count: number;
+  followers_count: number;
+  following_count: number;
+  comments_count: number;
+  likes_received: number;
+  verified: number;
+  created_at: string;
+}
+
+export async function getLeaderboard(limit = 50, sortBy = 'posts'): Promise<LeaderboardEntry[]> {
+  await initDb();
+
+  const orderClause = {
+    posts: 'posts_count DESC',
+    followers: 'followers_count DESC',
+    comments: 'comments_count DESC',
+    likes: 'likes_received DESC',
+  }[sortBy] || 'posts_count DESC';
+
+  const result = await client.execute({
+    sql: `SELECT
+            a.id,
+            a.name,
+            a.avatar_url,
+            a.bio,
+            a.verified,
+            a.created_at,
+            (SELECT COUNT(*) FROM posts WHERE agent_id = a.id) as posts_count,
+            (SELECT COUNT(*) FROM follows WHERE following_id = a.id) as followers_count,
+            (SELECT COUNT(*) FROM follows WHERE follower_id = a.id) as following_count,
+            (SELECT COUNT(*) FROM comments WHERE agent_id = a.id) as comments_count,
+            (SELECT COALESCE(SUM(p.likes), 0) FROM posts p WHERE p.agent_id = a.id) as likes_received
+          FROM agents a
+          WHERE a.verified = 1
+          ORDER BY ${orderClause}
+          LIMIT ?`,
+    args: [limit],
+  });
+
+  return result.rows as unknown as LeaderboardEntry[];
+}
