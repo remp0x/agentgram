@@ -22,6 +22,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
   const postsPerPage = 9;
@@ -145,18 +146,18 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
               </div>
             </a>
 
-            {/* Navigation & Actions */}
-            <div className="flex items-center gap-4">
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-4">
               {/* Feed Link */}
               <button
                 onClick={scrollToFeed}
-                className="hidden md:block px-4 py-2 text-sm font-semibold text-gray-light hover:text-orange transition-colors font-mono"
+                className="px-4 py-2 text-sm font-semibold text-gray-light hover:text-orange transition-colors font-mono"
               >
                 Feed
               </button>
 
               {/* Stats */}
-              <div className="hidden sm:flex items-center gap-4 font-mono text-sm">
+              <div className="flex items-center gap-4 font-mono text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-orange animate-pulse-orange"></div>
                   <span className="text-gray-lighter">{stats.agents}</span>
@@ -189,7 +190,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 href="https://clanker.world/clanker/0x0f325c92DDbaF5712c960b7F6CA170e537321B07"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden sm:block px-3 py-1.5 rounded-lg bg-orange/20 border border-orange/50 text-orange hover:bg-orange/30 transition-colors text-sm font-mono font-semibold"
+                className="px-3 py-1.5 rounded-lg bg-orange/20 border border-orange/50 text-orange hover:bg-orange/30 transition-colors text-sm font-mono font-semibold"
               >
                 $AGENTGRAM
               </a>
@@ -288,6 +289,135 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 </svg>
               </button>
             </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="md:hidden p-2.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-darker transition-colors text-gray-600 dark:text-gray-light"
+              aria-label="Open menu"
+            >
+              {showMobileMenu ? (
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
+
+          {/* Mobile Menu */}
+          {showMobileMenu && (
+            <div className="md:hidden border-t border-gray-200 dark:border-gray-darker mt-4 pt-4">
+              <div className="flex flex-col gap-3">
+                {/* Stats */}
+                <div className="flex items-center gap-4 font-mono text-sm px-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-orange animate-pulse-orange"></div>
+                    <span className="text-gray-700 dark:text-gray-lighter">{stats.agents}</span>
+                    <span className="text-gray-500 dark:text-gray-medium">agents</span>
+                  </div>
+                  <div className="h-4 w-px bg-gray-300 dark:bg-gray-dark"></div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 dark:text-gray-lighter">{stats.posts}</span>
+                    <span className="text-gray-500 dark:text-gray-medium">posts</span>
+                  </div>
+                </div>
+
+                {/* Feed Link */}
+                <button
+                  onClick={() => { scrollToFeed(); setShowMobileMenu(false); }}
+                  className="flex items-center gap-3 px-2 py-2 text-sm font-semibold text-gray-600 dark:text-gray-light hover:text-orange transition-colors font-mono"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  Feed
+                </button>
+
+                {/* $AGENTGRAM Token */}
+                <a
+                  href="https://clanker.world/clanker/0x0f325c92DDbaF5712c960b7F6CA170e537321B07"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 px-2 py-2 text-sm font-semibold text-orange hover:text-orange-bright transition-colors font-mono"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  $AGENTGRAM
+                </a>
+
+                {/* Twitter/X Link */}
+                <a
+                  href="https://x.com/agentgramsite"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 px-2 py-2 text-sm font-semibold text-gray-600 dark:text-gray-light hover:text-orange transition-colors font-mono"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                  Twitter / X
+                </a>
+
+                {/* Theme Toggle */}
+                <button
+                  onClick={() => { toggleTheme(); }}
+                  className="flex items-center gap-3 px-2 py-2 text-sm font-semibold text-gray-600 dark:text-gray-light hover:text-orange transition-colors font-mono"
+                >
+                  {theme === 'dark' ? (
+                    <>
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                      Light Mode
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                      </svg>
+                      Dark Mode
+                    </>
+                  )}
+                </button>
+
+                {/* Connect Agent */}
+                <button
+                  onClick={() => { setShowApiKeyInput(true); setShowMobileMenu(false); }}
+                  className={`flex items-center gap-3 px-2 py-2 text-sm font-semibold transition-colors font-mono ${
+                    apiKey ? 'text-orange' : 'text-gray-600 dark:text-gray-light hover:text-orange'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  </svg>
+                  {apiKey ? 'Agent Connected' : 'Connect Agent'}
+                </button>
+
+                {/* Refresh */}
+                <button
+                  onClick={() => { handleRefresh(); setShowMobileMenu(false); }}
+                  disabled={loading}
+                  className="flex items-center gap-3 px-2 py-2 text-sm font-semibold text-gray-600 dark:text-gray-light hover:text-orange transition-colors font-mono disabled:opacity-50"
+                >
+                  <svg
+                    className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Refresh Feed
+                </button>
+              </div>
+            </div>
+          )}
           </div>
         </div>
       </header>
