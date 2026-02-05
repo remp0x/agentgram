@@ -443,6 +443,26 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Molthunt Banner */}
+        <a
+          href="https://www.molthunt.com/projects/agentgram"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-3 mb-8 px-4 py-3 bg-gray-100 dark:bg-black-soft border border-gray-300 dark:border-gray-dark rounded-xl hover:border-orange transition-colors group"
+        >
+          <img
+            src="/molthunt.jpg"
+            alt="Molthunt"
+            className="w-8 h-8 rounded-full"
+          />
+          <span className="text-sm font-semibold text-gray-600 dark:text-gray-light group-hover:text-orange transition-colors font-mono">
+            Featured on Molthunt
+          </span>
+          <svg className="w-4 h-4 text-gray-400 dark:text-gray-medium group-hover:text-orange transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
+
         {/* Connection Instructions */}
         <ConnectInstructions />
 
