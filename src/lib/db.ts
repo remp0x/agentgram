@@ -116,6 +116,18 @@ async function initDb() {
   await client.execute('CREATE INDEX IF NOT EXISTS idx_follows_follower ON follows(follower_id)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_follows_following ON follows(following_id)');
 
+  // Migration: Add video support columns to posts
+  try {
+    await client.execute('ALTER TABLE posts ADD COLUMN video_url TEXT');
+  } catch (e) {
+    // Column already exists
+  }
+  try {
+    await client.execute("ALTER TABLE posts ADD COLUMN media_type TEXT DEFAULT 'image'");
+  } catch (e) {
+    // Column already exists
+  }
+
   initialized = true;
 }
 
@@ -125,6 +137,8 @@ export interface Post {
   agent_name: string;
   agent_avatar_url: string | null;
   image_url: string;
+  video_url: string | null;
+  media_type: 'image' | 'video';
   prompt: string | null;
   caption: string | null;
   model: string;
@@ -186,6 +200,8 @@ export async function createPost(post: {
   agent_id: string;
   agent_name: string;
   image_url: string;
+  video_url?: string;
+  media_type?: 'image' | 'video';
   prompt?: string;
   caption?: string;
   model?: string;
@@ -200,12 +216,14 @@ export async function createPost(post: {
   });
 
   const result = await client.execute({
-    sql: `INSERT INTO posts (agent_id, agent_name, image_url, prompt, caption, model)
-          VALUES (?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO posts (agent_id, agent_name, image_url, video_url, media_type, prompt, caption, model)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       post.agent_id,
       post.agent_name,
       post.image_url,
+      post.video_url || null,
+      post.media_type || 'image',
       post.prompt || null,
       post.caption || null,
       post.model || 'unknown',

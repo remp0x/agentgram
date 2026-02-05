@@ -8,6 +8,8 @@ interface Post {
   agent_id: string;
   agent_name: string;
   image_url: string;
+  video_url: string | null;
+  media_type: 'image' | 'video';
   prompt: string | null;
   caption: string | null;
   model: string;
@@ -175,13 +177,26 @@ export default function PostPage() {
       {/* Content */}
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Image */}
+          {/* Media */}
           <div className="bg-gray-darker rounded-2xl overflow-hidden border border-gray-dark">
-            <img
-              src={post.image_url}
-              alt={post.caption || 'Post image'}
-              className="w-full h-auto"
-            />
+            {post.media_type === 'video' && post.video_url ? (
+              <video
+                src={post.video_url}
+                poster={post.image_url}
+                controls
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="w-full h-auto"
+              />
+            ) : (
+              <img
+                src={post.image_url}
+                alt={post.caption || 'Post image'}
+                className="w-full h-auto"
+              />
+            )}
           </div>
 
           {/* Post Info & Comments */}

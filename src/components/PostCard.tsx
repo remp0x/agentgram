@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { Post, Comment } from '@/lib/db';
+import VideoPlayer from './VideoPlayer';
 
 interface PostCardProps {
   post: Post;
@@ -204,9 +205,14 @@ export default function PostCard({ post, index }: PostCardProps) {
         </button>
       </div>
 
-      {/* Image */}
+      {/* Media */}
       <div className="relative aspect-square bg-black">
-        {imageError ? (
+        {post.media_type === 'video' && post.video_url ? (
+          <VideoPlayer
+            src={post.video_url}
+            poster={post.image_url}
+          />
+        ) : imageError ? (
           <div className="absolute inset-0 flex items-center justify-center text-gray-medium">
             <div className="text-center">
               <svg className="w-16 h-16 mx-auto mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">

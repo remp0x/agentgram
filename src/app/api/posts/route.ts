@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPosts, createPost, getStats, getAgentByApiKey, getPostsFromFollowing } from '@/lib/db';
 import { svgToPng, asciiToPng, isValidSvg, isValidAscii, uploadBase64Image } from '@/lib/image-utils';
+import { uploadBase64Video, extractFirstFrame, isValidVideoFormat } from '@/lib/video-utils';
 import { rateLimiters } from '@/lib/rateLimit';
 import { isAllowedImageUrl } from '@/lib/urlValidation';
 
@@ -120,10 +121,134 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine image source and process accordingly
+    // Determine media source and process accordingly
     let imageUrl: string;
+    let videoUrl: string | undefined;
+    let mediaType: 'image' | 'video' = 'image';
 
-    if (body.image_file) {
+    if (body.video_file) {
+      // Video uploaded as base64
+      mediaType = 'video';
+      try {
+        videoUrl = await uploadBase64Video(body.video_file);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return NextResponse.json(
+          { success: false, error: `Failed to upload video: ${message}` },
+          { status: 400 }
+        );
+      }
+
+      // Thumbnail: use provided image, or extract first frame
+      if (body.image_file) {
+        try {
+          imageUrl = await uploadBase64Image(body.image_file);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          return NextResponse.json(
+            { success: false, error: `Failed to upload thumbnail: ${message}` },
+            { status: 400 }
+          );
+        }
+      } else if (body.image_url) {
+        try {
+          new URL(body.image_url);
+          if (!isAllowedImageUrl(body.image_url)) {
+            return NextResponse.json(
+              { success: false, error: 'Thumbnail URL not from allowed host.' },
+              { status: 400 }
+            );
+          }
+          imageUrl = body.image_url;
+        } catch {
+          return NextResponse.json(
+            { success: false, error: 'Invalid thumbnail image_url' },
+            { status: 400 }
+          );
+        }
+      } else {
+        // Extract first frame from video as thumbnail
+        try {
+          let base64Data = body.video_file.replace(/^data:video\/[a-zA-Z0-9]+;base64,/, '');
+          base64Data = base64Data.replace(/\s/g, '');
+          const videoBuffer = Buffer.from(base64Data, 'base64');
+          imageUrl = await extractFirstFrame(videoBuffer);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          return NextResponse.json(
+            { success: false, error: `Failed to extract video thumbnail: ${message}` },
+            { status: 400 }
+          );
+        }
+      }
+    } else if (body.video_url) {
+      // Video URL provided directly
+      mediaType = 'video';
+      try {
+        new URL(body.video_url);
+        if (!isAllowedImageUrl(body.video_url)) {
+          return NextResponse.json(
+            { success: false, error: 'Video URL not from allowed host. Allowed: Vercel Blob, Imgur, Cloudinary, Unsplash, GitHub.' },
+            { status: 400 }
+          );
+        }
+        videoUrl = body.video_url;
+      } catch {
+        return NextResponse.json(
+          { success: false, error: 'Invalid video_url' },
+          { status: 400 }
+        );
+      }
+
+      // Thumbnail: use provided image, or download video and extract frame
+      if (body.image_file) {
+        try {
+          imageUrl = await uploadBase64Image(body.image_file);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          return NextResponse.json(
+            { success: false, error: `Failed to upload thumbnail: ${message}` },
+            { status: 400 }
+          );
+        }
+      } else if (body.image_url) {
+        try {
+          new URL(body.image_url);
+          if (!isAllowedImageUrl(body.image_url)) {
+            return NextResponse.json(
+              { success: false, error: 'Thumbnail URL not from allowed host.' },
+              { status: 400 }
+            );
+          }
+          imageUrl = body.image_url;
+        } catch {
+          return NextResponse.json(
+            { success: false, error: 'Invalid thumbnail image_url' },
+            { status: 400 }
+          );
+        }
+      } else {
+        // Download video and extract first frame
+        try {
+          const videoRes = await fetch(body.video_url);
+          if (!videoRes.ok) {
+            throw new Error(`Failed to fetch video: ${videoRes.status}`);
+          }
+          const videoBuffer = Buffer.from(await videoRes.arrayBuffer());
+          const formatCheck = isValidVideoFormat(videoBuffer);
+          if (!formatCheck.valid) {
+            throw new Error('URL does not point to a valid MP4 or WebM video');
+          }
+          imageUrl = await extractFirstFrame(videoBuffer);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          return NextResponse.json(
+            { success: false, error: `Failed to extract video thumbnail: ${message}` },
+            { status: 400 }
+          );
+        }
+      }
+    } else if (body.image_file) {
       // Agent generated image (OpenAI, Gemini, etc.) - uploaded as base64
       try {
         imageUrl = await uploadBase64Image(body.image_file);
@@ -136,7 +261,6 @@ export async function POST(request: NextRequest) {
         );
       }
     } else if (body.svg) {
-      // Agent created SVG
       if (!isValidSvg(body.svg)) {
         return NextResponse.json(
           { success: false, error: 'Invalid SVG format' },
@@ -152,7 +276,6 @@ export async function POST(request: NextRequest) {
         );
       }
     } else if (body.ascii) {
-      // Agent created ASCII art
       if (!isValidAscii(body.ascii)) {
         return NextResponse.json(
           { success: false, error: 'Invalid ASCII art format' },
@@ -168,9 +291,8 @@ export async function POST(request: NextRequest) {
         );
       }
     } else if (body.image_url) {
-      // External URL - validate against whitelist
       try {
-        new URL(body.image_url); // Basic URL validation
+        new URL(body.image_url);
         if (!isAllowedImageUrl(body.image_url)) {
           return NextResponse.json(
             { success: false, error: 'Image URL not from allowed host. Allowed: Vercel Blob, Imgur, Cloudinary, Unsplash, GitHub.' },
@@ -188,20 +310,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Missing image source: provide image_url, svg, ascii, or image_file'
+          error: 'Missing media source: provide image_url, image_file, svg, ascii, video_file, or video_url'
         },
         { status: 400 }
       );
     }
 
-    // Use authenticated agent's ID and name
     const post = await createPost({
       agent_id: agent.id,
       agent_name: agent.name,
       image_url: imageUrl,
+      video_url: videoUrl,
+      media_type: mediaType,
       prompt: body.prompt,
       caption: body.caption,
-      model: body.model || (body.image_file ? 'generated' : body.svg ? 'svg' : body.ascii ? 'ascii-art' : undefined),
+      model: body.model || (body.video_file || body.video_url ? 'video' : body.image_file ? 'generated' : body.svg ? 'svg' : body.ascii ? 'ascii-art' : undefined),
     });
 
     console.log(`🤖 New post from ${agent.name}: "${body.caption?.slice(0, 50) || 'No caption'}..."`);
