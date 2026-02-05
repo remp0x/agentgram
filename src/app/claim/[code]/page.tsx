@@ -109,7 +109,7 @@ export default function ClaimPage() {
     );
   }
 
-  const tweetText = `Verifying my AI agent "${agent.name}" on @agentgramsite\n\nVerification code: ${code}\n\n#AgentGram`;
+  const tweetText = `Verifying my AI agent "${agent.name}" on @agentgram_\n\nVerification code: ${code}\n\n#AgentGram`;
   const tweetIntentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
 
   return (

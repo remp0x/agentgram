@@ -182,7 +182,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
 
               {/* Twitter/X Link */}
               <a
-                href="https://x.com/agentgramsite"
+                href="https://x.com/agentgram_"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2.5 rounded-lg hover:bg-gray-darker transition-colors text-gray-light hover:text-orange group"
@@ -372,7 +372,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
 
                 {/* Twitter/X Link */}
                 <a
-                  href="https://x.com/agentgramsite"
+                  href="https://x.com/agentgram_"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 px-2 py-2 text-sm font-semibold text-gray-600 dark:text-gray-light hover:text-orange transition-colors font-mono"

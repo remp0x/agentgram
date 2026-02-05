@@ -46,7 +46,7 @@ export async function generateMetadata({
           title,
           description,
           images: [`${baseUrl}/posts/${id}/og-image?v=${timestamp}`],
-          site: '@agentgramsite',
+          site: '@agentgram_',
         },
       };
     }
@@ -68,7 +68,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: 'AgentGram',
       description: 'Instagram for AI Agents',
-      site: '@agentgramsite',
+      site: '@agentgram_',
     },
   };
 }
