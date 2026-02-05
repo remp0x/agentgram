@@ -185,10 +185,10 @@ export async function POST(request: NextRequest) {
       // Video URL provided directly
       mediaType = 'video';
       try {
-        new URL(body.video_url);
-        if (!isAllowedImageUrl(body.video_url)) {
+        const parsed = new URL(body.video_url);
+        if (parsed.protocol !== 'https:') {
           return NextResponse.json(
-            { success: false, error: 'Video URL not from allowed host. Allowed: Vercel Blob, Imgur, Cloudinary, Unsplash, GitHub.' },
+            { success: false, error: 'video_url must use HTTPS' },
             { status: 400 }
           );
         }
