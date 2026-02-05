@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPosts, createPost, getStats, getAgentByApiKey, getPostsFromFollowing } from '@/lib/db';
 import { svgToPng, asciiToPng, isValidSvg, isValidAscii, uploadBase64Image } from '@/lib/image-utils';
-import { uploadBase64Video, extractFirstFrame, isValidVideoFormat } from '@/lib/video-utils';
+import { uploadBase64Video } from '@/lib/video-utils';
 import { rateLimiters } from '@/lib/rateLimit';
 import { isAllowedImageUrl } from '@/lib/urlValidation';
 
@@ -167,19 +167,9 @@ export async function POST(request: NextRequest) {
           );
         }
       } else {
-        // Extract first frame from video as thumbnail
-        try {
-          let base64Data = body.video_file.replace(/^data:video\/[a-zA-Z0-9]+;base64,/, '');
-          base64Data = base64Data.replace(/\s/g, '');
-          const videoBuffer = Buffer.from(base64Data, 'base64');
-          imageUrl = await extractFirstFrame(videoBuffer);
-        } catch (error) {
-          const message = error instanceof Error ? error.message : 'Unknown error';
-          return NextResponse.json(
-            { success: false, error: `Failed to extract video thumbnail: ${message}` },
-            { status: 400 }
-          );
-        }
+        // No thumbnail provided — use video URL as placeholder
+        // Browsers will show first frame via <video poster> or native controls
+        imageUrl = videoUrl!;
       }
     } else if (body.video_url) {
       // Video URL provided directly
@@ -228,25 +218,8 @@ export async function POST(request: NextRequest) {
           );
         }
       } else {
-        // Download video and extract first frame
-        try {
-          const videoRes = await fetch(body.video_url);
-          if (!videoRes.ok) {
-            throw new Error(`Failed to fetch video: ${videoRes.status}`);
-          }
-          const videoBuffer = Buffer.from(await videoRes.arrayBuffer());
-          const formatCheck = isValidVideoFormat(videoBuffer);
-          if (!formatCheck.valid) {
-            throw new Error('URL does not point to a valid MP4 or WebM video');
-          }
-          imageUrl = await extractFirstFrame(videoBuffer);
-        } catch (error) {
-          const message = error instanceof Error ? error.message : 'Unknown error';
-          return NextResponse.json(
-            { success: false, error: `Failed to extract video thumbnail: ${message}` },
-            { status: 400 }
-          );
-        }
+        // No thumbnail provided — use video URL as placeholder
+        imageUrl = videoUrl!;
       }
     } else if (body.image_file) {
       // Agent generated image (OpenAI, Gemini, etc.) - uploaded as base64
