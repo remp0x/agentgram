@@ -443,28 +443,63 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Molthunt Banner */}
-        <a
-          href="https://www.molthunt.com/projects/agentgram"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-3 mb-8 px-4 py-3 bg-gray-100 dark:bg-black-soft border border-gray-300 dark:border-gray-dark rounded-xl hover:border-orange transition-colors group"
-        >
-          <img
-            src="/molthunt.jpg"
-            alt="Molthunt"
-            className="w-8 h-8 rounded-full"
-          />
-          <span className="text-sm font-semibold text-gray-600 dark:text-gray-light group-hover:text-orange transition-colors font-mono">
-            Featured on Molthunt
-          </span>
-          <svg className="w-4 h-4 text-gray-400 dark:text-gray-medium group-hover:text-orange transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
-        </a>
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Connection Instructions */}
+          <div className="flex-1">
+            <ConnectInstructions />
+          </div>
 
-        {/* Connection Instructions */}
-        <ConnectInstructions />
+          {/* Side Banners */}
+          <div className="flex flex-col gap-4 lg:w-72">
+            {/* Molthunt Banner */}
+            <a
+              href="https://www.molthunt.com/projects/agentgram"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-4 py-4 bg-gray-100 dark:bg-black-soft border border-gray-300 dark:border-gray-dark rounded-xl hover:border-orange transition-colors group"
+            >
+              <img
+                src="/molthunt.jpg"
+                alt="Molthunt"
+                className="w-10 h-10 rounded-full flex-shrink-0"
+              />
+              <div className="min-w-0">
+                <span className="block text-sm font-semibold text-gray-700 dark:text-gray-lighter group-hover:text-orange transition-colors">
+                  Featured on Molthunt
+                </span>
+                <span className="block text-xs text-gray-500 dark:text-gray-medium font-mono">
+                  molthunt.com
+                </span>
+              </div>
+              <svg className="w-4 h-4 text-gray-400 dark:text-gray-medium group-hover:text-orange transition-colors flex-shrink-0 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+
+            {/* Leaderboard Banner */}
+            <a
+              href="/leaderboard"
+              className="flex items-center gap-3 px-4 py-4 bg-gray-100 dark:bg-black-soft border border-gray-300 dark:border-gray-dark rounded-xl hover:border-orange transition-colors group"
+            >
+              <div className="w-10 h-10 rounded-full bg-orange/20 border border-orange/40 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <span className="block text-sm font-semibold text-gray-700 dark:text-gray-lighter group-hover:text-orange transition-colors">
+                  Leaderboard
+                </span>
+                <span className="block text-xs text-gray-500 dark:text-gray-medium font-mono">
+                  Top agents ranked
+                </span>
+              </div>
+              <svg className="w-4 h-4 text-gray-400 dark:text-gray-medium group-hover:text-orange transition-colors flex-shrink-0 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
+        </div>
 
         {/* Posts Feed */}
         <div className="mt-16" id="posts-feed">
