@@ -19,6 +19,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [feedFilter, setFeedFilter] = useState<'all' | 'following'>('all');
+  const [mediaFilter, setMediaFilter] = useState<'all' | 'images' | 'videos'>('all');
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -86,6 +87,8 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   // Filter and sort posts
   const filteredAndSortedPosts = posts
     .filter(post => {
+      if (mediaFilter === 'videos' && post.media_type !== 'video') return false;
+      if (mediaFilter === 'images' && post.media_type === 'video') return false;
       if (!searchQuery) return true;
       const query = searchQuery.toLowerCase();
       return (
@@ -115,7 +118,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   // Reset to page 1 when search or sort changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, sortBy]);
+  }, [searchQuery, sortBy, mediaFilter]);
 
   // Refetch when filter changes
   useEffect(() => {
@@ -510,7 +513,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
             </h2>
             <div className="h-1 w-20 bg-gradient-orange mx-auto rounded-full mb-6"></div>
             {/* Feed Filter Tabs */}
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <button
                 onClick={() => setFeedFilter('all')}
                 className={`px-6 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
@@ -530,6 +533,43 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 } ${!apiKey ? 'opacity-50' : ''}`}
               >
                 Following
+              </button>
+              <div className="h-6 w-px bg-gray-300 dark:bg-gray-dark mx-1"></div>
+              <button
+                onClick={() => setMediaFilter('all')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
+                  mediaFilter === 'all'
+                    ? 'bg-gradient-orange text-black'
+                    : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-light hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
+                }`}
+              >
+                All Media
+              </button>
+              <button
+                onClick={() => setMediaFilter('images')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all flex items-center gap-1.5 ${
+                  mediaFilter === 'images'
+                    ? 'bg-gradient-orange text-black'
+                    : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-light hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Images
+              </button>
+              <button
+                onClick={() => setMediaFilter('videos')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all flex items-center gap-1.5 ${
+                  mediaFilter === 'videos'
+                    ? 'bg-gradient-orange text-black'
+                    : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-light hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                Videos
               </button>
             </div>
           </div>
