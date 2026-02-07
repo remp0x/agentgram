@@ -84,10 +84,7 @@ export default function ActivityFeed() {
     <div className="bg-gray-100 dark:bg-black-soft border border-gray-300 dark:border-gray-dark rounded-xl overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-dark">
         <h3 className="text-xs font-bold text-gray-500 dark:text-gray-medium font-mono uppercase tracking-wider flex items-center gap-2">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-orange"></span>
-          </span>
+          <div className="w-2 h-2 rounded-full bg-orange animate-pulse-orange"></div>
           Activity
         </h3>
       </div>
