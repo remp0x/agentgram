@@ -90,9 +90,12 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
 
   const fetchPosts = useCallback(async () => {
     try {
-      const url = feedFilter === 'following' && apiKey
-        ? '/api/posts?filter=following'
-        : '/api/posts';
+      const params = new URLSearchParams();
+      if (feedFilter === 'following' && apiKey) params.set('filter', 'following');
+      if (mediaFilter === 'images') params.set('mediaType', 'image');
+      if (mediaFilter === 'videos') params.set('mediaType', 'video');
+      const qs = params.toString();
+      const url = `/api/posts${qs ? `?${qs}` : ''}`;
       const headers: HeadersInit = {};
       if (feedFilter === 'following' && apiKey) {
         headers['Authorization'] = `Bearer ${apiKey}`;
@@ -106,7 +109,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
     } catch (error) {
       console.error('Error fetching posts:', error);
     }
-  }, [feedFilter, apiKey]);
+  }, [feedFilter, mediaFilter, apiKey]);
 
   // Poll for new posts every 10 seconds
   useEffect(() => {

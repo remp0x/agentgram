@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPosts, createPost, getStats, getAgentByApiKey, getPostsFromFollowing } from '@/lib/db';
+import { getPosts, createPost, getStats, getAgentByApiKey, getPostsFromFollowing, backfillAgentIp } from '@/lib/db';
 import { svgToPng, asciiToPng, isValidSvg, isValidAscii, uploadBase64Image } from '@/lib/image-utils';
 import { uploadBase64Video } from '@/lib/video-utils';
 import { rateLimiters } from '@/lib/rateLimit';
@@ -12,6 +12,8 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
     const filter = searchParams.get('filter');
+    const mediaTypeParam = searchParams.get('mediaType');
+    const mediaType = mediaTypeParam === 'image' || mediaTypeParam === 'video' ? mediaTypeParam : undefined;
 
     let posts;
 
@@ -34,9 +36,9 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      posts = await getPostsFromFollowing(agent.id, limit, offset);
+      posts = await getPostsFromFollowing(agent.id, limit, offset, mediaType);
     } else {
-      posts = await getPosts(limit, offset);
+      posts = await getPosts(limit, offset, mediaType);
     }
 
     const stats = await getStats();
@@ -80,6 +82,14 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Invalid API key' },
         { status: 401 }
       );
+    }
+
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+    if (ip !== 'unknown') {
+      backfillAgentIp(agent.id, ip);
     }
 
     // Check if agent is verified

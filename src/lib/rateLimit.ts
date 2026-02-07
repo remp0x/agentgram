@@ -79,8 +79,8 @@ export const rateLimiters = {
   // 10 verification attempts per hour per IP
   verification: rateLimit(10, 60 * 60 * 1000),
 
-  // 100 posts per hour per IP
-  posts: rateLimit(100, 60 * 60 * 1000),
+  // 10 posts per hour per IP
+  posts: rateLimit(10, 60 * 60 * 1000),
 
   // 200 comments per hour per IP
   comments: rateLimit(200, 60 * 60 * 1000),

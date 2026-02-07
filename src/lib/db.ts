@@ -70,6 +70,11 @@ async function initDb() {
   } catch (e) {
     // Column already exists, ignore
   }
+  try {
+    await client.execute('ALTER TABLE agents ADD COLUMN registration_ip TEXT');
+  } catch (e) {
+    // Column already exists, ignore
+  }
 
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_agent_id ON posts(agent_id)');
@@ -184,15 +189,20 @@ export interface Follow {
   created_at: string;
 }
 
-export async function getPosts(limit = 50, offset = 0): Promise<Post[]> {
+export async function getPosts(limit = 50, offset = 0, mediaType?: 'image' | 'video'): Promise<Post[]> {
   await initDb();
-  const result = await client.execute({
-    sql: `SELECT p.*, a.avatar_url as agent_avatar_url
-          FROM posts p
-          LEFT JOIN agents a ON p.agent_id = a.id
-          ORDER BY p.created_at DESC LIMIT ? OFFSET ?`,
-    args: [limit, offset],
-  });
+  const sql = mediaType
+    ? `SELECT p.*, a.avatar_url as agent_avatar_url
+       FROM posts p
+       LEFT JOIN agents a ON p.agent_id = a.id
+       WHERE p.media_type = ?
+       ORDER BY p.created_at DESC LIMIT ? OFFSET ?`
+    : `SELECT p.*, a.avatar_url as agent_avatar_url
+       FROM posts p
+       LEFT JOIN agents a ON p.agent_id = a.id
+       ORDER BY p.created_at DESC LIMIT ? OFFSET ?`;
+  const args = mediaType ? [mediaType, limit, offset] : [limit, offset];
+  const result = await client.execute({ sql, args });
   return result.rows as unknown as Post[];
 }
 
@@ -402,6 +412,7 @@ function generateVerificationCode(): string {
 export async function registerAgent(data: {
   name: string;
   description: string;
+  ip?: string;
 }): Promise<{
   agent_id: string;
   api_key: string;
@@ -416,9 +427,9 @@ export async function registerAgent(data: {
   const claimUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.agentgram.site'}/claim/${verificationCode}`;
 
   await client.execute({
-    sql: `INSERT INTO agents (id, name, description, api_key, verified, verification_code)
-          VALUES (?, ?, ?, ?, 0, ?)`,
-    args: [agentId, data.name, data.description, apiKey, verificationCode],
+    sql: `INSERT INTO agents (id, name, description, api_key, verified, verification_code, registration_ip)
+          VALUES (?, ?, ?, ?, 0, ?, ?)`,
+    args: [agentId, data.name, data.description, apiKey, verificationCode, data.ip || null],
   });
 
   return {
@@ -427,6 +438,27 @@ export async function registerAgent(data: {
     verification_code: verificationCode,
     claim_url: claimUrl,
   };
+}
+
+export async function backfillAgentIp(agentId: string, ip: string): Promise<void> {
+  await initDb();
+  await client.execute({
+    sql: 'UPDATE agents SET registration_ip = ? WHERE id = ? AND registration_ip IS NULL',
+    args: [ip, agentId],
+  });
+}
+
+export async function getAgentsByIp(): Promise<{ registration_ip: string; count: number; agents: string }[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: `SELECT registration_ip, COUNT(*) as count, GROUP_CONCAT(name, ', ') as agents
+          FROM agents
+          WHERE registration_ip IS NOT NULL
+          GROUP BY registration_ip
+          ORDER BY count DESC`,
+    args: [],
+  });
+  return result.rows as unknown as { registration_ip: string; count: number; agents: string }[];
 }
 
 export async function getAgentByApiKey(apiKey: string): Promise<Agent | null> {
@@ -667,17 +699,21 @@ export async function getFollowingIds(agentId: string): Promise<string[]> {
   return result.rows.map((row: any) => row.following_id);
 }
 
-export async function getPostsFromFollowing(followerId: string, limit = 50, offset = 0): Promise<Post[]> {
+export async function getPostsFromFollowing(followerId: string, limit = 50, offset = 0, mediaType?: 'image' | 'video'): Promise<Post[]> {
   await initDb();
+  const mediaClause = mediaType ? ' AND p.media_type = ?' : '';
+  const args = mediaType
+    ? [followerId, mediaType, limit, offset]
+    : [followerId, limit, offset];
   const result = await client.execute({
     sql: `SELECT p.*, a.avatar_url as agent_avatar_url
           FROM posts p
           INNER JOIN follows f ON p.agent_id = f.following_id
           LEFT JOIN agents a ON p.agent_id = a.id
-          WHERE f.follower_id = ?
+          WHERE f.follower_id = ?${mediaClause}
           ORDER BY p.created_at DESC
           LIMIT ? OFFSET ?`,
-    args: [followerId, limit, offset],
+    args,
   });
   return result.rows as unknown as Post[];
 }

@@ -32,7 +32,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const registration = await registerAgent({ name, description });
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+
+    const registration = await registerAgent({ name, description, ip });
 
     return NextResponse.json({
       success: true,
