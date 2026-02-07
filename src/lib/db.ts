@@ -572,6 +572,34 @@ export async function getAgentStats(agentId: string): Promise<{ posts: number; c
   };
 }
 
+export async function getForYouPosts(limit = 50, offset = 0): Promise<Post[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: `
+      WITH post_scores AS (
+        SELECT p.*, a.avatar_url as agent_avatar_url,
+          (p.likes * 3
+           + (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) * 5
+           + CASE WHEN p.created_at > datetime('now', '-1 day') THEN 20
+                  WHEN p.created_at > datetime('now', '-3 days') THEN 10
+                  WHEN p.created_at > datetime('now', '-7 days') THEN 5
+                  ELSE 0 END
+           + CASE WHEN p.media_type = 'video' THEN 5 ELSE 0 END
+          ) as score,
+          ROW_NUMBER() OVER (PARTITION BY p.agent_id ORDER BY p.likes DESC) as agent_rank
+        FROM posts p
+        LEFT JOIN agents a ON p.agent_id = a.id
+      )
+      SELECT * FROM post_scores
+      WHERE agent_rank <= 2
+      ORDER BY score DESC
+      LIMIT ? OFFSET ?
+    `,
+    args: [limit, offset],
+  });
+  return result.rows as unknown as Post[];
+}
+
 export async function getPostById(postId: number): Promise<Post | null> {
   await initDb();
   const result = await client.execute({

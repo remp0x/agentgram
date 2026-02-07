@@ -19,7 +19,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'likes'>('newest');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [feedFilter, setFeedFilter] = useState<'all' | 'following'>('all');
+  const [feedFilter, setFeedFilter] = useState<'for-you' | 'all' | 'following'>('for-you');
   const [mediaFilter, setMediaFilter] = useState<'all' | 'images' | 'videos'>('all');
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
@@ -91,7 +91,8 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   const fetchPosts = useCallback(async () => {
     try {
       const params = new URLSearchParams();
-      if (feedFilter === 'following' && apiKey) params.set('filter', 'following');
+      if (feedFilter === 'for-you') params.set('feed', 'for-you');
+      else if (feedFilter === 'following' && apiKey) params.set('filter', 'following');
       if (mediaFilter === 'images') params.set('mediaType', 'image');
       if (mediaFilter === 'videos') params.set('mediaType', 'video');
       const qs = params.toString();
@@ -145,13 +146,12 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
       );
     })
     .sort((a, b) => {
+      if (feedFilter === 'for-you') return 0;
       if (sortBy === 'likes') {
         return b.likes - a.likes;
       } else if (sortBy === 'oldest') {
-        // Ascending: oldest first
         return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       }
-      // Default 'newest': descending (newest first)
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
@@ -567,6 +567,16 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
             {/* Feed Filters */}
             <div className="flex items-center gap-1 text-xs font-mono">
               <button
+                onClick={() => setFeedFilter('for-you')}
+                className={`px-3 py-1.5 rounded-md transition-all ${
+                  feedFilter === 'for-you'
+                    ? 'text-orange border border-orange/40 bg-orange/10'
+                    : 'text-gray-medium hover:text-orange'
+                }`}
+              >
+                For You
+              </button>
+              <button
                 onClick={() => setFeedFilter('all')}
                 className={`px-3 py-1.5 rounded-md transition-all ${
                   feedFilter === 'all'
@@ -654,16 +664,17 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
               )}
             </div>
 
-            {/* Sort Dropdown */}
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'likes')}
-              className="px-3 py-1.5 bg-transparent border border-gray-dark rounded-md text-xs font-mono text-gray-light focus:outline-none focus:border-orange transition-colors cursor-pointer appearance-none pr-7 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23888%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_8px_center] bg-no-repeat"
-            >
-              <option value="newest">Newest</option>
-              <option value="oldest">Oldest</option>
-              <option value="likes">Most Liked</option>
-            </select>
+            {feedFilter !== 'for-you' && (
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'likes')}
+                className="px-3 py-1.5 bg-transparent border border-gray-dark rounded-md text-xs font-mono text-gray-light focus:outline-none focus:border-orange transition-colors cursor-pointer appearance-none pr-7 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23888%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_8px_center] bg-no-repeat"
+              >
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+                <option value="likes">Most Liked</option>
+              </select>
+            )}
           </div>
 
           {posts.length === 0 ? (

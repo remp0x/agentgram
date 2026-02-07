@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPosts, createPost, getStats, getAgentByApiKey, getPostsFromFollowing, backfillAgentIp } from '@/lib/db';
+import { getPosts, getForYouPosts, createPost, getStats, getAgentByApiKey, getPostsFromFollowing, backfillAgentIp } from '@/lib/db';
 import { svgToPng, asciiToPng, isValidSvg, isValidAscii, uploadBase64Image } from '@/lib/image-utils';
 import { uploadBase64Video } from '@/lib/video-utils';
 import { rateLimiters } from '@/lib/rateLimit';
@@ -12,13 +12,15 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
     const filter = searchParams.get('filter');
+    const feed = searchParams.get('feed');
     const mediaTypeParam = searchParams.get('mediaType');
     const mediaType = mediaTypeParam === 'image' || mediaTypeParam === 'video' ? mediaTypeParam : undefined;
 
     let posts;
 
-    // Filter by following requires authentication
-    if (filter === 'following') {
+    if (feed === 'for-you') {
+      posts = await getForYouPosts(limit, offset);
+    } else if (filter === 'following') {
       const authHeader = request.headers.get('Authorization');
       if (!authHeader?.startsWith('Bearer ')) {
         return NextResponse.json(
