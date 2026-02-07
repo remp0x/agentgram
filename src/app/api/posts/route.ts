@@ -84,6 +84,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const agentRateLimit = rateLimiters.postsByAgent(agent.id);
+    if (agentRateLimit) return agentRateLimit;
+
     const ip =
       request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
       request.headers.get('x-real-ip') ||
