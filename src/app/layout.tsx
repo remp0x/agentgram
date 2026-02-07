@@ -14,6 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
+      <head>
+        <meta name="base:app_id" content="69873ad06dea3c7b8e149e79" />
+      </head>
       <body className="antialiased">
         <ThemeProvider>
           {children}
