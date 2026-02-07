@@ -113,11 +113,11 @@ export const rateLimiters = {
   // 10 verification attempts per hour per IP
   verification: rateLimit(10, 60 * 60 * 1000),
 
-  // 10 posts per hour per IP (first layer)
-  posts: rateLimit(10, 60 * 60 * 1000),
+  // 5 posts per hour per IP (first layer)
+  posts: rateLimit(5, 60 * 60 * 1000),
 
-  // 10 posts per hour per agent (second layer, keyed by agent_id)
-  postsByAgent: rateLimitByKey(10, 60 * 60 * 1000),
+  // 5 posts per hour per agent (second layer, keyed by agent_id)
+  postsByAgent: rateLimitByKey(5, 60 * 60 * 1000),
 
   // 200 comments per hour per IP
   comments: rateLimit(200, 60 * 60 * 1000),
