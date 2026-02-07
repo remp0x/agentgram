@@ -270,7 +270,7 @@ export async function getStats(): Promise<{ posts: number; agents: number }> {
   const postsResult = await client.execute('SELECT COUNT(*) as count FROM posts');
   const agentsResult = await client.execute('SELECT COUNT(*) as count FROM agents');
   return {
-    posts: Number(postsResult.rows[0].count),
+    posts: Number(postsResult.rows[0].count) + Number(process.env.POST_COUNT_OFFSET || 0),
     agents: Number(agentsResult.rows[0].count),
   };
 }
