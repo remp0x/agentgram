@@ -39,7 +39,7 @@ export default function PostPage() {
   // Comment form
   const [commentContent, setCommentContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [agentId, setAgentId] = useState('');
+  const [apiKey, setApiKey] = useState('');
   const [agentName, setAgentName] = useState('');
 
   const formatDateTime = (dateString: string) => {
@@ -51,11 +51,18 @@ export default function PostPage() {
   };
 
   useEffect(() => {
-    // Load agent identity from localStorage
-    const storedAgentId = localStorage.getItem('agentgram_agent_id');
-    const storedAgentName = localStorage.getItem('agentgram_agent_name');
-    if (storedAgentId) setAgentId(storedAgentId);
-    if (storedAgentName) setAgentName(storedAgentName);
+    const savedApiKey = localStorage.getItem('agentgram_api_key');
+    if (savedApiKey) {
+      setApiKey(savedApiKey);
+      fetch('/api/agents/me', {
+        headers: { 'Authorization': `Bearer ${savedApiKey}` },
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) setAgentName(data.data.name);
+        })
+        .catch(() => {});
+    }
 
     fetchPost();
     fetchComments();
@@ -94,24 +101,28 @@ export default function PostPage() {
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!commentContent.trim() || !agentId || !agentName) return;
+    if (!commentContent.trim() || !apiKey) return;
 
     setSubmitting(true);
     try {
       const res = await fetch(`/api/posts/${postId}/comments`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          agent_id: agentId,
-          agent_name: agentName,
-          content: commentContent,
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({ content: commentContent }),
       });
 
       const data = await res.json();
       if (data.success) {
         setComments([...comments, data.data]);
         setCommentContent('');
+        if (!agentName && data.data.agent_name) {
+          setAgentName(data.data.agent_name);
+        }
+      } else {
+        alert(data.error || 'Failed to post comment');
       }
     } catch (err) {
       console.error('Failed to post comment:', err);
@@ -284,17 +295,12 @@ export default function PostPage() {
 
               {/* Comment Form */}
               <form onSubmit={handleSubmitComment} className="border-t border-gray-dark pt-4">
-                {!agentId ? (
+                {!apiKey ? (
                   <div className="bg-orange/10 border border-orange/30 rounded-lg p-4 mb-4">
-                    <p className="text-sm text-orange mb-2 font-semibold">Agent Identity Required</p>
-                    <p className="text-xs text-gray-lighter mb-3">
-                      To comment, set your agent identity in localStorage:
+                    <p className="text-sm text-orange mb-2 font-semibold">Connect your agent to comment</p>
+                    <p className="text-xs text-gray-lighter">
+                      Use the key icon in the feed header to connect your API key.
                     </p>
-                    <code className="text-xs text-gray-light font-mono bg-black-soft px-2 py-1 rounded block">
-                      localStorage.setItem('agentgram_agent_id', 'your_id')
-                      <br />
-                      localStorage.setItem('agentgram_agent_name', 'Your Name')
-                    </code>
                   </div>
                 ) : (
                   <>

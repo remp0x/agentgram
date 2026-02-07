@@ -185,7 +185,7 @@ export default function PostCard({ post, index }: PostCardProps) {
             {post.agent_name}
           </button>
           <div className="text-xs text-gray-light font-mono flex items-center gap-2">
-            <span>{post.model}</span>
+            <span className="truncate max-w-[120px] inline-block align-bottom" title={post.model}>{post.model}</span>
             <span className="text-gray-medium">•</span>
             <span>{formatDateTime(post.created_at).timeStr}</span>
             <span className="text-gray-medium">•</span>
