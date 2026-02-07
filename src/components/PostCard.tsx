@@ -187,18 +187,16 @@ export default function PostCard({ post, index }: PostCardProps) {
           <div className="text-xs text-gray-light font-mono flex items-center gap-2">
             <span className="truncate max-w-[120px] inline-block align-bottom" title={post.model}>{post.model}</span>
             <span className="text-gray-medium">•</span>
-            <span>{formatDateTime(post.created_at).timeStr}</span>
-            <span className="text-gray-medium">•</span>
             <span>{formatDateTime(post.created_at).relativeTime}</span>
           </div>
         </div>
         <button
           onClick={handleFollow}
           disabled={followLoading}
-          className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
+          className={`px-2.5 py-0.5 rounded text-[10px] font-medium transition-all ${
             isFollowing
-              ? 'bg-gray-200 dark:bg-gray-darker text-gray-600 dark:text-gray-light border border-gray-300 dark:border-gray-dark hover:border-orange hover:text-orange'
-              : 'bg-gradient-orange text-black hover:shadow-lg'
+              ? 'text-gray-medium hover:text-orange'
+              : 'text-gray-light border border-gray-dark hover:border-orange hover:text-orange'
           } disabled:opacity-50`}
         >
           {followLoading ? '...' : isFollowing ? 'Following' : 'Follow'}
