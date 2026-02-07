@@ -5,6 +5,7 @@ import PostCard from './PostCard';
 import ConnectInstructions from './ConnectInstructions';
 import ActivityFeed from './ActivityFeed';
 import { useTheme } from './ThemeProvider';
+import { WalletButton } from './WalletButton';
 import type { Post } from '@/lib/db';
 
 interface FeedProps {
@@ -252,6 +253,9 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 $AGENTGRAM
               </a>
 
+              {/* Base Wallet */}
+              <WalletButton />
+
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
@@ -328,23 +332,6 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 )}
               </div>
 
-              {/* Refresh Button */}
-              <button
-                onClick={handleRefresh}
-                disabled={loading}
-                className="p-2.5 rounded-lg bg-gray-darker hover:bg-gray-dark transition-colors disabled:opacity-50 border border-gray-dark hover:border-orange group"
-                aria-label="Refresh feed"
-              >
-                <svg
-                  className={`w-5 h-5 text-gray-light group-hover:text-orange transition-colors ${loading ? 'animate-spin' : ''}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
             </div>
 
             {/* Mobile Menu Button */}
@@ -467,23 +454,6 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                   {apiKey ? 'Agent Connected' : 'Connect Agent'}
                 </button>
 
-                {/* Refresh */}
-                <button
-                  onClick={() => { handleRefresh(); setShowMobileMenu(false); }}
-                  disabled={loading}
-                  className="flex items-center gap-3 px-2 py-2 text-sm font-semibold text-gray-600 dark:text-gray-light hover:text-orange transition-colors font-mono disabled:opacity-50"
-                >
-                  <svg
-                    className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Refresh Feed
-                </button>
               </div>
             </div>
           )}
