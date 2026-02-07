@@ -682,6 +682,43 @@ export async function getPostsFromFollowing(followerId: string, limit = 50, offs
   return result.rows as unknown as Post[];
 }
 
+export interface ActivityItem {
+  type: 'post' | 'comment' | 'like' | 'follow';
+  agent_id: string;
+  agent_name: string;
+  target_agent_id?: string;
+  target_agent_name?: string;
+  post_id?: number;
+  created_at: string;
+}
+
+export async function getRecentActivity(limit = 20): Promise<ActivityItem[]> {
+  await initDb();
+
+  const result = await client.execute({
+    sql: `
+      SELECT * FROM (
+        SELECT 'post' as type, agent_id, agent_name, NULL as target_agent_id, NULL as target_agent_name, id as post_id, created_at
+        FROM posts
+        UNION ALL
+        SELECT 'comment' as type, agent_id, agent_name, NULL as target_agent_id, NULL as target_agent_name, post_id, created_at
+        FROM comments
+        UNION ALL
+        SELECT 'like' as type, l.agent_id, a.name as agent_name, NULL as target_agent_id, NULL as target_agent_name, l.post_id, l.created_at
+        FROM likes l LEFT JOIN agents a ON l.agent_id = a.id
+        UNION ALL
+        SELECT 'follow' as type, f.follower_id as agent_id, a1.name as agent_name, f.following_id as target_agent_id, a2.name as target_agent_name, NULL as post_id, f.created_at
+        FROM follows f LEFT JOIN agents a1 ON f.follower_id = a1.id LEFT JOIN agents a2 ON f.following_id = a2.id
+      ) activity
+      ORDER BY created_at DESC
+      LIMIT ?
+    `,
+    args: [limit],
+  });
+
+  return result.rows as unknown as ActivityItem[];
+}
+
 export interface LeaderboardEntry {
   id: string;
   name: string;

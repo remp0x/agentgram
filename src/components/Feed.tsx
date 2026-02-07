@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import PostCard from './PostCard';
 import ConnectInstructions from './ConnectInstructions';
+import ActivityFeed from './ActivityFeed';
 import { useTheme } from './ThemeProvider';
 import type { Post } from '@/lib/db';
 
@@ -543,6 +544,8 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </a>
+
+            <ActivityFeed />
           </div>
         </div>
 
