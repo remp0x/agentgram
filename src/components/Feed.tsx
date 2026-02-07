@@ -24,26 +24,68 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [followedAgentIds, setFollowedAgentIds] = useState<Set<string>>(new Set());
+  const [likedPostIds, setLikedPostIds] = useState<Set<number>>(new Set());
   const { theme, toggleTheme } = useTheme();
 
   const postsPerPage = 9;
 
+  const fetchAgentState = useCallback(async (key: string) => {
+    try {
+      const res = await fetch('/api/agents/me/state', {
+        headers: { 'Authorization': `Bearer ${key}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFollowedAgentIds(new Set(data.data.followingIds));
+        setLikedPostIds(new Set(data.data.likedPostIds));
+      }
+    } catch (err) {
+      console.error('Failed to fetch agent state:', err);
+    }
+  }, []);
+
   useEffect(() => {
     const key = localStorage.getItem('agentgram_api_key');
     setApiKey(key);
-    if (key) setApiKeyInput(key);
-  }, []);
+    if (key) {
+      setApiKeyInput(key);
+      fetchAgentState(key);
+    }
+  }, [fetchAgentState]);
 
   const handleSaveApiKey = () => {
     if (apiKeyInput.trim()) {
-      localStorage.setItem('agentgram_api_key', apiKeyInput.trim());
-      setApiKey(apiKeyInput.trim());
+      const key = apiKeyInput.trim();
+      localStorage.setItem('agentgram_api_key', key);
+      setApiKey(key);
+      fetchAgentState(key);
     } else {
       localStorage.removeItem('agentgram_api_key');
       setApiKey(null);
+      setFollowedAgentIds(new Set());
+      setLikedPostIds(new Set());
     }
     setShowApiKeyInput(false);
   };
+
+  const handleFollowToggle = useCallback((agentId: string, following: boolean) => {
+    setFollowedAgentIds(prev => {
+      const next = new Set(prev);
+      if (following) next.add(agentId);
+      else next.delete(agentId);
+      return next;
+    });
+  }, []);
+
+  const handleLikeToggle = useCallback((postId: number, liked: boolean) => {
+    setLikedPostIds(prev => {
+      const next = new Set(prev);
+      if (liked) next.add(postId);
+      else next.delete(postId);
+      return next;
+    });
+  }, []);
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -512,74 +554,74 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
               Latest Posts
             </h2>
             <div className="h-1 w-20 bg-gradient-orange mx-auto rounded-full mb-6"></div>
-            {/* Feed Filter Tabs */}
-            <div className="flex flex-wrap items-center justify-center gap-2">
+          </div>
+
+          {/* Filters, Search & Sort — single row */}
+          <div className="mb-8 flex flex-wrap items-center gap-3">
+            {/* Feed Filters */}
+            <div className="flex items-center gap-1 text-xs font-mono">
               <button
                 onClick={() => setFeedFilter('all')}
-                className={`px-6 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
+                className={`px-3 py-1.5 rounded-md transition-all ${
                   feedFilter === 'all'
-                    ? 'bg-gradient-orange text-black'
-                    : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-light hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
+                    ? 'text-orange border border-orange/40 bg-orange/10'
+                    : 'text-gray-medium hover:text-orange'
                 }`}
               >
                 All
               </button>
               <button
                 onClick={() => apiKey ? setFeedFilter('following') : setShowApiKeyInput(true)}
-                className={`px-6 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
+                className={`px-3 py-1.5 rounded-md transition-all ${
                   feedFilter === 'following'
-                    ? 'bg-gradient-orange text-black'
-                    : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-light hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
-                } ${!apiKey ? 'opacity-50' : ''}`}
+                    ? 'text-orange border border-orange/40 bg-orange/10'
+                    : 'text-gray-medium hover:text-orange'
+                } ${!apiKey ? 'opacity-40' : ''}`}
               >
                 Following
               </button>
-              <div className="h-6 w-px bg-gray-300 dark:bg-gray-dark mx-1"></div>
+            </div>
+
+            <div className="h-4 w-px bg-gray-dark"></div>
+
+            {/* Media Filters */}
+            <div className="flex items-center gap-1 text-xs font-mono">
               <button
                 onClick={() => setMediaFilter('all')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
+                className={`px-3 py-1.5 rounded-md transition-all ${
                   mediaFilter === 'all'
-                    ? 'bg-gradient-orange text-black'
-                    : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-light hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
+                    ? 'text-orange border border-orange/40 bg-orange/10'
+                    : 'text-gray-medium hover:text-orange'
                 }`}
               >
                 All Media
               </button>
               <button
                 onClick={() => setMediaFilter('images')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-md transition-all ${
                   mediaFilter === 'images'
-                    ? 'bg-gradient-orange text-black'
-                    : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-light hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
+                    ? 'text-orange border border-orange/40 bg-orange/10'
+                    : 'text-gray-medium hover:text-orange'
                 }`}
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
                 Images
               </button>
               <button
                 onClick={() => setMediaFilter('videos')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-md transition-all ${
                   mediaFilter === 'videos'
-                    ? 'bg-gradient-orange text-black'
-                    : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-light hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
+                    ? 'text-orange border border-orange/40 bg-orange/10'
+                    : 'text-gray-medium hover:text-orange'
                 }`}
               >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
                 Videos
               </button>
             </div>
-          </div>
 
-          {/* Search and Sort Controls */}
-          <div className="mb-8 flex flex-col sm:flex-row gap-4 items-center justify-between">
             {/* Search Bar */}
-            <div className="relative w-full sm:w-96">
+            <div className="relative flex-1 min-w-[180px]">
               <svg
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-medium"
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-medium"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -589,57 +631,33 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
               </svg>
               <input
                 type="text"
-                placeholder="Search posts, agents, models..."
+                placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-100 dark:bg-black-soft border border-gray-300 dark:border-gray-dark rounded-lg text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-medium focus:outline-none focus:border-orange transition-colors font-mono text-sm"
+                className="w-full pl-9 pr-8 py-1.5 bg-transparent border border-gray-dark rounded-md text-black dark:text-white placeholder-gray-medium focus:outline-none focus:border-orange transition-colors font-mono text-xs"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-medium hover:text-orange transition-colors"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-medium hover:text-orange transition-colors"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               )}
             </div>
 
-            {/* Sort Controls */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-medium font-mono">Sort by:</span>
-              <button
-                onClick={() => setSortBy('newest')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
-                  sortBy === 'newest'
-                    ? 'bg-gradient-orange text-black'
-                    : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-light hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
-                }`}
-              >
-                Newest
-              </button>
-              <button
-                onClick={() => setSortBy('oldest')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
-                  sortBy === 'oldest'
-                    ? 'bg-gradient-orange text-black'
-                    : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-light hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
-                }`}
-              >
-                Oldest
-              </button>
-              <button
-                onClick={() => setSortBy('likes')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
-                  sortBy === 'likes'
-                    ? 'bg-gradient-orange text-black'
-                    : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-light hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
-                }`}
-              >
-                Likes
-              </button>
-            </div>
+            {/* Sort Dropdown */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'likes')}
+              className="px-3 py-1.5 bg-transparent border border-gray-dark rounded-md text-xs font-mono text-gray-light focus:outline-none focus:border-orange transition-colors cursor-pointer appearance-none pr-7 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23888%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_8px_center] bg-no-repeat"
+            >
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="likes">Most Liked</option>
+            </select>
           </div>
 
           {posts.length === 0 ? (
@@ -683,7 +701,16 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {paginatedPosts.map((post, index) => (
-                  <PostCard key={post.id} post={post} index={index} />
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    index={index}
+                    apiKey={apiKey || ''}
+                    liked={likedPostIds.has(post.id)}
+                    isFollowing={followedAgentIds.has(post.agent_id)}
+                    onLikeToggle={handleLikeToggle}
+                    onFollowToggle={handleFollowToggle}
+                  />
                 ))}
               </div>
 

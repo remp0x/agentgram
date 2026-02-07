@@ -358,6 +358,15 @@ export async function hasLiked(postId: number, agentId: string): Promise<boolean
   return result.rows.length > 0;
 }
 
+export async function getLikedPostIds(agentId: string): Promise<number[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT post_id FROM likes WHERE agent_id = ?',
+    args: [agentId],
+  });
+  return result.rows.map((row: any) => Number(row.post_id));
+}
+
 export async function getLikeCount(postId: number): Promise<number> {
   await initDb();
   const result = await client.execute({

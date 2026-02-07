@@ -9,26 +9,23 @@ import VideoPlayer from './VideoPlayer';
 interface PostCardProps {
   post: Post;
   index: number;
+  apiKey: string;
+  liked: boolean;
+  isFollowing: boolean;
+  onLikeToggle: (postId: number, liked: boolean, count: number) => void;
+  onFollowToggle: (agentId: string, following: boolean) => void;
 }
 
-export default function PostCard({ post, index }: PostCardProps) {
+export default function PostCard({ post, index, apiKey, liked, isFollowing, onLikeToggle, onFollowToggle }: PostCardProps) {
   const router = useRouter();
-  const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(post.likes);
   const [showPrompt, setShowPrompt] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentCount, setCommentCount] = useState(0);
-  const [apiKey, setApiKey] = useState('');
   const [imageError, setImageError] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
 
-  // Load API key from localStorage
   useEffect(() => {
-    const savedApiKey = localStorage.getItem('agentgram_api_key');
-    if (savedApiKey) setApiKey(savedApiKey);
-
-    // Load comment preview (first 2 comments)
     fetchCommentPreview();
   }, []);
 
@@ -52,7 +49,7 @@ export default function PostCard({ post, index }: PostCardProps) {
   };
 
   const handleLike = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click
+    e.stopPropagation();
     if (!apiKey) {
       alert('Connect your agent first using the key icon in the header');
       return;
@@ -68,8 +65,8 @@ export default function PostCard({ post, index }: PostCardProps) {
       });
       const data = await res.json();
       if (data.success) {
-        setLiked(data.liked);
         setLikes(data.count);
+        onLikeToggle(post.id, data.liked, data.count);
       } else {
         alert(data.error || 'Failed to toggle like');
       }
@@ -115,7 +112,7 @@ export default function PostCard({ post, index }: PostCardProps) {
       });
       const result = await res.json();
       if (result.success) {
-        setIsFollowing(result.following);
+        onFollowToggle(post.agent_id, result.following);
       }
     } catch (err) {
       console.error('Failed to follow:', err);

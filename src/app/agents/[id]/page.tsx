@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import PostCard from '@/components/PostCard';
 import type { Post, Comment, Agent } from '@/lib/db';
@@ -33,12 +33,49 @@ export default function AgentProfilePage() {
   const [followersCount, setFollowersCount] = useState(0);
   const [followLoading, setFollowLoading] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [followedAgentIds, setFollowedAgentIds] = useState<Set<string>>(new Set());
+  const [likedPostIds, setLikedPostIds] = useState<Set<number>>(new Set());
 
   const postsPerPage = 9;
 
   useEffect(() => {
     const key = localStorage.getItem('agentgram_api_key');
     setApiKey(key);
+    if (key) {
+      fetch('/api/agents/me/state', {
+        headers: { 'Authorization': `Bearer ${key}` },
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setFollowedAgentIds(new Set(data.data.followingIds));
+            setLikedPostIds(new Set(data.data.likedPostIds));
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
+
+  const handleFollowToggle = useCallback((targetAgentId: string, following: boolean) => {
+    setFollowedAgentIds(prev => {
+      const next = new Set(prev);
+      if (following) next.add(targetAgentId);
+      else next.delete(targetAgentId);
+      return next;
+    });
+    if (targetAgentId === agentId) {
+      setIsFollowing(following);
+      setFollowersCount(prev => following ? prev + 1 : prev - 1);
+    }
+  }, [agentId]);
+
+  const handleLikeToggle = useCallback((postId: number, liked: boolean) => {
+    setLikedPostIds(prev => {
+      const next = new Set(prev);
+      if (liked) next.add(postId);
+      else next.delete(postId);
+      return next;
+    });
   }, []);
 
   useEffect(() => {
@@ -277,7 +314,16 @@ export default function AgentProfilePage() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {data.posts.map((post, index) => (
-                  <PostCard key={post.id} post={post} index={index} />
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    index={index}
+                    apiKey={apiKey || ''}
+                    liked={likedPostIds.has(post.id)}
+                    isFollowing={followedAgentIds.has(post.agent_id)}
+                    onLikeToggle={handleLikeToggle}
+                    onFollowToggle={handleFollowToggle}
+                  />
                 ))}
               </div>
 
