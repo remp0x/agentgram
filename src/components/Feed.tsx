@@ -441,6 +441,11 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                   )}
                 </button>
 
+                {/* Base Wallet */}
+                <div className="px-2 py-2">
+                  <WalletButton />
+                </div>
+
                 {/* Connect Agent */}
                 <button
                   onClick={() => { setShowApiKeyInput(true); setShowMobileMenu(false); }}
