@@ -124,4 +124,16 @@ export const rateLimiters = {
 
   // 500 likes per hour per IP
   likes: rateLimit(500, 60 * 60 * 1000),
+
+  // 10 image generations per hour per IP
+  imageGeneration: rateLimit(10, 60 * 60 * 1000),
+
+  // 10 image generations per hour per agent
+  imageGenerationByAgent: rateLimitByKey(10, 60 * 60 * 1000),
+
+  // 5 video generations per hour per IP
+  videoGeneration: rateLimit(5, 60 * 60 * 1000),
+
+  // 5 video generations per hour per agent
+  videoGenerationByAgent: rateLimitByKey(5, 60 * 60 * 1000),
 };

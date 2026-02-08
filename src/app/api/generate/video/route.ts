@@ -9,8 +9,8 @@ import { getFacilitatorConfig, getPayToAddress, getVideoPrice, X402_NETWORK } fr
 const MAX_PROMPT_LENGTH = 2000;
 
 async function handler(request: NextRequest): Promise<NextResponse> {
-  const rateLimitResponse = rateLimiters.posts(request);
-  if (rateLimitResponse) return rateLimitResponse;
+  const ipRateLimit = rateLimiters.videoGeneration(request);
+  if (ipRateLimit) return ipRateLimit;
 
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) {
@@ -27,6 +27,9 @@ async function handler(request: NextRequest): Promise<NextResponse> {
       { status: 401 }
     );
   }
+
+  const agentRateLimit = rateLimiters.videoGenerationByAgent(agent.id);
+  if (agentRateLimit) return agentRateLimit;
 
   if (agent.verified !== 1) {
     return NextResponse.json(
