@@ -1,26 +1,15 @@
 import Replicate from 'replicate';
 
-const SUPPORTED_IMAGE_MODELS: Record<string, string> = {
-  'sdxl': 'stability-ai/sdxl:7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc',
-  'flux-schnell': 'black-forest-labs/flux-schnell',
-  'flux-dev': 'black-forest-labs/flux-dev',
-};
+const XAI_API_URL = 'https://api.x.ai/v1/images/generations';
+
+const SUPPORTED_IMAGE_MODELS = ['grok-2-image'] as const;
+const DEFAULT_IMAGE_MODEL = 'grok-2-image';
 
 const SUPPORTED_VIDEO_MODELS: Record<string, string> = {
   'minimax-video': 'minimax/video-01',
   'wan-2.1': 'wan-video/wan-2.1-t2v',
 };
-
-const DEFAULT_IMAGE_MODEL = 'flux-schnell';
 const DEFAULT_VIDEO_MODEL = 'minimax-video';
-
-function getReplicate(): Replicate {
-  const token = process.env.REPLICATE_API_TOKEN;
-  if (!token) {
-    throw new Error('REPLICATE_API_TOKEN env var is required for generation');
-  }
-  return new Replicate({ auth: token });
-}
 
 export interface ImageGenerationResult {
   url: string;
@@ -33,37 +22,74 @@ export interface VideoGenerationResult {
 }
 
 export function getAvailableImageModels(): string[] {
-  return Object.keys(SUPPORTED_IMAGE_MODELS);
+  return [...SUPPORTED_IMAGE_MODELS];
 }
 
 export function getAvailableVideoModels(): string[] {
   return Object.keys(SUPPORTED_VIDEO_MODELS);
 }
 
+interface XAIImageResponse {
+  data: Array<{ url?: string; b64_json?: string }>;
+}
+
 export async function generateImage(
   prompt: string,
-  model?: string,
+  _model?: string,
   options?: { width?: number; height?: number }
 ): Promise<ImageGenerationResult> {
-  const modelKey = model && model in SUPPORTED_IMAGE_MODELS ? model : DEFAULT_IMAGE_MODEL;
-  const replicateModel = SUPPORTED_IMAGE_MODELS[modelKey];
-  const replicate = getReplicate();
-
-  const input: Record<string, unknown> = { prompt };
-  if (options?.width) input.width = options.width;
-  if (options?.height) input.height = options.height;
-
-  const output = await replicate.run(
-    replicateModel as `${string}/${string}`,
-    { input }
-  );
-
-  const url = extractUrl(output);
-  if (!url) {
-    throw new Error('Generation returned no output');
+  const apiKey = process.env.XAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('XAI_API_KEY env var is required for image generation');
   }
 
-  return { url, model: modelKey };
+  const aspectRatio = resolveAspectRatio(options?.width, options?.height);
+
+  const res = await fetch(XAI_API_URL, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'grok-2-image',
+      prompt,
+      n: 1,
+      response_format: 'url',
+      ...(aspectRatio && { aspect_ratio: aspectRatio }),
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`xAI API error (${res.status}): ${text}`);
+  }
+
+  const json = (await res.json()) as XAIImageResponse;
+  const url = json.data?.[0]?.url;
+  if (!url) {
+    throw new Error('xAI returned no image URL');
+  }
+
+  return { url, model: DEFAULT_IMAGE_MODEL };
+}
+
+function resolveAspectRatio(width?: number, height?: number): string | undefined {
+  if (!width || !height) return undefined;
+  const ratio = width / height;
+  if (ratio > 1.7) return '16:9';
+  if (ratio > 1.2) return '4:3';
+  if (ratio < 0.6) return '9:16';
+  if (ratio < 0.8) return '3:4';
+  return '1:1';
+}
+
+function getReplicate(): Replicate {
+  const token = process.env.REPLICATE_API_TOKEN;
+  if (!token) {
+    throw new Error('REPLICATE_API_TOKEN env var is required for video generation');
+  }
+  return new Replicate({ auth: token });
 }
 
 export async function generateVideo(
