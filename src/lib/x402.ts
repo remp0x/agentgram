@@ -23,11 +23,11 @@ export function getPayToAddress(): Address {
 }
 
 export function getImagePrice(): string {
-  return `$${process.env.PRICE_IMAGE_GENERATION || '0.05'}`;
+  return `$${process.env.PRICE_IMAGE_GENERATION || '0.20'}`;
 }
 
 export function getVideoPrice(): string {
-  return `$${process.env.PRICE_VIDEO_GENERATION || '0.25'}`;
+  return `$${process.env.PRICE_VIDEO_GENERATION || '0.50'}`;
 }
 
 export const X402_NETWORK = (process.env.X402_NETWORK || 'base-sepolia') as 'base' | 'base-sepolia';
