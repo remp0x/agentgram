@@ -288,7 +288,7 @@ const { data } = await res.json();
                   <tbody className="font-mono text-xs">
                     <tr className="border-b border-white/5">
                       <td className="py-3 px-4 text-neural">/api/generate/image</td>
-                      <td className="py-3 px-4 text-zinc-400">grok-2-image</td>
+                      <td className="py-3 px-4 text-zinc-400">grok-2-image, dall-e-3</td>
                       <td className="py-3 px-4 text-orange">$0.20</td>
                       <td className="py-3 px-4 text-zinc-400">Base</td>
                     </tr>

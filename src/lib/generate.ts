@@ -1,8 +1,27 @@
 import Replicate from 'replicate';
 
-const XAI_API_URL = 'https://api.x.ai/v1/images/generations';
+interface ImageModelConfig {
+  apiUrl: string;
+  apiModel: string;
+  envKey: string;
+  supportsSize: boolean;
+}
 
-const SUPPORTED_IMAGE_MODELS = ['grok-2-image'] as const;
+const IMAGE_MODELS: Record<string, ImageModelConfig> = {
+  'grok-2-image': {
+    apiUrl: 'https://api.x.ai/v1/images/generations',
+    apiModel: 'grok-2-image',
+    envKey: 'XAI_API_KEY',
+    supportsSize: false,
+  },
+  'dall-e-3': {
+    apiUrl: 'https://api.openai.com/v1/images/generations',
+    apiModel: 'dall-e-3',
+    envKey: 'OPENAI_API_KEY',
+    supportsSize: true,
+  },
+};
+
 const DEFAULT_IMAGE_MODEL = 'grok-2-image';
 
 const SUPPORTED_VIDEO_MODELS: Record<string, string> = {
@@ -22,56 +41,73 @@ export interface VideoGenerationResult {
 }
 
 export function getAvailableImageModels(): string[] {
-  return [...SUPPORTED_IMAGE_MODELS];
+  return Object.keys(IMAGE_MODELS);
 }
 
 export function getAvailableVideoModels(): string[] {
   return Object.keys(SUPPORTED_VIDEO_MODELS);
 }
 
-interface XAIImageResponse {
+interface ImageAPIResponse {
   data: Array<{ url?: string; b64_json?: string }>;
 }
 
 export async function generateImage(
   prompt: string,
-  _model?: string,
+  model?: string,
   options?: { width?: number; height?: number }
 ): Promise<ImageGenerationResult> {
-  const apiKey = process.env.XAI_API_KEY;
+  const modelKey = model && model in IMAGE_MODELS ? model : DEFAULT_IMAGE_MODEL;
+  const config = IMAGE_MODELS[modelKey];
+
+  const apiKey = process.env[config.envKey];
   if (!apiKey) {
-    throw new Error('XAI_API_KEY env var is required for image generation');
+    throw new Error(`${config.envKey} env var is required for ${modelKey}`);
   }
 
-  const aspectRatio = resolveAspectRatio(options?.width, options?.height);
+  const body: Record<string, unknown> = {
+    model: config.apiModel,
+    prompt,
+    n: 1,
+    response_format: 'url',
+  };
 
-  const res = await fetch(XAI_API_URL, {
+  if (config.supportsSize) {
+    body.size = resolveSize(options?.width, options?.height);
+  } else {
+    const aspectRatio = resolveAspectRatio(options?.width, options?.height);
+    if (aspectRatio) body.aspect_ratio = aspectRatio;
+  }
+
+  const res = await fetch(config.apiUrl, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      model: 'grok-2-image',
-      prompt,
-      n: 1,
-      response_format: 'url',
-      ...(aspectRatio && { aspect_ratio: aspectRatio }),
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`xAI API error (${res.status}): ${text}`);
+    throw new Error(`${modelKey} API error (${res.status}): ${text}`);
   }
 
-  const json = (await res.json()) as XAIImageResponse;
+  const json = (await res.json()) as ImageAPIResponse;
   const url = json.data?.[0]?.url;
   if (!url) {
-    throw new Error('xAI returned no image URL');
+    throw new Error(`${modelKey} returned no image URL`);
   }
 
-  return { url, model: DEFAULT_IMAGE_MODEL };
+  return { url, model: modelKey };
+}
+
+function resolveSize(width?: number, height?: number): string {
+  if (!width || !height) return '1024x1024';
+  const ratio = width / height;
+  if (ratio > 1.2) return '1792x1024';
+  if (ratio < 0.8) return '1024x1792';
+  return '1024x1024';
 }
 
 function resolveAspectRatio(width?: number, height?: number): string | undefined {
