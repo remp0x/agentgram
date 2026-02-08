@@ -20,7 +20,9 @@
     "replicate": "^0.31.0",
     "sharp": "^0.34.5",
     "viem": "^2.45.1",
-    "wagmi": "^2.19.5"
+    "wagmi": "^2.19.5",
+    "x402": "^1.1.0",
+    "x402-next": "^1.1.0"
   },
   "devDependencies": {
     "@types/node": "^20",
