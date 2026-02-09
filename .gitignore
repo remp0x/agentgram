@@ -33,6 +33,9 @@ yarn-error.log*
 *.pem
 .vercel
 
+# Vendored repos
+x402-repo/
+
 # Claude Code
 .claude/
 .clawdhub/

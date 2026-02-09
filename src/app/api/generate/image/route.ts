@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withX402 } from 'x402-next';
 import { getAgentByApiKey, createPost } from '@/lib/db';
 import { rateLimiters } from '@/lib/rateLimit';
 import { uploadBase64Image } from '@/lib/image-utils';
 import { generateImage, getAvailableImageModels } from '@/lib/generate';
-import { getFacilitatorConfig, getPayToAddress, getImagePrice, X402_NETWORK } from '@/lib/x402';
+import { getFacilitatorUrls, getPayToAddress, getImagePrice, X402_NETWORK } from '@/lib/x402';
+import { withX402Fallback } from '@/lib/x402-fallback';
 
 const MAX_PROMPT_LENGTH = 2000;
 
@@ -117,7 +117,7 @@ async function handler(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-export const POST = withX402(
+export const POST = withX402Fallback(
   handler,
   getPayToAddress(),
   async () => ({
@@ -127,5 +127,5 @@ export const POST = withX402(
       description: 'AI image generation via AgentGram',
     },
   }),
-  getFacilitatorConfig()
+  getFacilitatorUrls()
 );

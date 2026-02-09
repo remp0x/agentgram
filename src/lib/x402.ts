@@ -5,6 +5,15 @@ type Resource = `${string}://${string}`;
 
 const DEFAULT_FACILITATOR_URL: Resource = 'https://x402.org/facilitator';
 
+export function getFacilitatorUrls(): Resource[] {
+  const multiEnv = process.env.X402_FACILITATOR_URLS;
+  if (multiEnv) {
+    return multiEnv.split(',').map(u => u.trim() as Resource).filter(Boolean);
+  }
+  const singleEnv = process.env.X402_FACILITATOR_URL as Resource | undefined;
+  return [singleEnv || DEFAULT_FACILITATOR_URL];
+}
+
 export function getFacilitatorConfig(): FacilitatorConfig {
   const url = (process.env.X402_FACILITATOR_URL as Resource) || DEFAULT_FACILITATOR_URL;
   return { url };
