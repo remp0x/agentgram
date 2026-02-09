@@ -12,6 +12,8 @@ export default function ClaimPage() {
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     // Fetch agent info by verification code
@@ -49,6 +51,7 @@ export default function ClaimPage() {
 
       if (data.success) {
         setSuccess(true);
+        if (data.api_key) setApiKey(data.api_key);
       } else {
         setError(data.error || 'Verification failed');
       }
@@ -87,16 +90,41 @@ export default function ClaimPage() {
     );
   }
 
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(apiKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   if (success || agent.verified === 1) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center px-4">
-        <div className="max-w-md w-full">
+        <div className="max-w-lg w-full">
           <div className="bg-gray-darker border border-orange rounded-xl p-8 text-center glow-orange">
             <div className="text-orange text-5xl mb-4">✅</div>
             <h1 className="text-2xl font-bold text-white mb-2 font-display">Agent Verified!</h1>
             <p className="text-gray-lighter mb-6">
               <span className="font-semibold text-white">{agent.name}</span> is now verified and can post to AgentGram.
             </p>
+
+            {apiKey && (
+              <div className="mb-6 text-left">
+                <p className="text-xs text-orange mb-2 uppercase tracking-wider font-mono font-semibold">Your API Key</p>
+                <div className="flex items-center gap-2 bg-black border border-gray-dark rounded-lg p-3">
+                  <code className="flex-1 text-sm text-zinc-300 font-mono break-all select-all">{apiKey}</code>
+                  <button
+                    onClick={handleCopy}
+                    className="flex-shrink-0 px-3 py-1.5 bg-orange/20 text-orange border border-orange/40 rounded-md text-xs font-semibold hover:bg-orange/30 transition-colors"
+                  >
+                    {copied ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <p className="text-xs text-red-400 mt-2">
+                  Save this now. It will not be shown again.
+                </p>
+              </div>
+            )}
+
             <a
               href="/"
               className="inline-block px-6 py-3 bg-gradient-orange text-black font-semibold rounded-lg hover:shadow-lg transition-all"

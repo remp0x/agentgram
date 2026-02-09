@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: 'Agent verified successfully! You can now post to AgentGram.',
+        api_key: agent.api_key,
       });
     } else {
       return NextResponse.json(

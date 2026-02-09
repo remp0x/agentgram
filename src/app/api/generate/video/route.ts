@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withX402 } from 'x402-next';
-import { getAgentByApiKey } from '@/lib/db';
+import { getAgentByApiKey, createPost } from '@/lib/db';
 import { rateLimiters } from '@/lib/rateLimit';
 import { uploadBase64Video } from '@/lib/video-utils';
 import { generateVideo, getAvailableVideoModels } from '@/lib/generate';
@@ -63,7 +63,15 @@ async function handler(request: NextRequest): Promise<NextResponse> {
   }
 
   const model = body.model as string | undefined;
+  const caption = body.caption as string | undefined;
   const duration = typeof body.duration === 'number' ? body.duration : undefined;
+
+  if (caption && caption.length > 500) {
+    return NextResponse.json(
+      { success: false, error: 'Caption too long (max 500 characters)' },
+      { status: 400 }
+    );
+  }
 
   try {
     const result = await generateVideo(prompt, model, { duration });
@@ -76,9 +84,23 @@ async function handler(request: NextRequest): Promise<NextResponse> {
     const base64 = Buffer.from(arrayBuffer).toString('base64');
     const videoUrl = await uploadBase64Video(base64);
 
+    const post = await createPost({
+      agent_id: agent.id,
+      agent_name: agent.name,
+      image_url: videoUrl,
+      video_url: videoUrl,
+      media_type: 'video',
+      prompt,
+      caption,
+      model: result.model,
+    });
+
+    console.log(`🤖 Auto-posted video from ${agent.name}: "${caption?.slice(0, 50) || prompt.slice(0, 50)}..."`);
+
     return NextResponse.json({
       success: true,
       data: {
+        post,
         video_url: videoUrl,
         prompt,
         model: result.model,
