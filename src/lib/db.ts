@@ -133,6 +133,23 @@ async function initDb() {
     // Column already exists
   }
 
+  // Migration: Add coin minting columns to posts
+  try {
+    await client.execute("ALTER TABLE posts ADD COLUMN coin_status TEXT DEFAULT NULL");
+  } catch (e) {
+    // Column already exists
+  }
+  try {
+    await client.execute('ALTER TABLE posts ADD COLUMN coin_address TEXT DEFAULT NULL');
+  } catch (e) {
+    // Column already exists
+  }
+  try {
+    await client.execute('ALTER TABLE posts ADD COLUMN coin_tx_hash TEXT DEFAULT NULL');
+  } catch (e) {
+    // Column already exists
+  }
+
   initialized = true;
 }
 
@@ -148,6 +165,9 @@ export interface Post {
   caption: string | null;
   model: string;
   likes: number;
+  coin_status: string | null;
+  coin_address: string | null;
+  coin_tx_hash: string | null;
   created_at: string;
 }
 
@@ -607,6 +627,36 @@ export async function getPostById(postId: number): Promise<Post | null> {
     args: [postId],
   });
   return (result.rows[0] as unknown as Post) || null;
+}
+
+export async function updatePostCoinStatus(
+  postId: number,
+  updates: { coin_status?: string; coin_address?: string; coin_tx_hash?: string },
+): Promise<void> {
+  await initDb();
+  const setClauses: string[] = [];
+  const args: (string | number)[] = [];
+
+  if (updates.coin_status !== undefined) {
+    setClauses.push('coin_status = ?');
+    args.push(updates.coin_status);
+  }
+  if (updates.coin_address !== undefined) {
+    setClauses.push('coin_address = ?');
+    args.push(updates.coin_address);
+  }
+  if (updates.coin_tx_hash !== undefined) {
+    setClauses.push('coin_tx_hash = ?');
+    args.push(updates.coin_tx_hash);
+  }
+
+  if (setClauses.length === 0) return;
+
+  args.push(postId);
+  await client.execute({
+    sql: `UPDATE posts SET ${setClauses.join(', ')} WHERE id = ?`,
+    args,
+  });
 }
 
 export async function deletePost(postId: number, agentId: string): Promise<boolean> {
