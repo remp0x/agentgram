@@ -155,6 +155,28 @@ async function initDb() {
     // Column already exists
   }
 
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      agent_id TEXT NOT NULL,
+      agent_name TEXT NOT NULL,
+      route TEXT NOT NULL,
+      media_type TEXT NOT NULL,
+      amount_usd TEXT NOT NULL,
+      network TEXT NOT NULL,
+      transaction_hash TEXT,
+      payer_address TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_payments_created_at ON payments(created_at)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_payments_agent_id ON payments(agent_id)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_payments_media_type ON payments(media_type)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_likes_created_at ON likes(created_at)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_comments_created_at ON comments(created_at)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_follows_created_at ON follows(created_at)');
+
   initialized = true;
 }
 
@@ -888,4 +910,296 @@ export async function getLeaderboard(limit = 50, sortBy = 'posts'): Promise<Lead
   });
 
   return result.rows as unknown as LeaderboardEntry[];
+}
+
+// Payments
+
+export async function logPayment(data: {
+  agent_id: string;
+  agent_name: string;
+  route: string;
+  media_type: string;
+  amount_usd: string;
+  network: string;
+  transaction_hash?: string;
+  payer_address?: string;
+}): Promise<void> {
+  await initDb();
+  await client.execute({
+    sql: `INSERT INTO payments (agent_id, agent_name, route, media_type, amount_usd, network, transaction_hash, payer_address)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [
+      data.agent_id,
+      data.agent_name,
+      data.route,
+      data.media_type,
+      data.amount_usd,
+      data.network,
+      data.transaction_hash || null,
+      data.payer_address || null,
+    ],
+  });
+}
+
+// Metrics
+
+export interface MetricsData {
+  agents: {
+    total: number;
+    verified: number;
+    unverified: number;
+    daily: { date: string; count: number }[];
+  };
+  posts: {
+    total: number;
+    images: number;
+    videos: number;
+    daily: { date: string; count: number }[];
+    byModel: { model: string; count: number }[];
+  };
+  coins: {
+    total: number;
+    pending: number;
+    minting: number;
+    minted: number;
+    failed: number;
+    successRate: number;
+  };
+  engagement: {
+    totalLikes: number;
+    totalComments: number;
+    totalFollows: number;
+    daily: { date: string; likes: number; comments: number; follows: number }[];
+  };
+  revenue: {
+    totalUsd: number;
+    daily: { date: string; amount: number }[];
+    byType: { type: string; amount: number; count: number }[];
+    avgPerTransaction: number;
+    transactionCount: number;
+  };
+  topAgents: { id: string; name: string; avatar_url: string | null; posts_count: number }[];
+  topPosts: { id: number; image_url: string; caption: string | null; agent_name: string; likes: number }[];
+}
+
+export async function getMetrics(days: number = 30): Promise<MetricsData> {
+  await initDb();
+
+  const dateThreshold = `datetime('now', '-${days} days')`;
+
+  const [
+    agentTotals,
+    dailyAgents,
+    postTotals,
+    dailyPosts,
+    postsByModel,
+    coinStats,
+    engagementTotals,
+    dailyLikes,
+    dailyComments,
+    dailyFollows,
+    revenueTotals,
+    dailyRevenue,
+    revenueByType,
+    topAgents,
+    topPosts,
+  ] = await Promise.all([
+    client.execute(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN verified = 1 THEN 1 ELSE 0 END) as verified,
+        SUM(CASE WHEN verified = 0 THEN 1 ELSE 0 END) as unverified
+      FROM agents
+    `),
+    client.execute({
+      sql: `SELECT DATE(created_at) as date, COUNT(*) as count
+            FROM agents WHERE created_at >= ${dateThreshold}
+            GROUP BY DATE(created_at) ORDER BY date`,
+      args: [],
+    }),
+    client.execute(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN media_type = 'image' THEN 1 ELSE 0 END) as images,
+        SUM(CASE WHEN media_type = 'video' THEN 1 ELSE 0 END) as videos
+      FROM posts
+    `),
+    client.execute({
+      sql: `SELECT DATE(created_at) as date, COUNT(*) as count
+            FROM posts WHERE created_at >= ${dateThreshold}
+            GROUP BY DATE(created_at) ORDER BY date`,
+      args: [],
+    }),
+    client.execute({
+      sql: `SELECT model, COUNT(*) as count FROM posts
+            WHERE created_at >= ${dateThreshold}
+            GROUP BY model ORDER BY count DESC LIMIT 10`,
+      args: [],
+    }),
+    client.execute(`
+      SELECT
+        COUNT(CASE WHEN coin_status IS NOT NULL THEN 1 END) as total,
+        COUNT(CASE WHEN coin_status = 'pending' THEN 1 END) as pending,
+        COUNT(CASE WHEN coin_status = 'minting' THEN 1 END) as minting,
+        COUNT(CASE WHEN coin_status = 'minted' THEN 1 END) as minted,
+        COUNT(CASE WHEN coin_status = 'failed' THEN 1 END) as failed
+      FROM posts
+    `),
+    client.execute(`
+      SELECT
+        (SELECT COUNT(*) FROM likes) as totalLikes,
+        (SELECT COUNT(*) FROM comments) as totalComments,
+        (SELECT COUNT(*) FROM follows) as totalFollows
+    `),
+    client.execute({
+      sql: `SELECT DATE(created_at) as date, COUNT(*) as count
+            FROM likes WHERE created_at >= ${dateThreshold}
+            GROUP BY DATE(created_at) ORDER BY date`,
+      args: [],
+    }),
+    client.execute({
+      sql: `SELECT DATE(created_at) as date, COUNT(*) as count
+            FROM comments WHERE created_at >= ${dateThreshold}
+            GROUP BY DATE(created_at) ORDER BY date`,
+      args: [],
+    }),
+    client.execute({
+      sql: `SELECT DATE(created_at) as date, COUNT(*) as count
+            FROM follows WHERE created_at >= ${dateThreshold}
+            GROUP BY DATE(created_at) ORDER BY date`,
+      args: [],
+    }),
+    client.execute(`
+      SELECT
+        COALESCE(SUM(CAST(amount_usd AS REAL)), 0) as totalUsd,
+        COUNT(*) as txCount
+      FROM payments
+    `),
+    client.execute({
+      sql: `SELECT DATE(created_at) as date, SUM(CAST(amount_usd AS REAL)) as amount
+            FROM payments WHERE created_at >= ${dateThreshold}
+            GROUP BY DATE(created_at) ORDER BY date`,
+      args: [],
+    }),
+    client.execute(`
+      SELECT media_type as type, SUM(CAST(amount_usd AS REAL)) as amount, COUNT(*) as count
+      FROM payments GROUP BY media_type
+    `),
+    client.execute(`
+      SELECT a.id, a.name, a.avatar_url,
+        (SELECT COUNT(*) FROM posts WHERE agent_id = a.id) as posts_count
+      FROM agents a
+      ORDER BY posts_count DESC LIMIT 5
+    `),
+    client.execute(`
+      SELECT id, image_url, caption, agent_name, likes
+      FROM posts ORDER BY likes DESC LIMIT 5
+    `),
+  ]);
+
+  const row0 = (r: { rows: unknown[] }) => r.rows[0] as Record<string, unknown>;
+  const num = (v: unknown) => Number(v) || 0;
+
+  const coinRow = row0(coinStats);
+  const coinTotal = num(coinRow.total);
+  const coinMinted = num(coinRow.minted);
+
+  const engRow = row0(engagementTotals);
+  const revRow = row0(revenueTotals);
+  const txCount = num(revRow.txCount);
+
+  const likesMap = new Map<string, number>();
+  const commentsMap = new Map<string, number>();
+  const followsMap = new Map<string, number>();
+  for (const r of dailyLikes.rows as unknown as { date: string; count: number }[]) {
+    likesMap.set(r.date, num(r.count));
+  }
+  for (const r of dailyComments.rows as unknown as { date: string; count: number }[]) {
+    commentsMap.set(r.date, num(r.count));
+  }
+  for (const r of dailyFollows.rows as unknown as { date: string; count: number }[]) {
+    followsMap.set(r.date, num(r.count));
+  }
+
+  const allDates = Array.from(new Set([
+    ...Array.from(likesMap.keys()),
+    ...Array.from(commentsMap.keys()),
+    ...Array.from(followsMap.keys()),
+  ])).sort();
+
+  const dailyEngagement = allDates.map(date => ({
+    date,
+    likes: likesMap.get(date) || 0,
+    comments: commentsMap.get(date) || 0,
+    follows: followsMap.get(date) || 0,
+  }));
+
+  const agentRow = row0(agentTotals);
+  const postRow = row0(postTotals);
+
+  return {
+    agents: {
+      total: num(agentRow.total),
+      verified: num(agentRow.verified),
+      unverified: num(agentRow.unverified),
+      daily: (dailyAgents.rows as unknown as { date: string; count: number }[]).map(r => ({
+        date: r.date,
+        count: num(r.count),
+      })),
+    },
+    posts: {
+      total: num(postRow.total),
+      images: num(postRow.images),
+      videos: num(postRow.videos),
+      daily: (dailyPosts.rows as unknown as { date: string; count: number }[]).map(r => ({
+        date: r.date,
+        count: num(r.count),
+      })),
+      byModel: (postsByModel.rows as unknown as { model: string; count: number }[]).map(r => ({
+        model: r.model || 'unknown',
+        count: num(r.count),
+      })),
+    },
+    coins: {
+      total: coinTotal,
+      pending: num(coinRow.pending),
+      minting: num(coinRow.minting),
+      minted: coinMinted,
+      failed: num(coinRow.failed),
+      successRate: coinTotal > 0 ? Math.round((coinMinted / coinTotal) * 100) : 0,
+    },
+    engagement: {
+      totalLikes: num(engRow.totalLikes),
+      totalComments: num(engRow.totalComments),
+      totalFollows: num(engRow.totalFollows),
+      daily: dailyEngagement,
+    },
+    revenue: {
+      totalUsd: num(revRow.totalUsd),
+      daily: (dailyRevenue.rows as unknown as { date: string; amount: number }[]).map(r => ({
+        date: r.date,
+        amount: num(r.amount),
+      })),
+      byType: (revenueByType.rows as unknown as { type: string; amount: number; count: number }[]).map(r => ({
+        type: r.type,
+        amount: num(r.amount),
+        count: num(r.count),
+      })),
+      avgPerTransaction: txCount > 0 ? Math.round((num(revRow.totalUsd) / txCount) * 100) / 100 : 0,
+      transactionCount: txCount,
+    },
+    topAgents: (topAgents.rows as unknown as { id: string; name: string; avatar_url: string | null; posts_count: number }[]).map(r => ({
+      id: r.id,
+      name: r.name,
+      avatar_url: r.avatar_url,
+      posts_count: num(r.posts_count),
+    })),
+    topPosts: (topPosts.rows as unknown as { id: number; image_url: string; caption: string | null; agent_name: string; likes: number }[]).map(r => ({
+      id: num(r.id),
+      image_url: r.image_url,
+      caption: r.caption,
+      agent_name: r.agent_name,
+      likes: num(r.likes),
+    })),
+  };
 }

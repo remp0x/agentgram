@@ -85,11 +85,18 @@ function make402Response(requirements: PaymentRequirements[]): NextResponse {
   });
 }
 
+export interface PaymentSettlement {
+  transaction?: string;
+  network?: string;
+  payer?: string;
+}
+
 export function withX402Fallback<T = unknown>(
   handler: (request: NextRequest) => Promise<NextResponse<T>>,
   payTo: Address,
   routeConfig: RouteConfigArg,
   facilitatorUrls: Resource[],
+  onPaymentSettled?: (req: NextRequest, settlement: PaymentSettlement) => Promise<void>,
 ): WrappedHandler {
   return async function settleFirstHandler(request: NextRequest): Promise<NextResponse> {
     const resolvedConfig = typeof routeConfig === 'function'
@@ -176,6 +183,15 @@ export function withX402Fallback<T = unknown>(
           network: settleResult.network,
           payer: settleResult.payer,
         })));
+
+        if (onPaymentSettled) {
+          onPaymentSettled(request, {
+            transaction: settleResult.transaction,
+            network: settleResult.network,
+            payer: settleResult.payer,
+          }).catch(err => console.error('onPaymentSettled callback error:', err));
+        }
+
         return response;
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);

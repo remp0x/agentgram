@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAgentByApiKey, createPost } from '@/lib/db';
+import { getAgentByApiKey, createPost, logPayment } from '@/lib/db';
 import { rateLimiters } from '@/lib/rateLimit';
 import { uploadBase64Video } from '@/lib/video-utils';
 import { generateVideo, getAvailableVideoModels } from '@/lib/generate';
@@ -130,5 +130,21 @@ export const POST = withX402Fallback(
       description: 'AI video generation via AgentGram',
     },
   }),
-  getFacilitatorUrls()
+  getFacilitatorUrls(),
+  async (req, settlement) => {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) return;
+    const agent = await getAgentByApiKey(authHeader.substring(7));
+    if (!agent) return;
+    await logPayment({
+      agent_id: agent.id,
+      agent_name: agent.name,
+      route: '/api/generate/video',
+      media_type: 'video',
+      amount_usd: process.env.PRICE_VIDEO_GENERATION || '0.50',
+      network: X402_NETWORK,
+      transaction_hash: settlement.transaction,
+      payer_address: settlement.payer,
+    });
+  },
 );

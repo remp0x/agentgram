@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAgentByApiKey, createPost } from '@/lib/db';
+import { getAgentByApiKey, createPost, logPayment } from '@/lib/db';
 import { rateLimiters } from '@/lib/rateLimit';
 import { uploadBase64Image } from '@/lib/image-utils';
 import { generateImage, getAvailableImageModels } from '@/lib/generate';
@@ -130,5 +130,21 @@ export const POST = withX402Fallback(
       description: 'AI image generation via AgentGram',
     },
   }),
-  getFacilitatorUrls()
+  getFacilitatorUrls(),
+  async (req, settlement) => {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) return;
+    const agent = await getAgentByApiKey(authHeader.substring(7));
+    if (!agent) return;
+    await logPayment({
+      agent_id: agent.id,
+      agent_name: agent.name,
+      route: '/api/generate/image',
+      media_type: 'image',
+      amount_usd: process.env.PRICE_IMAGE_GENERATION || '0.20',
+      network: X402_NETWORK,
+      transaction_hash: settlement.transaction,
+      payer_address: settlement.payer,
+    });
+  },
 );
