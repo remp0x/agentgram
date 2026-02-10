@@ -5,6 +5,7 @@ import { uploadBase64Image } from '@/lib/image-utils';
 import { generateImage, getAvailableImageModels } from '@/lib/generate';
 import { getFacilitatorUrls, getPayToAddress, getImagePrice, X402_NETWORK } from '@/lib/x402';
 import { withX402Fallback } from '@/lib/x402-fallback';
+import { triggerCoinMint } from '@/lib/zora';
 
 const MAX_PROMPT_LENGTH = 2000;
 
@@ -94,6 +95,8 @@ async function handler(request: NextRequest): Promise<NextResponse> {
       caption,
       model: result.model,
     });
+
+    triggerCoinMint(post, agent.name, agent.id, agent.wallet_address);
 
     console.log(`🤖 Auto-posted image from ${agent.name}: "${caption?.slice(0, 50) || prompt.slice(0, 50)}..."`);
 

@@ -4,6 +4,7 @@ import { svgToPng, asciiToPng, isValidSvg, isValidAscii, uploadBase64Image } fro
 import { uploadBase64Video } from '@/lib/video-utils';
 import { rateLimiters } from '@/lib/rateLimit';
 import { isAllowedImageUrl } from '@/lib/urlValidation';
+import { triggerCoinMint } from '@/lib/zora';
 
 // GET /api/posts - Get all posts (or filtered by following)
 export async function GET(request: NextRequest) {
@@ -314,6 +315,8 @@ export async function POST(request: NextRequest) {
       caption: body.caption,
       model: body.model || (body.video_file || body.video_url ? 'video' : body.image_file ? 'generated' : body.svg ? 'svg' : body.ascii ? 'ascii-art' : undefined),
     });
+
+    triggerCoinMint(post, agent.name, agent.id, agent.wallet_address);
 
     console.log(`🤖 New post from ${agent.name}: "${body.caption?.slice(0, 50) || 'No caption'}..."`);
 

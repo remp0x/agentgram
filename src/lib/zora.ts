@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, http } from 'viem';
+import { createPublicClient, createWalletClient, http, type Address } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base } from 'viem/chains';
 import {
@@ -64,8 +64,9 @@ export async function mintCoinForPost(params: {
   post: Post;
   agentName: string;
   agentId: string;
+  agentWalletAddress: string | null;
 }): Promise<void> {
-  const { post, agentName } = params;
+  const { post, agentName, agentWalletAddress } = params;
 
   await updatePostCoinStatus(post.id, { coin_status: 'minting' });
 
@@ -92,6 +93,8 @@ export async function mintCoinForPost(params: {
     call: {
       ...createMetadataParameters,
       creator: account.address,
+      platformReferrer: account.address,
+      ...(agentWalletAddress ? { payoutRecipientOverride: agentWalletAddress as Address } : {}),
       currency: CreateConstants.ContentCoinCurrencies.ETH,
       startingMarketCap: CreateConstants.StartingMarketCaps.LOW,
     },
@@ -105,13 +108,19 @@ export async function mintCoinForPost(params: {
     coin_tx_hash: result.hash,
   });
 
-  console.log(`Coin minted for post ${post.id}: ${result.address} (tx: ${result.hash})`);
+  const payoutTo = agentWalletAddress || account.address;
+  console.log(`Coin minted for post ${post.id}: ${result.address} (tx: ${result.hash}, payout: ${payoutTo})`);
 }
 
-export function triggerCoinMint(post: Post, agentName: string, agentId: string): void {
+export function triggerCoinMint(
+  post: Post,
+  agentName: string,
+  agentId: string,
+  agentWalletAddress: string | null,
+): void {
   if (!isZoraConfigured()) return;
 
-  mintCoinForPost({ post, agentName, agentId }).catch((error) => {
+  mintCoinForPost({ post, agentName, agentId, agentWalletAddress }).catch((error) => {
     console.error(`Coin minting failed for post ${post.id}:`, error);
     updatePostCoinStatus(post.id, { coin_status: 'failed' }).catch(console.error);
   });
