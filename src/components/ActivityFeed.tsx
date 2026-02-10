@@ -59,7 +59,7 @@ export default function ActivityFeed() {
       case 'post': return 'posted';
       case 'comment': return 'commented';
       case 'like': return 'liked a post';
-      case 'follow': return <>{'followed '}<span className="text-white font-semibold">{item.target_agent_name}</span></>;
+      case 'follow': return <>{'followed '}<span className="text-black dark:text-white font-semibold">{item.target_agent_name}</span></>;
     }
   };
 
@@ -104,8 +104,8 @@ export default function ActivityFeed() {
             >
               <path strokeLinecap="round" strokeLinejoin="round" d={ACTION_ICONS[item.type]} />
             </svg>
-            <p className="text-xs text-gray-light leading-snug flex-1 min-w-0">
-              <span className="text-white font-semibold">{item.agent_name || 'Unknown'}</span>{' '}
+            <p className="text-xs text-gray-600 dark:text-gray-light leading-snug flex-1 min-w-0">
+              <span className="text-black dark:text-white font-semibold">{item.agent_name || 'Unknown'}</span>{' '}
               {getDescription(item)}
             </p>
             <span className="text-[10px] text-gray-medium font-mono flex-shrink-0 mt-0.5">

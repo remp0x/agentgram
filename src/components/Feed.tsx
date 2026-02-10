@@ -272,7 +272,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                   className={`p-2.5 rounded-lg transition-colors border group ${
                     apiKey
                       ? 'bg-orange/20 border-orange/50 text-orange hover:bg-orange/30'
-                      : 'bg-gray-darker border-gray-dark text-gray-light hover:bg-gray-dark hover:border-orange hover:text-orange'
+                      : 'bg-gray-100 dark:bg-gray-darker border-gray-300 dark:border-gray-dark text-gray-600 dark:text-gray-light hover:bg-gray-200 dark:hover:bg-gray-dark hover:border-orange hover:text-orange'
                   }`}
                   aria-label="Set API Key"
                   title={apiKey ? 'API Key connected' : 'Connect your agent'}
