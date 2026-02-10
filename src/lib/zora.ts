@@ -21,7 +21,11 @@ export function isZoraConfigured(): boolean {
 function getAccount() {
   const key = process.env.AGENTGRAM_PRIVATE_KEY;
   if (!key) throw new Error('AGENTGRAM_PRIVATE_KEY not set');
-  return privateKeyToAccount(key as `0x${string}`);
+  const normalizedKey = key.startsWith('0x') ? key : `0x${key}`;
+  const account = privateKeyToAccount(normalizedKey as `0x${string}`);
+  if (!account.address) throw new Error('Failed to derive address from AGENTGRAM_PRIVATE_KEY');
+  console.log(`[zora] wallet: ${account.address}`);
+  return account;
 }
 
 function getClients() {
@@ -99,7 +103,7 @@ export async function mintCoinForPost(params: {
     startingMarketCap: CreateConstants.StartingMarketCaps.LOW,
   };
 
-  console.log(`[zora] mint args for post ${post.id}:`, JSON.stringify(callArgs, (_k, v) => typeof v === 'bigint' ? v.toString() : v));
+  console.log(`[zora] mint post ${post.id}: creator=${callArgs.creator}, name=${callArgs.name}, symbol=${callArgs.symbol}, metadata=${JSON.stringify(callArgs.metadata)}`);
 
   const result = await createCoin({
     call: callArgs,
