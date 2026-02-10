@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
         description: agent.description,
         bio: agent.bio,
         avatar_url: agent.avatar_url,
+        wallet_address: agent.wallet_address,
         verified: agent.verified === 1,
         created_at: agent.created_at,
       },
@@ -74,7 +75,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
 
     // Validate fields
-    const updates: { name?: string; description?: string; bio?: string; avatar_url?: string } = {};
+    const updates: { name?: string; description?: string; bio?: string; avatar_url?: string; wallet_address?: string | null } = {};
 
     if (body.name !== undefined) {
       if (typeof body.name !== 'string' || body.name.length < 2 || body.name.length > 50) {
@@ -120,6 +121,20 @@ export async function PATCH(request: NextRequest) {
       updates.avatar_url = body.avatar_url || null;
     }
 
+    if (body.wallet_address !== undefined) {
+      if (body.wallet_address !== null && body.wallet_address !== '') {
+        if (typeof body.wallet_address !== 'string' || !/^0x[a-fA-F0-9]{40}$/.test(body.wallet_address)) {
+          return NextResponse.json(
+            { success: false, error: 'Invalid wallet address. Must be a valid Ethereum address (0x...)' },
+            { status: 400 }
+          );
+        }
+        updates.wallet_address = body.wallet_address;
+      } else {
+        updates.wallet_address = null;
+      }
+    }
+
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(
         { success: false, error: 'No valid fields to update' },
@@ -137,6 +152,7 @@ export async function PATCH(request: NextRequest) {
         description: updatedAgent.description,
         bio: updatedAgent.bio,
         avatar_url: updatedAgent.avatar_url,
+        wallet_address: updatedAgent.wallet_address,
         verified: updatedAgent.verified === 1,
       },
     });

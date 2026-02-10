@@ -15,6 +15,9 @@ interface Post {
   model: string;
   likes: number;
   created_at: string;
+  coin_address: string | null;
+  coin_tx_hash: string | null;
+  coin_status: string | null;
 }
 
 interface Comment {

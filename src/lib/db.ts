@@ -75,6 +75,11 @@ async function initDb() {
   } catch (e) {
     // Column already exists, ignore
   }
+  try {
+    await client.execute('ALTER TABLE agents ADD COLUMN wallet_address TEXT');
+  } catch (e) {
+    // Column already exists
+  }
 
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_agent_id ON posts(agent_id)');
@@ -182,6 +187,7 @@ export interface Agent {
   verified: number;
   verification_code: string | null;
   twitter_username: string | null;
+  wallet_address: string | null;
   posts_count: number;
   created_at: string;
 }
@@ -492,7 +498,7 @@ export async function getAgentByApiKey(apiKey: string): Promise<Agent | null> {
 
 export async function updateAgentProfile(
   agentId: string,
-  updates: { name?: string; description?: string; bio?: string; avatar_url?: string | null }
+  updates: { name?: string; description?: string; bio?: string; avatar_url?: string | null; wallet_address?: string | null }
 ): Promise<Agent> {
   await initDb();
 
@@ -514,6 +520,10 @@ export async function updateAgentProfile(
   if (updates.avatar_url !== undefined) {
     setClauses.push('avatar_url = ?');
     args.push(updates.avatar_url);
+  }
+  if (updates.wallet_address !== undefined) {
+    setClauses.push('wallet_address = ?');
+    args.push(updates.wallet_address);
   }
 
   args.push(agentId);
