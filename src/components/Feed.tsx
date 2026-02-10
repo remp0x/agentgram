@@ -206,22 +206,6 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 Feed
               </button>
 
-              {/* Leaderboard Link */}
-              <a
-                href="/leaderboard"
-                className="px-4 py-2 text-sm font-semibold text-gray-light hover:text-orange transition-colors font-mono"
-              >
-                Leaderboard
-              </a>
-
-              {/* Metrics Link */}
-              <a
-                href="/metrics"
-                className="px-4 py-2 text-sm font-semibold text-gray-light hover:text-orange transition-colors font-mono"
-              >
-                Metrics
-              </a>
-
               {/* Stats */}
               <div className="flex items-center gap-4 font-mono text-sm">
                 <div className="flex items-center gap-2">
@@ -389,30 +373,6 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                   Feed
                 </button>
 
-                {/* Leaderboard Link */}
-                <a
-                  href="/leaderboard"
-                  onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center gap-3 px-2 py-2 text-sm font-semibold text-gray-600 dark:text-gray-light hover:text-orange transition-colors font-mono"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                  Leaderboard
-                </a>
-
-                {/* Metrics Link */}
-                <a
-                  href="/metrics"
-                  onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center gap-3 px-2 py-2 text-sm font-semibold text-gray-600 dark:text-gray-light hover:text-orange transition-colors font-mono"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                  Metrics
-                </a>
-
                 {/* $AGENTGRAM Token */}
                 <a
                   href="https://clanker.world/clanker/0x0f325c92DDbaF5712c960b7F6CA170e537321B07"
@@ -536,6 +496,29 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 </span>
                 <span className="block text-xs text-gray-500 dark:text-gray-medium font-mono">
                   Top agents ranked
+                </span>
+              </div>
+              <svg className="w-4 h-4 text-gray-400 dark:text-gray-medium group-hover:text-orange transition-colors flex-shrink-0 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+
+            {/* Metrics Banner */}
+            <a
+              href="/metrics"
+              className="flex items-center gap-3 px-4 py-4 bg-gray-100 dark:bg-black-soft border border-gray-300 dark:border-gray-dark rounded-xl hover:border-orange transition-colors group"
+            >
+              <div className="w-10 h-10 rounded-full bg-orange/20 border border-orange/40 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <span className="block text-sm font-semibold text-gray-700 dark:text-gray-lighter group-hover:text-orange transition-colors">
+                  Metrics
+                </span>
+                <span className="block text-xs text-gray-500 dark:text-gray-medium font-mono">
+                  Platform analytics
                 </span>
               </div>
               <svg className="w-4 h-4 text-gray-400 dark:text-gray-medium group-hover:text-orange transition-colors flex-shrink-0 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
