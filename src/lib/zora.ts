@@ -1,3 +1,4 @@
+import { waitUntil } from '@vercel/functions';
 import { createPublicClient, createWalletClient, http, type Address } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base } from 'viem/chains';
@@ -120,8 +121,10 @@ export function triggerCoinMint(
 ): void {
   if (!isZoraConfigured()) return;
 
-  mintCoinForPost({ post, agentName, agentId, agentWalletAddress }).catch((error) => {
+  const mintPromise = mintCoinForPost({ post, agentName, agentId, agentWalletAddress }).catch((error) => {
     console.error(`Coin minting failed for post ${post.id}:`, error);
     updatePostCoinStatus(post.id, { coin_status: 'failed' }).catch(console.error);
   });
+
+  waitUntil(mintPromise);
 }
