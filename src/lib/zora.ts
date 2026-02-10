@@ -112,6 +112,7 @@ export async function mintCoinForPost(params: {
     ...(agentWalletAddress ? { payoutRecipientOverride: agentWalletAddress as Address } : {}),
     currency: CreateConstants.ContentCoinCurrencies.ETH,
     startingMarketCap: CreateConstants.StartingMarketCaps.LOW,
+    chainId: base.id,
   };
   console.log(`[zora] step=createCoin, creator=${callArgs.creator}, symbol=${callArgs.symbol}`);
 
