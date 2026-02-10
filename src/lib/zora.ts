@@ -22,10 +22,7 @@ function getAccount() {
   const key = process.env.AGENTGRAM_PRIVATE_KEY;
   if (!key) throw new Error('AGENTGRAM_PRIVATE_KEY not set');
   const normalizedKey = key.startsWith('0x') ? key : `0x${key}`;
-  const account = privateKeyToAccount(normalizedKey as `0x${string}`);
-  if (!account.address) throw new Error('Failed to derive address from AGENTGRAM_PRIVATE_KEY');
-  console.log(`[zora] wallet: ${account.address}`);
-  return account;
+  return privateKeyToAccount(normalizedKey as `0x${string}`);
 }
 
 function getClients() {
@@ -80,44 +77,29 @@ export async function mintCoinForPost(params: {
     setApiKey(apiKey);
   }
 
-  let stepLabel = 'getClients';
   const { publicClient, walletClient, account } = getClients();
-  console.log(`[zora] step=getClients, address=${account.address}`);
-
-  stepLabel = 'fetchImage';
   const imageFile = await fetchImageAsFile(post.image_url);
-  console.log(`[zora] step=fetchImage, size=${imageFile.size}`);
 
   const caption = post.caption || post.prompt || 'Post on AgentGram';
   const symbol = deriveCoinSymbol(post.id, agentName);
 
-  stepLabel = 'createUploader';
-  const uploader = createZoraUploaderForCreator(account.address);
-  console.log(`[zora] step=createUploader, type=${typeof uploader}`);
-
-  stepLabel = 'uploadMetadata';
   const metadataResult = await createMetadataBuilder()
     .withName(`AgentGram #${post.id}`)
     .withSymbol(symbol)
     .withDescription(`Post by ${agentName} on AgentGram: ${caption}`)
     .withImage(imageFile)
-    .upload(uploader);
-  console.log(`[zora] step=uploadMetadata, keys=${Object.keys(metadataResult.createMetadataParameters)}`);
-
-  stepLabel = 'createCoin';
-  const callArgs = {
-    ...metadataResult.createMetadataParameters,
-    creator: account.address,
-    platformReferrer: account.address,
-    ...(agentWalletAddress ? { payoutRecipientOverride: agentWalletAddress as Address } : {}),
-    currency: CreateConstants.ContentCoinCurrencies.ETH,
-    startingMarketCap: CreateConstants.StartingMarketCaps.LOW,
-    chainId: base.id,
-  };
-  console.log(`[zora] step=createCoin, creator=${callArgs.creator}, symbol=${callArgs.symbol}`);
+    .upload(createZoraUploaderForCreator(account.address));
 
   const result = await createCoin({
-    call: callArgs,
+    call: {
+      ...metadataResult.createMetadataParameters,
+      creator: account.address,
+      platformReferrer: account.address,
+      ...(agentWalletAddress ? { payoutRecipientOverride: agentWalletAddress as Address } : {}),
+      currency: CreateConstants.ContentCoinCurrencies.ETH,
+      startingMarketCap: CreateConstants.StartingMarketCaps.LOW,
+      chainId: base.id,
+    },
     walletClient,
     publicClient,
   });

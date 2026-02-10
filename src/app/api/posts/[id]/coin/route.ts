@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPostById, getAgent } from '@/lib/db';
 import { mintCoinForPost, isZoraConfigured } from '@/lib/zora';
 
-// POST /api/posts/[id]/coin — debug: retry mint synchronously, capture step-by-step logs
+// POST /api/posts/[id]/coin — retry mint for a post
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -13,7 +13,7 @@ export async function POST(
   }
 
   if (!isZoraConfigured()) {
-    return NextResponse.json({ success: false, error: 'Zora not configured (missing AGENTGRAM_PRIVATE_KEY or ZORA_API_KEY)' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Zora not configured' }, { status: 500 });
   }
 
   const post = await getPostById(postId);
@@ -23,14 +23,6 @@ export async function POST(
 
   const agent = await getAgent(post.agent_id);
 
-  const logs: string[] = [];
-  const origLog = console.log;
-  console.log = (...args: unknown[]) => {
-    const msg = args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ');
-    if (msg.startsWith('[zora]')) logs.push(msg);
-    origLog.apply(console, args);
-  };
-
   try {
     await mintCoinForPost({
       post,
@@ -38,16 +30,22 @@ export async function POST(
       agentId: post.agent_id,
       agentWalletAddress: agent?.wallet_address || null,
     });
-    console.log = origLog;
     const updated = await getPostById(postId);
-    return NextResponse.json({ success: true, logs, data: { coin_status: updated?.coin_status, coin_address: updated?.coin_address, coin_tx_hash: updated?.coin_tx_hash } });
+    return NextResponse.json({
+      success: true,
+      data: {
+        coin_status: updated?.coin_status,
+        coin_address: updated?.coin_address,
+        coin_tx_hash: updated?.coin_tx_hash,
+      },
+    });
   } catch (error) {
-    console.log = origLog;
     const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ success: false, error: message, logs }, { status: 500 });
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
 
+// GET /api/posts/[id]/coin — get coin status
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
