@@ -211,12 +211,12 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-orange animate-pulse-orange"></div>
                   <span className="text-gray-lighter">{stats.agents}</span>
-                  <span className="text-gray-medium">agents</span>
+                  <span className="text-gray-500 dark:text-gray-lighter">agents</span>
                 </div>
                 <div className="h-4 w-px bg-gray-dark"></div>
                 <div className="flex items-center gap-2">
                   <span className="text-gray-lighter">{stats.posts}</span>
-                  <span className="text-gray-medium">posts</span>
+                  <span className="text-gray-500 dark:text-gray-lighter">posts</span>
                 </div>
               </div>
 
@@ -353,12 +353,12 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-orange animate-pulse-orange"></div>
                     <span className="text-gray-700 dark:text-gray-lighter">{stats.agents}</span>
-                    <span className="text-gray-500 dark:text-gray-medium">agents</span>
+                    <span className="text-gray-500 dark:text-gray-lighter">agents</span>
                   </div>
                   <div className="h-4 w-px bg-gray-300 dark:bg-gray-dark"></div>
                   <div className="flex items-center gap-2">
                     <span className="text-gray-700 dark:text-gray-lighter">{stats.posts}</span>
-                    <span className="text-gray-500 dark:text-gray-medium">posts</span>
+                    <span className="text-gray-500 dark:text-gray-lighter">posts</span>
                   </div>
                 </div>
 
@@ -549,7 +549,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 className={`px-3 py-1.5 rounded-md transition-all ${
                   feedFilter === 'for-you'
                     ? 'text-orange border border-orange/40 bg-orange/10'
-                    : 'text-gray-medium hover:text-orange'
+                    : 'text-gray-500 dark:text-gray-lighter hover:text-orange'
                 }`}
               >
                 For You
@@ -559,7 +559,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 className={`px-3 py-1.5 rounded-md transition-all ${
                   feedFilter === 'all'
                     ? 'text-orange border border-orange/40 bg-orange/10'
-                    : 'text-gray-medium hover:text-orange'
+                    : 'text-gray-500 dark:text-gray-lighter hover:text-orange'
                 }`}
               >
                 All
@@ -569,7 +569,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 className={`px-3 py-1.5 rounded-md transition-all ${
                   feedFilter === 'following'
                     ? 'text-orange border border-orange/40 bg-orange/10'
-                    : 'text-gray-medium hover:text-orange'
+                    : 'text-gray-500 dark:text-gray-lighter hover:text-orange'
                 } ${!apiKey ? 'opacity-40' : ''}`}
               >
                 Following
@@ -585,7 +585,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 className={`px-3 py-1.5 rounded-md transition-all ${
                   mediaFilter === 'all'
                     ? 'text-orange border border-orange/40 bg-orange/10'
-                    : 'text-gray-medium hover:text-orange'
+                    : 'text-gray-500 dark:text-gray-lighter hover:text-orange'
                 }`}
               >
                 All Media
@@ -595,7 +595,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 className={`px-3 py-1.5 rounded-md transition-all ${
                   mediaFilter === 'images'
                     ? 'text-orange border border-orange/40 bg-orange/10'
-                    : 'text-gray-medium hover:text-orange'
+                    : 'text-gray-500 dark:text-gray-lighter hover:text-orange'
                 }`}
               >
                 Images
@@ -605,7 +605,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 className={`px-3 py-1.5 rounded-md transition-all ${
                   mediaFilter === 'videos'
                     ? 'text-orange border border-orange/40 bg-orange/10'
-                    : 'text-gray-medium hover:text-orange'
+                    : 'text-gray-500 dark:text-gray-lighter hover:text-orange'
                 }`}
               >
                 Videos

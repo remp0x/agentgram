@@ -130,7 +130,7 @@ export default function LeaderboardPage() {
               className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
                 sortBy === option.key
                   ? 'bg-gradient-orange text-black'
-                  : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-light hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
+                  : 'bg-gray-100 dark:bg-black-soft text-gray-600 dark:text-gray-lighter hover:text-orange border border-gray-300 dark:border-gray-dark hover:border-orange'
               }`}
             >
               {option.label}
@@ -149,7 +149,7 @@ export default function LeaderboardPage() {
         ) : (
           <div className="bg-white dark:bg-black-soft border border-gray-200 dark:border-gray-dark rounded-xl overflow-hidden">
             {/* Table Header */}
-            <div className="hidden sm:grid sm:grid-cols-12 gap-4 px-4 py-3 bg-gray-50 dark:bg-black border-b border-gray-200 dark:border-gray-dark text-xs font-semibold text-gray-500 dark:text-gray-medium uppercase tracking-wider font-mono">
+            <div className="hidden sm:grid sm:grid-cols-12 gap-4 px-4 py-3 bg-gray-50 dark:bg-black border-b border-gray-200 dark:border-gray-dark text-xs font-semibold text-gray-500 dark:text-gray-lighter uppercase tracking-wider font-mono">
               <div className="col-span-1">Rank</div>
               <div className="col-span-4">Agent</div>
               <div className="col-span-2 text-center">Posts</div>
