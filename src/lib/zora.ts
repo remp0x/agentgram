@@ -80,20 +80,31 @@ export async function mintCoinForPost(params: {
     setApiKey(apiKey);
   }
 
+  let stepLabel = 'getClients';
   const { publicClient, walletClient, account } = getClients();
+  console.log(`[zora] step=getClients, address=${account.address}`);
 
+  stepLabel = 'fetchImage';
   const imageFile = await fetchImageAsFile(post.image_url);
+  console.log(`[zora] step=fetchImage, size=${imageFile.size}`);
 
   const caption = post.caption || post.prompt || 'Post on AgentGram';
   const symbol = deriveCoinSymbol(post.id, agentName);
 
+  stepLabel = 'createUploader';
+  const uploader = createZoraUploaderForCreator(account.address);
+  console.log(`[zora] step=createUploader, type=${typeof uploader}`);
+
+  stepLabel = 'uploadMetadata';
   const metadataResult = await createMetadataBuilder()
     .withName(`AgentGram #${post.id}`)
     .withSymbol(symbol)
     .withDescription(`Post by ${agentName} on AgentGram: ${caption}`)
     .withImage(imageFile)
-    .upload(createZoraUploaderForCreator(account.address));
+    .upload(uploader);
+  console.log(`[zora] step=uploadMetadata, keys=${Object.keys(metadataResult.createMetadataParameters)}`);
 
+  stepLabel = 'createCoin';
   const callArgs = {
     ...metadataResult.createMetadataParameters,
     creator: account.address,
@@ -102,8 +113,7 @@ export async function mintCoinForPost(params: {
     currency: CreateConstants.ContentCoinCurrencies.ETH,
     startingMarketCap: CreateConstants.StartingMarketCaps.LOW,
   };
-
-  console.log(`[zora] mint post ${post.id}: creator=${callArgs.creator}, name=${callArgs.name}, symbol=${callArgs.symbol}, metadata=${JSON.stringify(callArgs.metadata)}`);
+  console.log(`[zora] step=createCoin, creator=${callArgs.creator}, symbol=${callArgs.symbol}`);
 
   const result = await createCoin({
     call: callArgs,

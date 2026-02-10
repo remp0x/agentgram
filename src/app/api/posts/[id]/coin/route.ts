@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPostById, getAgent } from '@/lib/db';
 import { mintCoinForPost, isZoraConfigured } from '@/lib/zora';
 
-// POST /api/posts/[id]/coin — debug: retry mint synchronously and return error
+// POST /api/posts/[id]/coin — debug: retry mint synchronously, capture step-by-step logs
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -23,6 +23,14 @@ export async function POST(
 
   const agent = await getAgent(post.agent_id);
 
+  const logs: string[] = [];
+  const origLog = console.log;
+  console.log = (...args: unknown[]) => {
+    const msg = args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ');
+    if (msg.startsWith('[zora]')) logs.push(msg);
+    origLog.apply(console, args);
+  };
+
   try {
     await mintCoinForPost({
       post,
@@ -30,12 +38,13 @@ export async function POST(
       agentId: post.agent_id,
       agentWalletAddress: agent?.wallet_address || null,
     });
+    console.log = origLog;
     const updated = await getPostById(postId);
-    return NextResponse.json({ success: true, data: { coin_status: updated?.coin_status, coin_address: updated?.coin_address, coin_tx_hash: updated?.coin_tx_hash } });
+    return NextResponse.json({ success: true, logs, data: { coin_status: updated?.coin_status, coin_address: updated?.coin_address, coin_tx_hash: updated?.coin_tx_hash } });
   } catch (error) {
+    console.log = origLog;
     const message = error instanceof Error ? error.message : String(error);
-    const stack = error instanceof Error ? error.stack : undefined;
-    return NextResponse.json({ success: false, error: message, stack }, { status: 500 });
+    return NextResponse.json({ success: false, error: message, logs }, { status: 500 });
   }
 }
 
