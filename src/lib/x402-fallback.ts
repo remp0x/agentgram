@@ -2,17 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import { useFacilitator } from 'x402/verify';
-import { decodePayment } from 'x402/schemes';
+import { exact } from 'x402/schemes';
 import {
   processPriceToAtomicAmount,
   findMatchingPaymentRequirements,
   toJsonSafe,
 } from 'x402/shared';
-import { settleResponseHeader } from 'x402/types';
+import { SupportedEVMNetworks } from 'x402/types';
+import { safeBase64Encode } from 'x402/shared';
 import type {
   FacilitatorConfig,
   RouteConfig,
   PaymentRequirements,
+  Network,
 } from 'x402/types';
 
 type Resource = `${string}://${string}`;
@@ -38,25 +40,37 @@ function buildPaymentRequirements(
   payTo: Address,
   resource: string,
   routeConfig: RouteConfig,
+  method: string,
 ): PaymentRequirements[] {
   const result = processPriceToAtomicAmount(routeConfig.price, routeConfig.network);
   if ('error' in result) {
     throw new Error(`x402: invalid price config — ${result.error}`);
   }
 
+  if (!SupportedEVMNetworks.includes(routeConfig.network as Network)) {
+    throw new Error(`x402: unsupported network — ${routeConfig.network}`);
+  }
+
   return [{
     scheme: 'exact' as const,
     network: routeConfig.network,
     maxAmountRequired: result.maxAmountRequired,
-    asset: typeof result.asset === 'object' && 'address' in result.asset
-      ? result.asset.address
-      : String(result.asset),
+    asset: getAddress(result.asset.address),
     payTo: getAddress(payTo),
     resource,
     description: routeConfig.config?.description ?? '',
     mimeType: routeConfig.config?.mimeType ?? 'application/json',
-    maxTimeoutSeconds: routeConfig.config?.maxTimeoutSeconds ?? 60,
-    ...(routeConfig.config?.outputSchema ? { outputSchema: routeConfig.config.outputSchema } : {}),
+    maxTimeoutSeconds: routeConfig.config?.maxTimeoutSeconds ?? 300,
+    outputSchema: {
+      input: {
+        type: 'http',
+        method,
+        discoverable: true,
+        ...routeConfig.config?.inputSchema,
+      },
+      output: routeConfig.config?.outputSchema,
+    },
+    extra: 'eip712' in result.asset ? result.asset.eip712 : undefined,
   }];
 }
 
@@ -82,8 +96,9 @@ export function withX402Fallback<T = unknown>(
       ? await routeConfig(request)
       : routeConfig;
 
+    const method = request.method.toUpperCase();
     const resource = `${request.nextUrl.protocol}//${request.nextUrl.host}${request.nextUrl.pathname}` as Resource;
-    const requirements = buildPaymentRequirements(payTo, resource, resolvedConfig);
+    const requirements = buildPaymentRequirements(payTo, resource, resolvedConfig, method);
 
     const paymentHeader = request.headers.get('X-PAYMENT');
     if (!paymentHeader) {
@@ -92,7 +107,8 @@ export function withX402Fallback<T = unknown>(
 
     let payment;
     try {
-      payment = decodePayment(paymentHeader);
+      payment = exact.evm.decodePayment(paymentHeader);
+      payment.x402Version = 1;
     } catch (err) {
       console.warn('x402: failed to decode X-PAYMENT header:', err instanceof Error ? err.message : err);
       return new NextResponse(
@@ -154,7 +170,12 @@ export function withX402Fallback<T = unknown>(
         console.log(`x402 facilitator [${url}]: payment settled (tx: ${settleResult.transaction})`);
 
         const response = await handler(request) as NextResponse;
-        response.headers.set('X-PAYMENT-RESPONSE', settleResponseHeader(settleResult));
+        response.headers.set('X-PAYMENT-RESPONSE', safeBase64Encode(JSON.stringify({
+          success: true,
+          transaction: settleResult.transaction,
+          network: settleResult.network,
+          payer: settleResult.payer,
+        })));
         return response;
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
