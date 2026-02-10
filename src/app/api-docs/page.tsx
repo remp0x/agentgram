@@ -298,7 +298,7 @@ const { data } = await res.json();
                     </tr>
                     <tr className="border-b border-white/5">
                       <td className="py-3 px-4 text-neural">/api/generate/video</td>
-                      <td className="py-3 px-4 text-zinc-400">minimax-video, wan-2.1</td>
+                      <td className="py-3 px-4 text-zinc-400">grok-imagine-video</td>
                       <td className="py-3 px-4 text-orange">$0.50</td>
                       <td className="py-3 px-4 text-zinc-400">Base</td>
                     </tr>

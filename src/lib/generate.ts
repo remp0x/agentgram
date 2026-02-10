@@ -1,5 +1,3 @@
-import Replicate from 'replicate';
-
 interface ImageModelConfig {
   apiUrl: string;
   apiModel: string;
@@ -24,11 +22,21 @@ const IMAGE_MODELS: Record<string, ImageModelConfig> = {
 
 const DEFAULT_IMAGE_MODEL = 'grok-2-image';
 
-const SUPPORTED_VIDEO_MODELS: Record<string, string> = {
-  'minimax-video': 'minimax/video-01',
-  'wan-2.1': 'wan-video/wan-2.1-t2v',
+interface VideoModelConfig {
+  apiUrl: string;
+  envKey: string;
+}
+
+const SUPPORTED_VIDEO_MODELS: Record<string, VideoModelConfig> = {
+  'grok-imagine-video': {
+    apiUrl: 'https://api.x.ai/v1/videos/generations',
+    envKey: 'XAI_API_KEY',
+  },
 };
-const DEFAULT_VIDEO_MODEL = 'minimax-video';
+const DEFAULT_VIDEO_MODEL = 'grok-imagine-video';
+
+const VIDEO_POLL_INTERVAL_MS = 3000;
+const VIDEO_POLL_TIMEOUT_MS = 120_000;
 
 export interface ImageGenerationResult {
   url: string;
@@ -120,50 +128,64 @@ function resolveAspectRatio(width?: number, height?: number): string | undefined
   return '1:1';
 }
 
-function getReplicate(): Replicate {
-  const token = process.env.REPLICATE_API_TOKEN;
-  if (!token) {
-    throw new Error('REPLICATE_API_TOKEN env var is required for video generation');
-  }
-  return new Replicate({ auth: token });
-}
-
 export async function generateVideo(
   prompt: string,
   model?: string,
   options?: { duration?: number }
 ): Promise<VideoGenerationResult> {
   const modelKey = model && model in SUPPORTED_VIDEO_MODELS ? model : DEFAULT_VIDEO_MODEL;
-  const replicateModel = SUPPORTED_VIDEO_MODELS[modelKey];
-  const replicate = getReplicate();
+  const config = SUPPORTED_VIDEO_MODELS[modelKey];
 
-  const input: Record<string, unknown> = { prompt };
-  if (options?.duration) input.duration = options.duration;
-
-  const output = await replicate.run(
-    replicateModel as `${string}/${string}`,
-    { input }
-  );
-
-  const url = extractUrl(output);
-  if (!url) {
-    throw new Error('Generation returned no output');
+  const apiKey = process.env[config.envKey];
+  if (!apiKey) {
+    throw new Error(`${config.envKey} env var is required for ${modelKey}`);
   }
 
-  return { url, model: modelKey };
-}
+  const body: Record<string, unknown> = {
+    prompt,
+    model: modelKey,
+  };
+  if (options?.duration) body.duration = options.duration;
 
-function extractUrl(output: unknown): string | null {
-  if (typeof output === 'string') return output;
-  if (output && typeof output === 'object' && 'url' in output) {
-    return (output as { url: string }).url;
+  const createRes = await fetch(config.apiUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!createRes.ok) {
+    const text = await createRes.text();
+    throw new Error(`${modelKey} API error (${createRes.status}): ${text}`);
   }
-  if (Array.isArray(output) && output.length > 0) {
-    const first = output[0];
-    if (typeof first === 'string') return first;
-    if (first && typeof first === 'object' && 'url' in first) {
-      return (first as { url: string }).url;
+
+  const { request_id } = (await createRes.json()) as { request_id: string };
+  if (!request_id) {
+    throw new Error(`${modelKey} returned no request_id`);
+  }
+
+  const pollUrl = `https://api.x.ai/v1/videos/${request_id}`;
+  const deadline = Date.now() + VIDEO_POLL_TIMEOUT_MS;
+
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, VIDEO_POLL_INTERVAL_MS));
+
+    const pollRes = await fetch(pollUrl, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+
+    if (!pollRes.ok) {
+      const text = await pollRes.text();
+      throw new Error(`${modelKey} poll error (${pollRes.status}): ${text}`);
+    }
+
+    const pollData = (await pollRes.json()) as { video?: { url?: string } };
+    if (pollData.video?.url) {
+      return { url: pollData.video.url, model: modelKey };
     }
   }
-  return null;
+
+  throw new Error(`${modelKey} generation timed out after ${VIDEO_POLL_TIMEOUT_MS / 1000}s`);
 }

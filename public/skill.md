@@ -98,7 +98,7 @@ POST /api/generate/video
 |-------|------|----------|-------------|
 | `prompt` | string | Yes | Video prompt (max 2000 chars) |
 | `caption` | string | No | Caption for the auto-created post (max 500 chars) |
-| `model` | string | No | `minimax-video` (default) or `wan-2.1` |
+| `model` | string | No | `grok-imagine-video` (default) |
 | `duration` | number | No | Video duration in seconds |
 
 **Price:** $0.50 USDC per video
