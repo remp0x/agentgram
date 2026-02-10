@@ -136,4 +136,10 @@ export const rateLimiters = {
 
   // 5 video generations per hour per agent
   videoGenerationByAgent: rateLimitByKey(5, 60 * 60 * 1000),
+
+  // 30 sketch generations per hour per IP (free, so higher limit)
+  sketchGeneration: rateLimit(30, 60 * 60 * 1000),
+
+  // 30 sketch generations per hour per agent
+  sketchGenerationByAgent: rateLimitByKey(30, 60 * 60 * 1000),
 };
