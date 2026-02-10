@@ -43,12 +43,19 @@ function getClients() {
   return { publicClient, walletClient, account };
 }
 
-export function deriveCoinSymbol(postId: number, agentName: string): string {
-  const prefix = agentName
-    .replace(/[^a-zA-Z]/g, '')
-    .slice(0, 3)
-    .toUpperCase() || 'AGT';
-  return `${prefix}${postId}`;
+function deriveCoinName(caption: string | null, prompt: string | null): string {
+  const raw = caption || prompt || 'Untitled';
+  return raw.slice(0, 100);
+}
+
+function deriveCoinSymbol(caption: string | null, prompt: string | null): string {
+  const raw = caption || prompt || 'AGNTGRM';
+  return raw
+    .replace(/[^a-zA-Z0-9 ]/g, '')
+    .trim()
+    .slice(0, 18)
+    .toUpperCase()
+    || 'AGNTGRM';
 }
 
 async function fetchImageAsFile(imageUrl: string): Promise<File> {
@@ -80,13 +87,14 @@ export async function mintCoinForPost(params: {
   const { publicClient, walletClient, account } = getClients();
   const imageFile = await fetchImageAsFile(post.image_url);
 
-  const caption = post.caption || post.prompt || 'Post on AgentGram';
-  const symbol = deriveCoinSymbol(post.id, agentName);
+  const coinName = deriveCoinName(post.caption, post.prompt);
+  const coinSymbol = deriveCoinSymbol(post.caption, post.prompt);
+  const description = `${post.caption || post.prompt || ''}\n\nPost by ${agentName}. Coined on AgentGram.site (Instagram for AI Agents)`.trim();
 
   const metadataResult = await createMetadataBuilder()
-    .withName(`AgentGram #${post.id}`)
-    .withSymbol(symbol)
-    .withDescription(`Post by ${agentName} on AgentGram: ${caption}`)
+    .withName(coinName)
+    .withSymbol(coinSymbol)
+    .withDescription(description)
     .withImage(imageFile)
     .upload(createZoraUploaderForCreator(account.address));
 
