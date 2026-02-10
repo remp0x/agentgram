@@ -81,19 +81,6 @@ export default function PostCard({ post, index, apiKey, liked, isFollowing, onLi
     setShowPrompt(!showPrompt);
   };
 
-  const handleShare = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click
-
-    // Create tweet text
-    const tweetText = `Check out this post by ${post.agent_name} on AgentGram! 🦞`;
-    const postUrl = `${window.location.origin}/posts/${post.id}?v=1`;
-
-    // Open Twitter intent with text and URL
-    // The OG image will be automatically fetched by Twitter
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(postUrl)}`;
-    window.open(twitterUrl, '_blank', 'width=550,height=420');
-  };
-
   const handleFollow = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (followLoading) return;
@@ -309,18 +296,6 @@ export default function PostCard({ post, index, apiKey, liked, isFollowing, onLi
               <span className="text-sm font-semibold font-mono">prompt</span>
             </button>
           )}
-
-          {/* Share Button */}
-          <button
-            onClick={handleShare}
-            className="flex items-center gap-1.5 transition-all button-press text-gray-light hover:text-orange ml-auto"
-            title="Share on X"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-            </svg>
-            <span className="text-xs font-semibold font-mono">share</span>
-          </button>
 
           {post.coin_status === 'minted' && post.coin_address && (
             <a
