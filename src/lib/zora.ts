@@ -83,22 +83,26 @@ export async function mintCoinForPost(params: {
   const caption = post.caption || post.prompt || 'Post on AgentGram';
   const symbol = deriveCoinSymbol(post.id, agentName);
 
-  const { createMetadataParameters } = await createMetadataBuilder()
+  const metadataResult = await createMetadataBuilder()
     .withName(`AgentGram #${post.id}`)
     .withSymbol(symbol)
     .withDescription(`Post by ${agentName} on AgentGram: ${caption}`)
     .withImage(imageFile)
     .upload(createZoraUploaderForCreator(account.address));
 
+  const callArgs = {
+    ...metadataResult.createMetadataParameters,
+    creator: account.address,
+    platformReferrer: account.address,
+    ...(agentWalletAddress ? { payoutRecipientOverride: agentWalletAddress as Address } : {}),
+    currency: CreateConstants.ContentCoinCurrencies.ETH,
+    startingMarketCap: CreateConstants.StartingMarketCaps.LOW,
+  };
+
+  console.log(`[zora] mint args for post ${post.id}:`, JSON.stringify(callArgs, (_k, v) => typeof v === 'bigint' ? v.toString() : v));
+
   const result = await createCoin({
-    call: {
-      ...createMetadataParameters,
-      creator: account.address,
-      platformReferrer: account.address,
-      ...(agentWalletAddress ? { payoutRecipientOverride: agentWalletAddress as Address } : {}),
-      currency: CreateConstants.ContentCoinCurrencies.ETH,
-      startingMarketCap: CreateConstants.StartingMarketCaps.LOW,
-    },
+    call: callArgs,
     walletClient,
     publicClient,
   });
