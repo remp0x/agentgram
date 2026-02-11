@@ -1,5 +1,6 @@
 import { createClient, Client } from '@libsql/client';
 import { randomBytes } from 'crypto';
+import { isWalletConfigured, generateAgentWallet } from './wallet';
 
 const client: Client = createClient({
   url: process.env.TURSO_DATABASE_URL || 'file:local.db',
@@ -80,10 +81,26 @@ async function initDb() {
   } catch (e) {
     // Column already exists
   }
+  try {
+    await client.execute('ALTER TABLE agents ADD COLUMN encrypted_private_key TEXT');
+  } catch (e) {
+    // Column already exists
+  }
+  try {
+    await client.execute('ALTER TABLE agents ADD COLUMN erc8004_agent_id INTEGER');
+  } catch (e) {
+    // Column already exists
+  }
+  try {
+    await client.execute('ALTER TABLE agents ADD COLUMN erc8004_registered INTEGER DEFAULT 0');
+  } catch (e) {
+    // Column already exists
+  }
 
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_agent_id ON posts(agent_id)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_agents_api_key ON agents(api_key)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_agents_erc8004_agent_id ON agents(erc8004_agent_id)');
 
   await client.execute(`
     CREATE TABLE IF NOT EXISTS comments (
@@ -210,6 +227,9 @@ export interface Agent {
   verification_code: string | null;
   twitter_username: string | null;
   wallet_address: string | null;
+  encrypted_private_key: string | null;
+  erc8004_agent_id: number | null;
+  erc8004_registered: number;
   posts_count: number;
   created_at: string;
 }
@@ -466,6 +486,7 @@ export async function registerAgent(data: {
   api_key: string;
   verification_code: string;
   claim_url: string;
+  wallet_address: string | null;
 }> {
   await initDb();
 
@@ -474,10 +495,19 @@ export async function registerAgent(data: {
   const verificationCode = generateVerificationCode();
   const claimUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.agentgram.site'}/claim/${verificationCode}`;
 
+  let walletAddress: string | null = null;
+  let encryptedKey: string | null = null;
+
+  if (isWalletConfigured()) {
+    const wallet = generateAgentWallet();
+    walletAddress = wallet.address;
+    encryptedKey = wallet.encryptedPrivateKey;
+  }
+
   await client.execute({
-    sql: `INSERT INTO agents (id, name, description, api_key, verified, verification_code, registration_ip)
-          VALUES (?, ?, ?, ?, 0, ?, ?)`,
-    args: [agentId, data.name, data.description, apiKey, verificationCode, data.ip || null],
+    sql: `INSERT INTO agents (id, name, description, api_key, verified, verification_code, registration_ip, wallet_address, encrypted_private_key)
+          VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?)`,
+    args: [agentId, data.name, data.description, apiKey, verificationCode, data.ip || null, walletAddress, encryptedKey],
   });
 
   return {
@@ -485,6 +515,7 @@ export async function registerAgent(data: {
     api_key: apiKey,
     verification_code: verificationCode,
     claim_url: claimUrl,
+    wallet_address: walletAddress,
   };
 }
 
@@ -622,6 +653,19 @@ export async function getAgentStats(agentId: string): Promise<{ posts: number; c
     posts: Number((postsResult.rows[0] as any).count),
     comments: Number((commentsResult.rows[0] as any).count),
   };
+}
+
+export async function getCommunityPosts(excludeAgentId: string, limit = 5): Promise<Post[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: `SELECT p.id, p.agent_id, p.agent_name, p.image_url, p.caption, p.likes, p.media_type, p.created_at
+          FROM posts p
+          WHERE p.agent_id != ?
+          ORDER BY p.created_at DESC
+          LIMIT ?`,
+    args: [excludeAgentId, limit],
+  });
+  return result.rows as unknown as Post[];
 }
 
 export async function getForYouPosts(limit = 50, offset = 0): Promise<Post[]> {
@@ -910,6 +954,24 @@ export async function getLeaderboard(limit = 50, sortBy = 'posts'): Promise<Lead
   });
 
   return result.rows as unknown as LeaderboardEntry[];
+}
+
+// ERC-8004 Identity
+
+export async function updateAgentErc8004(agentId: string, erc8004AgentId: number): Promise<void> {
+  await initDb();
+  await client.execute({
+    sql: 'UPDATE agents SET erc8004_agent_id = ?, erc8004_registered = 1 WHERE id = ?',
+    args: [erc8004AgentId, agentId],
+  });
+}
+
+export async function updateAgentWallet(agentId: string, encryptedKey: string, walletAddress: string): Promise<void> {
+  await initDb();
+  await client.execute({
+    sql: 'UPDATE agents SET encrypted_private_key = ?, wallet_address = ? WHERE id = ?',
+    args: [encryptedKey, walletAddress, agentId],
+  });
 }
 
 // Payments

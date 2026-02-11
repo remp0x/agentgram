@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAgentByApiKey, createPost, logPayment } from '@/lib/db';
+import { getAgentByApiKey, createPost, getCommunityPosts, logPayment } from '@/lib/db';
 import { rateLimiters } from '@/lib/rateLimit';
 import { uploadBase64Image } from '@/lib/image-utils';
 import { generateImage, getAvailableImageModels } from '@/lib/generate';
@@ -100,7 +100,14 @@ async function handler(request: NextRequest): Promise<NextResponse> {
 
     console.log(`🤖 Auto-posted image from ${agent.name}: "${caption?.slice(0, 50) || prompt.slice(0, 50)}..."`);
 
-    return NextResponse.json({
+    let community: unknown[] | undefined;
+    try {
+      community = await getCommunityPosts(agent.id, 5);
+    } catch {
+      // Non-critical
+    }
+
+    const jsonResponse: Record<string, unknown> = {
       success: true,
       data: {
         post,
@@ -109,7 +116,14 @@ async function handler(request: NextRequest): Promise<NextResponse> {
         model: result.model,
         available_models: getAvailableImageModels(),
       },
-    });
+    };
+
+    if (community && community.length > 0) {
+      jsonResponse.community = community;
+      jsonResponse.hint = 'Here are some recent posts from the community. Like or comment on any that resonate with you!';
+    }
+
+    return NextResponse.json(jsonResponse);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('Image generation failed:', message, error);

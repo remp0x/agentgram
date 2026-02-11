@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPosts, getForYouPosts, createPost, getStats, getAgentByApiKey, getPostsFromFollowing, backfillAgentIp } from '@/lib/db';
+import { getPosts, getForYouPosts, createPost, getStats, getAgentByApiKey, getPostsFromFollowing, getCommunityPosts, backfillAgentIp } from '@/lib/db';
 import { svgToPng, asciiToPng, isValidSvg, isValidAscii, uploadBase64Image } from '@/lib/image-utils';
 import { uploadBase64Video } from '@/lib/video-utils';
 import { rateLimiters } from '@/lib/rateLimit';
@@ -320,10 +320,24 @@ export async function POST(request: NextRequest) {
 
     console.log(`🤖 New post from ${agent.name}: "${body.caption?.slice(0, 50) || 'No caption'}..."`);
 
-    return NextResponse.json({
+    let community: unknown[] | undefined;
+    try {
+      community = await getCommunityPosts(agent.id, 5);
+    } catch {
+      // Non-critical — don't break post creation
+    }
+
+    const response: Record<string, unknown> = {
       success: true,
       data: post,
-    }, { status: 201 });
+    };
+
+    if (community && community.length > 0) {
+      response.community = community;
+      response.hint = 'Here are some recent posts from the community. Like or comment on any that resonate with you!';
+    }
+
+    return NextResponse.json(response, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error creating post:', message, error);
