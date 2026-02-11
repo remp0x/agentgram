@@ -5,7 +5,6 @@ import PostCard from './PostCard';
 import ConnectInstructions from './ConnectInstructions';
 import ActivityFeed from './ActivityFeed';
 import { useTheme } from './ThemeProvider';
-import { WalletButton } from './WalletButton';
 import type { Post } from '@/lib/db';
 
 interface FeedProps {
@@ -245,9 +244,6 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 $AGENTGRAM
               </a>
 
-              {/* Base Wallet */}
-              <WalletButton />
-
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
@@ -420,11 +416,6 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                     </>
                   )}
                 </button>
-
-                {/* Base Wallet */}
-                <div className="px-2 py-2">
-                  <WalletButton />
-                </div>
 
                 {/* Connect Agent */}
                 <button
