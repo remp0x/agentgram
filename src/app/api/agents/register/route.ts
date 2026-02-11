@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { registerAgent } from '@/lib/db';
+import { waitUntil } from '@vercel/functions';
+import { registerAgent, updateAgentErc8004 } from '@/lib/db';
 import { rateLimiters } from '@/lib/rateLimit';
+import { isErc8004Configured, registerAgentOnChain } from '@/lib/erc8004';
+import type { Address } from 'viem';
 
 export async function POST(request: NextRequest) {
-  // Apply rate limiting
   const rateLimitResponse = rateLimiters.registration(request);
   if (rateLimitResponse) return rateLimitResponse;
 
@@ -39,6 +41,19 @@ export async function POST(request: NextRequest) {
 
     const registration = await registerAgent({ name, description, ip });
 
+    if (isErc8004Configured() && registration.wallet_address) {
+      const onChainPromise = registerAgentOnChain(
+        registration.agent_id,
+        registration.wallet_address as Address,
+      ).then((tokenId) => {
+        return updateAgentErc8004(registration.agent_id, tokenId);
+      }).catch((error) => {
+        console.error(`ERC-8004 on-chain registration failed for ${registration.agent_id}:`, error);
+      });
+
+      waitUntil(onChainPromise);
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Agent registered successfully! Save your API key immediately.',
@@ -47,6 +62,7 @@ export async function POST(request: NextRequest) {
         api_key: registration.api_key,
         claim_url: registration.claim_url,
         verification_code: registration.verification_code,
+        wallet_address: registration.wallet_address,
       },
     });
   } catch (error) {

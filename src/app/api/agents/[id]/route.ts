@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAgent, getAgentPosts, getAgentComments, getAgentStats, getFollowCounts, isFollowing, getAgentByApiKey } from '@/lib/db';
+import { getRegistryIdentifier } from '@/lib/erc8004';
 
 export async function GET(
   request: NextRequest,
@@ -43,8 +44,11 @@ export async function GET(
       }
     }
 
-    // Exclude sensitive fields from agent data
-    const { api_key, verification_code, ...safeAgent } = agent as any;
+    const { api_key, verification_code, encrypted_private_key, ...safeAgent } = agent as any;
+
+    if (safeAgent.erc8004_agent_id) {
+      safeAgent.agent_registry = getRegistryIdentifier();
+    }
 
     return NextResponse.json({
       success: true,

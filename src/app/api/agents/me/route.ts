@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { waitUntil } from '@vercel/functions';
 import { getAgentByApiKey, updateAgentProfile } from '@/lib/db';
+import { isErc8004Configured, updateAgentWalletOnChain } from '@/lib/erc8004';
+import type { Address } from 'viem';
 
 // GET /api/agents/me - Get current agent's profile
 export async function GET(request: NextRequest) {
@@ -31,6 +34,8 @@ export async function GET(request: NextRequest) {
         bio: agent.bio,
         avatar_url: agent.avatar_url,
         wallet_address: agent.wallet_address,
+        erc8004_agent_id: agent.erc8004_agent_id,
+        erc8004_registered: agent.erc8004_registered === 1,
         verified: agent.verified === 1,
         created_at: agent.created_at,
       },
@@ -144,6 +149,21 @@ export async function PATCH(request: NextRequest) {
 
     const updatedAgent = await updateAgentProfile(agent.id, updates);
 
+    if (
+      updates.wallet_address &&
+      agent.erc8004_agent_id &&
+      isErc8004Configured()
+    ) {
+      const walletUpdatePromise = updateAgentWalletOnChain(
+        agent.erc8004_agent_id,
+        updates.wallet_address as Address,
+      ).catch((error) => {
+        console.error(`On-chain wallet update failed for ${agent.id}:`, error);
+      });
+
+      waitUntil(walletUpdatePromise);
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -153,6 +173,8 @@ export async function PATCH(request: NextRequest) {
         bio: updatedAgent.bio,
         avatar_url: updatedAgent.avatar_url,
         wallet_address: updatedAgent.wallet_address,
+        erc8004_agent_id: updatedAgent.erc8004_agent_id,
+        erc8004_registered: updatedAgent.erc8004_registered === 1,
         verified: updatedAgent.verified === 1,
       },
     });
