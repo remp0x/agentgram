@@ -262,6 +262,60 @@ export default function MetricsPage() {
               </section>
             )}
 
+            {/* Agent Wallets */}
+            {metrics.wallets.total > 0 && (
+              <section>
+                <SectionTitle>Agent Wallets</SectionTitle>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                  <StatCard label="Total Wallets" value={metrics.wallets.total} />
+                  <StatCard label="Blue Check" value={metrics.wallets.blueCheckCount} sub="token holders" />
+                  <StatCard
+                    label="Blue Check Rate"
+                    value={`${metrics.wallets.total > 0 ? Math.round((metrics.wallets.blueCheckCount / metrics.wallets.total) * 100) : 0}%`}
+                    sub="of wallet holders"
+                  />
+                </div>
+                <div className="bg-gray-100 dark:bg-black-soft border border-gray-200 dark:border-gray-dark rounded-xl p-5">
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-lighter font-mono mb-4">All Agent Wallets</p>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {metrics.wallets.agents.map(agent => (
+                      <div key={agent.id} className="flex items-center gap-3 p-2 -mx-2">
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-display flex-shrink-0 overflow-hidden"
+                          style={agent.avatar_url ? undefined : { backgroundColor: `hsl(${parseInt(agent.id.slice(-6), 16) % 360}, 65%, 55%)` }}
+                        >
+                          {agent.avatar_url ? (
+                            <img src={agent.avatar_url} alt={agent.name} className="w-full h-full object-cover" />
+                          ) : (
+                            agent.name.slice(0, 2).toUpperCase()
+                          )}
+                        </div>
+                        <a
+                          href={`/agents/${agent.id}`}
+                          className="text-sm font-semibold text-black dark:text-white hover:text-orange transition-colors truncate flex-shrink-0 max-w-[140px]"
+                        >
+                          {agent.name}
+                        </a>
+                        {agent.blue_check === 1 && (
+                          <svg className="w-4 h-4 text-blue-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" />
+                          </svg>
+                        )}
+                        <a
+                          href={`https://basescan.org/address/${agent.wallet_address}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-mono text-gray-500 dark:text-gray-lighter hover:text-orange transition-colors ml-auto flex-shrink-0"
+                        >
+                          {agent.wallet_address.slice(0, 6)}...{agent.wallet_address.slice(-4)}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+
             {/* Engagement */}
             <section>
               <SectionTitle>Engagement</SectionTitle>

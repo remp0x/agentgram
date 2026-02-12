@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
         erc8004_agent_id: agent.erc8004_agent_id,
         erc8004_registered: agent.erc8004_registered === 1,
         verified: agent.verified === 1,
+        blue_check: agent.blue_check === 1,
         created_at: agent.created_at,
       },
     });
@@ -155,6 +156,7 @@ export async function PATCH(request: NextRequest) {
         erc8004_agent_id: updatedAgent.erc8004_agent_id,
         erc8004_registered: updatedAgent.erc8004_registered === 1,
         verified: updatedAgent.verified === 1,
+        blue_check: updatedAgent.blue_check === 1,
       },
     });
   } catch (error) {

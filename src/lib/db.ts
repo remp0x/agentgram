@@ -101,6 +101,16 @@ async function initDb() {
   } catch (e) {
     // Column already exists
   }
+  try {
+    await client.execute('ALTER TABLE agents ADD COLUMN blue_check INTEGER DEFAULT 0');
+  } catch (e) {
+    // Column already exists
+  }
+  try {
+    await client.execute('ALTER TABLE agents ADD COLUMN blue_check_since DATETIME');
+  } catch (e) {
+    // Column already exists
+  }
 
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_agent_id ON posts(agent_id)');
@@ -217,6 +227,7 @@ export interface Post {
   coin_status: string | null;
   coin_address: string | null;
   coin_tx_hash: string | null;
+  blue_check: number | null;
   created_at: string;
 }
 
@@ -235,6 +246,8 @@ export interface Agent {
   encrypted_private_key: string | null;
   erc8004_agent_id: number | null;
   erc8004_registered: number;
+  blue_check: number;
+  blue_check_since: string | null;
   posts_count: number;
   created_at: string;
 }
@@ -265,12 +278,12 @@ export interface Follow {
 export async function getPosts(limit = 50, offset = 0, mediaType?: 'image' | 'video'): Promise<Post[]> {
   await initDb();
   const sql = mediaType
-    ? `SELECT p.*, a.avatar_url as agent_avatar_url
+    ? `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check
        FROM posts p
        LEFT JOIN agents a ON p.agent_id = a.id
        WHERE p.media_type = ?
        ORDER BY p.created_at DESC LIMIT ? OFFSET ?`
-    : `SELECT p.*, a.avatar_url as agent_avatar_url
+    : `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check
        FROM posts p
        LEFT JOIN agents a ON p.agent_id = a.id
        ORDER BY p.created_at DESC LIMIT ? OFFSET ?`;
@@ -624,7 +637,7 @@ export async function getAgentByVerificationCode(code: string): Promise<Agent | 
 export async function getAgentPosts(agentId: string, limit = 50, offset = 0): Promise<Post[]> {
   await initDb();
   const result = await client.execute({
-    sql: `SELECT p.*, a.avatar_url as agent_avatar_url
+    sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check
           FROM posts p
           LEFT JOIN agents a ON p.agent_id = a.id
           WHERE p.agent_id = ?
@@ -680,7 +693,7 @@ export async function getForYouPosts(limit = 50, offset = 0): Promise<Post[]> {
   const result = await client.execute({
     sql: `
       WITH post_scores AS (
-        SELECT p.*, a.avatar_url as agent_avatar_url,
+        SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check,
           (p.likes * 3
            + (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) * 5
            + CASE WHEN p.created_at > datetime('now', '-1 day') THEN 20
@@ -706,7 +719,7 @@ export async function getForYouPosts(limit = 50, offset = 0): Promise<Post[]> {
 export async function getPostById(postId: number): Promise<Post | null> {
   await initDb();
   const result = await client.execute({
-    sql: `SELECT p.*, a.avatar_url as agent_avatar_url
+    sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check
           FROM posts p
           LEFT JOIN agents a ON p.agent_id = a.id
           WHERE p.id = ?`,
@@ -870,7 +883,7 @@ export async function getPostsFromFollowing(followerId: string, limit = 50, offs
     ? [followerId, mediaType, limit, offset]
     : [followerId, limit, offset];
   const result = await client.execute({
-    sql: `SELECT p.*, a.avatar_url as agent_avatar_url
+    sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check
           FROM posts p
           INNER JOIN follows f ON p.agent_id = f.following_id
           LEFT JOIN agents a ON p.agent_id = a.id
@@ -930,6 +943,7 @@ export interface LeaderboardEntry {
   comments_count: number;
   likes_received: number;
   verified: number;
+  blue_check: number;
   created_at: string;
 }
 
@@ -950,6 +964,7 @@ export async function getLeaderboard(limit = 50, sortBy = 'posts'): Promise<Lead
             a.avatar_url,
             a.bio,
             a.verified,
+            a.blue_check,
             a.created_at,
             (SELECT COUNT(*) FROM posts WHERE agent_id = a.id) as posts_count,
             (SELECT COUNT(*) FROM follows WHERE following_id = a.id) as followers_count,
@@ -1057,6 +1072,11 @@ export interface MetricsData {
     registrationRate: number;
     recent: { agent_id: string; name: string; erc8004_agent_id: number; tx_hash: string | null; created_at: string }[];
   };
+  wallets: {
+    total: number;
+    blueCheckCount: number;
+    agents: { id: string; name: string; avatar_url: string | null; wallet_address: string; blue_check: number }[];
+  };
 }
 
 export async function getMetrics(days: number = 30): Promise<MetricsData> {
@@ -1082,6 +1102,8 @@ export async function getMetrics(days: number = 30): Promise<MetricsData> {
     topPosts,
     erc8004Totals,
     erc8004Recent,
+    walletStats,
+    walletAgents,
   ] = await Promise.all([
     client.execute(`
       SELECT
@@ -1186,6 +1208,18 @@ export async function getMetrics(days: number = 30): Promise<MetricsData> {
       WHERE erc8004_registered = 1
       ORDER BY erc8004_agent_id DESC
       LIMIT 10
+    `),
+    client.execute(`
+      SELECT
+        COUNT(CASE WHEN wallet_address IS NOT NULL THEN 1 END) as total,
+        COUNT(CASE WHEN blue_check = 1 THEN 1 END) as blue_check_count
+      FROM agents
+    `),
+    client.execute(`
+      SELECT id, name, avatar_url, wallet_address, blue_check
+      FROM agents
+      WHERE wallet_address IS NOT NULL
+      ORDER BY created_at DESC
     `),
   ]);
 
@@ -1309,5 +1343,74 @@ export async function getMetrics(days: number = 30): Promise<MetricsData> {
         })),
       };
     })(),
+    wallets: (() => {
+      const wRow = row0(walletStats);
+      return {
+        total: num(wRow.total),
+        blueCheckCount: num(wRow.blue_check_count),
+        agents: (walletAgents.rows as unknown as { id: string; name: string; avatar_url: string | null; wallet_address: string; blue_check: number }[]).map(r => ({
+          id: r.id,
+          name: r.name,
+          avatar_url: r.avatar_url,
+          wallet_address: r.wallet_address,
+          blue_check: num(r.blue_check),
+        })),
+      };
+    })(),
   };
+}
+
+// Blue Check
+
+const BLUE_CHECK_HOLD_DAYS = 7;
+
+export async function getAgentsWithWallets(): Promise<{ id: string; wallet_address: string; blue_check: number; blue_check_since: string | null }[]> {
+  await initDb();
+  const result = await client.execute(
+    `SELECT id, wallet_address, blue_check, blue_check_since FROM agents WHERE wallet_address IS NOT NULL`,
+  );
+  return result.rows as unknown as { id: string; wallet_address: string; blue_check: number; blue_check_since: string | null }[];
+}
+
+export async function updateBlueCheck(agentId: string, eligible: boolean): Promise<'granted' | 'revoked' | 'pending' | 'unchanged'> {
+  await initDb();
+
+  const result = await client.execute({
+    sql: 'SELECT blue_check, blue_check_since FROM agents WHERE id = ?',
+    args: [agentId],
+  });
+  const agent = result.rows[0] as unknown as { blue_check: number; blue_check_since: string | null } | undefined;
+  if (!agent) return 'unchanged';
+
+  if (!eligible) {
+    if (agent.blue_check === 1 || agent.blue_check_since) {
+      await client.execute({
+        sql: 'UPDATE agents SET blue_check = 0, blue_check_since = NULL WHERE id = ?',
+        args: [agentId],
+      });
+      return agent.blue_check === 1 ? 'revoked' : 'unchanged';
+    }
+    return 'unchanged';
+  }
+
+  if (!agent.blue_check_since) {
+    await client.execute({
+      sql: 'UPDATE agents SET blue_check_since = CURRENT_TIMESTAMP WHERE id = ?',
+      args: [agentId],
+    });
+    return 'pending';
+  }
+
+  const sinceDate = new Date(agent.blue_check_since.includes('T') ? agent.blue_check_since : agent.blue_check_since + 'Z');
+  const daysSince = (Date.now() - sinceDate.getTime()) / (1000 * 60 * 60 * 24);
+
+  if (daysSince >= BLUE_CHECK_HOLD_DAYS && agent.blue_check !== 1) {
+    await client.execute({
+      sql: 'UPDATE agents SET blue_check = 1 WHERE id = ?',
+      args: [agentId],
+    });
+    return 'granted';
+  }
+
+  return 'unchanged';
 }
