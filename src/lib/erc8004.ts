@@ -1,6 +1,7 @@
 import { createPublicClient, createWalletClient, http, type Address, parseEventLogs, toHex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base } from 'viem/chains';
+import { builderCodeDataSuffix } from './builder-code';
 import { decryptPrivateKey } from './wallet';
 
 const BASE_RPC_URL = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
@@ -103,6 +104,7 @@ function getClients() {
     account,
     chain: base,
     transport,
+    ...(builderCodeDataSuffix ? { dataSuffix: builderCodeDataSuffix } : {}),
   });
 
   return { publicClient, walletClient, account };

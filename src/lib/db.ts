@@ -186,6 +186,11 @@ async function initDb() {
   } catch (e) {
     // Column already exists
   }
+  try {
+    await client.execute('ALTER TABLE posts ADD COLUMN coin_error TEXT DEFAULT NULL');
+  } catch (e) {
+    // Column already exists
+  }
 
   await client.execute(`
     CREATE TABLE IF NOT EXISTS payments (
@@ -227,6 +232,7 @@ export interface Post {
   coin_status: string | null;
   coin_address: string | null;
   coin_tx_hash: string | null;
+  coin_error: string | null;
   blue_check: number | null;
   created_at: string;
 }
@@ -730,11 +736,11 @@ export async function getPostById(postId: number): Promise<Post | null> {
 
 export async function updatePostCoinStatus(
   postId: number,
-  updates: { coin_status?: string; coin_address?: string; coin_tx_hash?: string },
+  updates: { coin_status?: string; coin_address?: string; coin_tx_hash?: string; coin_error?: string | null },
 ): Promise<void> {
   await initDb();
   const setClauses: string[] = [];
-  const args: (string | number)[] = [];
+  const args: (string | number | null)[] = [];
 
   if (updates.coin_status !== undefined) {
     setClauses.push('coin_status = ?');
@@ -747,6 +753,10 @@ export async function updatePostCoinStatus(
   if (updates.coin_tx_hash !== undefined) {
     setClauses.push('coin_tx_hash = ?');
     args.push(updates.coin_tx_hash);
+  }
+  if (updates.coin_error !== undefined) {
+    setClauses.push('coin_error = ?');
+    args.push(updates.coin_error);
   }
 
   if (setClauses.length === 0) return;

@@ -1,6 +1,7 @@
 import { http, createConfig } from 'wagmi';
 import { base } from 'wagmi/chains';
 import { coinbaseWallet } from 'wagmi/connectors';
+import { builderCodeDataSuffix } from './builder-code';
 
 export const wagmiConfig = createConfig({
   chains: [base],
@@ -14,4 +15,5 @@ export const wagmiConfig = createConfig({
     [base.id]: http(),
   },
   ssr: true,
+  ...(builderCodeDataSuffix ? { dataSuffix: builderCodeDataSuffix } : {}),
 });

@@ -2,6 +2,7 @@ import { waitUntil } from '@vercel/functions';
 import { createPublicClient, createWalletClient, http, type Address } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base } from 'viem/chains';
+import { builderCodeDataSuffix } from './builder-code';
 import {
   createCoin,
   createMetadataBuilder,
@@ -11,6 +12,7 @@ import {
 } from '@zoralabs/coins-sdk';
 import type { Post } from './db';
 import { updatePostCoinStatus } from './db';
+import { extractFirstFrame } from './video-utils';
 
 const BASE_RPC_URL = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
 
@@ -38,6 +40,7 @@ function getClients() {
     account,
     chain: base,
     transport,
+    ...(builderCodeDataSuffix ? { dataSuffix: builderCodeDataSuffix } : {}),
   });
 
   return { publicClient, walletClient, account };
@@ -58,15 +61,28 @@ function deriveCoinSymbol(caption: string | null, prompt: string | null): string
     || 'AGNTGRM';
 }
 
-async function fetchImageAsFile(imageUrl: string): Promise<File> {
-  const response = await fetch(imageUrl);
+async function fetchAsFile(url: string): Promise<File> {
+  const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`Failed to fetch image: ${response.status}`);
+    throw new Error(`Failed to fetch ${url}: ${response.status}`);
   }
   const blob = await response.blob();
   const contentType = response.headers.get('content-type') || 'image/png';
   const ext = contentType.includes('jpeg') || contentType.includes('jpg') ? 'jpg' : 'png';
   return new File([blob], `post.${ext}`, { type: contentType });
+}
+
+async function getCoinImageFile(post: Post): Promise<File> {
+  if (post.media_type === 'video' && post.video_url) {
+    const response = await fetch(post.video_url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch video for thumbnail: ${response.status}`);
+    }
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const thumbnailUrl = await extractFirstFrame(buffer);
+    return fetchAsFile(thumbnailUrl);
+  }
+  return fetchAsFile(post.image_url);
 }
 
 export async function mintCoinForPost(params: {
@@ -85,7 +101,7 @@ export async function mintCoinForPost(params: {
   }
 
   const { publicClient, walletClient, account } = getClients();
-  const imageFile = await fetchImageAsFile(post.image_url);
+  const imageFile = await getCoinImageFile(post);
 
   const coinName = deriveCoinName(post.caption, post.prompt);
   const coinSymbol = deriveCoinSymbol(post.caption, post.prompt);
@@ -116,6 +132,7 @@ export async function mintCoinForPost(params: {
     coin_status: 'minted',
     coin_address: result.address || undefined,
     coin_tx_hash: result.hash,
+    coin_error: null,
   });
 
   const payoutTo = agentWalletAddress || account.address;
@@ -130,9 +147,13 @@ export function triggerCoinMint(
 ): void {
   if (!isZoraConfigured()) return;
 
+  const errorMessage = (e: unknown) => e instanceof Error ? e.message : String(e);
   const mintPromise = mintCoinForPost({ post, agentName, agentId, agentWalletAddress }).catch((error) => {
     console.error(`Coin minting failed for post ${post.id}:`, error);
-    updatePostCoinStatus(post.id, { coin_status: 'failed' }).catch(console.error);
+    updatePostCoinStatus(post.id, {
+      coin_status: 'failed',
+      coin_error: errorMessage(error).slice(0, 500),
+    }).catch(console.error);
   });
 
   waitUntil(mintPromise);
