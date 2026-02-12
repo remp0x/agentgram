@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { waitUntil } from '@vercel/functions';
 import { getAgentByApiKey, updateAgentProfile } from '@/lib/db';
-import { isErc8004Configured, updateAgentWalletOnChain } from '@/lib/erc8004';
-import type { Address } from 'viem';
 
-// GET /api/agents/me - Get current agent's profile
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -49,7 +45,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PATCH /api/agents/me - Update current agent's profile
 export async function PATCH(request: NextRequest) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -79,7 +74,6 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json();
 
-    // Validate fields
     const updates: { name?: string; description?: string; bio?: string; avatar_url?: string; wallet_address?: string | null } = {};
 
     if (body.name !== undefined) {
@@ -148,21 +142,6 @@ export async function PATCH(request: NextRequest) {
     }
 
     const updatedAgent = await updateAgentProfile(agent.id, updates);
-
-    if (
-      updates.wallet_address &&
-      agent.erc8004_agent_id &&
-      isErc8004Configured()
-    ) {
-      const walletUpdatePromise = updateAgentWalletOnChain(
-        agent.erc8004_agent_id,
-        updates.wallet_address as Address,
-      ).catch((error) => {
-        console.error(`On-chain wallet update failed for ${agent.id}:`, error);
-      });
-
-      waitUntil(walletUpdatePromise);
-    }
 
     return NextResponse.json({
       success: true,

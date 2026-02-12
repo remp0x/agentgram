@@ -1,27 +1,26 @@
 import { createPublicClient, createWalletClient, http, type Address, parseEventLogs } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base } from 'viem/chains';
+import { decryptPrivateKey } from './wallet';
 
 const BASE_RPC_URL = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
 
 const REGISTRY_ABI = [
   {
     type: 'function',
-    name: 'registerWithWallet',
-    inputs: [
-      { name: 'agentURI', type: 'string' },
-      { name: 'wallet', type: 'address' },
-    ],
+    name: 'register',
+    inputs: [{ name: 'agentURI', type: 'string' }],
     outputs: [{ name: '', type: 'uint256' }],
     stateMutability: 'nonpayable',
   },
   {
     type: 'function',
-    name: 'setMetadata',
+    name: 'setAgentWallet',
     inputs: [
       { name: 'agentId', type: 'uint256' },
-      { name: 'key', type: 'string' },
-      { name: 'value', type: 'bytes' },
+      { name: 'newWallet', type: 'address' },
+      { name: 'deadline', type: 'uint256' },
+      { name: 'signature', type: 'bytes' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -35,14 +34,29 @@ const REGISTRY_ABI = [
   },
   {
     type: 'event',
-    name: 'AgentRegistered',
+    name: 'Registered',
     inputs: [
       { name: 'agentId', type: 'uint256', indexed: true },
       { name: 'agentURI', type: 'string', indexed: false },
+      { name: 'owner', type: 'address', indexed: true },
     ],
     anonymous: false,
   },
 ] as const;
+
+const EIP712_DOMAIN = {
+  name: 'AgentGram Identity',
+  version: '1',
+  chainId: 8453,
+} as const;
+
+const SET_AGENT_WALLET_TYPES = {
+  SetAgentWallet: [
+    { name: 'agentId', type: 'uint256' },
+    { name: 'newWallet', type: 'address' },
+    { name: 'deadline', type: 'uint256' },
+  ],
+} as const;
 
 export function isErc8004Configured(): boolean {
   return !!(
@@ -86,50 +100,60 @@ function getClients() {
 export async function registerAgentOnChain(
   agentId: string,
   agentWalletAddress: Address,
+  encryptedPrivateKey: string,
 ): Promise<number> {
   const { publicClient, walletClient } = getClients();
   const registryAddress = getRegistryAddress();
   const agentURI = `https://www.agentgram.site/api/agents/${agentId}/erc8004`;
 
-  const hash = await walletClient.writeContract({
+  const registerHash = await walletClient.writeContract({
     address: registryAddress,
     abi: REGISTRY_ABI,
-    functionName: 'registerWithWallet',
-    args: [agentURI, agentWalletAddress],
+    functionName: 'register',
+    args: [agentURI],
   });
 
-  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  const registerReceipt = await publicClient.waitForTransactionReceipt({ hash: registerHash });
 
   const logs = parseEventLogs({
     abi: REGISTRY_ABI,
-    eventName: 'AgentRegistered',
-    logs: receipt.logs,
+    eventName: 'Registered',
+    logs: registerReceipt.logs,
   });
 
   if (logs.length === 0) {
-    throw new Error('AgentRegistered event not found in tx receipt');
+    throw new Error('Registered event not found in tx receipt');
   }
 
-  return Number(logs[0].args.agentId);
-}
+  const tokenId = Number(logs[0].args.agentId);
 
-export async function updateAgentWalletOnChain(
-  erc8004AgentId: number,
-  newWallet: Address,
-): Promise<void> {
-  const { publicClient, walletClient } = getClients();
-  const registryAddress = getRegistryAddress();
+  const agentPrivateKey = decryptPrivateKey(encryptedPrivateKey);
+  const agentAccount = privateKeyToAccount(agentPrivateKey as `0x${string}`);
+  const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600);
 
-  const walletBytes = `0x${newWallet.slice(2).padStart(40, '0')}` as `0x${string}`;
-
-  const hash = await walletClient.writeContract({
-    address: registryAddress,
-    abi: REGISTRY_ABI,
-    functionName: 'setMetadata',
-    args: [BigInt(erc8004AgentId), 'agentWallet', walletBytes],
+  const signature = await agentAccount.signTypedData({
+    domain: { ...EIP712_DOMAIN, verifyingContract: registryAddress },
+    types: SET_AGENT_WALLET_TYPES,
+    primaryType: 'SetAgentWallet',
+    message: {
+      agentId: BigInt(tokenId),
+      newWallet: agentWalletAddress,
+      deadline,
+    },
   });
 
-  await publicClient.waitForTransactionReceipt({ hash });
+  const walletHash = await walletClient.writeContract({
+    address: registryAddress,
+    abi: REGISTRY_ABI,
+    functionName: 'setAgentWallet',
+    args: [BigInt(tokenId), agentWalletAddress, deadline, signature],
+  });
+
+  await publicClient.waitForTransactionReceipt({ hash: walletHash });
+
+  console.log(`ERC-8004: agent ${agentId} registered as token #${tokenId}, wallet set to ${agentWalletAddress}`);
+
+  return tokenId;
 }
 
 export function getRegistryIdentifier(): string {

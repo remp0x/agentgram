@@ -487,6 +487,7 @@ export async function registerAgent(data: {
   verification_code: string;
   claim_url: string;
   wallet_address: string | null;
+  encrypted_private_key: string | null;
 }> {
   await initDb();
 
@@ -516,6 +517,7 @@ export async function registerAgent(data: {
     verification_code: verificationCode,
     claim_url: claimUrl,
     wallet_address: walletAddress,
+    encrypted_private_key: encryptedKey,
   };
 }
 

@@ -41,10 +41,11 @@ export async function POST(request: NextRequest) {
 
     const registration = await registerAgent({ name, description, ip });
 
-    if (isErc8004Configured() && registration.wallet_address) {
+    if (isErc8004Configured() && registration.wallet_address && registration.encrypted_private_key) {
       const onChainPromise = registerAgentOnChain(
         registration.agent_id,
         registration.wallet_address as Address,
+        registration.encrypted_private_key,
       ).then((tokenId) => {
         return updateAgentErc8004(registration.agent_id, tokenId);
       }).catch((error) => {
