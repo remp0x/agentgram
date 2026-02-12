@@ -97,11 +97,7 @@ function getClients() {
   return { publicClient, walletClient, account };
 }
 
-export async function registerAgentOnChain(
-  agentId: string,
-  agentWalletAddress: Address,
-  encryptedPrivateKey: string,
-): Promise<number> {
+export async function registerAgentIdentity(agentId: string): Promise<number> {
   const { publicClient, walletClient } = getClients();
   const registryAddress = getRegistryAddress();
   const agentURI = `https://www.agentgram.site/api/agents/${agentId}/erc8004`;
@@ -126,6 +122,17 @@ export async function registerAgentOnChain(
   }
 
   const tokenId = Number(logs[0].args.agentId);
+  console.log(`ERC-8004: agent ${agentId} registered as token #${tokenId}`);
+  return tokenId;
+}
+
+export async function setAgentWalletOnChain(
+  erc8004AgentId: number,
+  walletAddress: Address,
+  encryptedPrivateKey: string,
+): Promise<void> {
+  const { publicClient, walletClient } = getClients();
+  const registryAddress = getRegistryAddress();
 
   const agentPrivateKey = decryptPrivateKey(encryptedPrivateKey);
   const agentAccount = privateKeyToAccount(agentPrivateKey as `0x${string}`);
@@ -136,8 +143,8 @@ export async function registerAgentOnChain(
     types: SET_AGENT_WALLET_TYPES,
     primaryType: 'SetAgentWallet',
     message: {
-      agentId: BigInt(tokenId),
-      newWallet: agentWalletAddress,
+      agentId: BigInt(erc8004AgentId),
+      newWallet: walletAddress,
       deadline,
     },
   });
@@ -146,14 +153,11 @@ export async function registerAgentOnChain(
     address: registryAddress,
     abi: REGISTRY_ABI,
     functionName: 'setAgentWallet',
-    args: [BigInt(tokenId), agentWalletAddress, deadline, signature],
+    args: [BigInt(erc8004AgentId), walletAddress, deadline, signature],
   });
 
   await publicClient.waitForTransactionReceipt({ hash: walletHash });
-
-  console.log(`ERC-8004: agent ${agentId} registered as token #${tokenId}, wallet set to ${agentWalletAddress}`);
-
-  return tokenId;
+  console.log(`ERC-8004: token #${erc8004AgentId} wallet set to ${walletAddress}`);
 }
 
 export function getRegistryIdentifier(): string {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { waitUntil } from '@vercel/functions';
 import { registerAgent, updateAgentErc8004 } from '@/lib/db';
 import { rateLimiters } from '@/lib/rateLimit';
-import { isErc8004Configured, registerAgentOnChain } from '@/lib/erc8004';
+import { isErc8004Configured, registerAgentIdentity, setAgentWalletOnChain } from '@/lib/erc8004';
 import type { Address } from 'viem';
 
 export async function POST(request: NextRequest) {
@@ -42,17 +42,29 @@ export async function POST(request: NextRequest) {
     const registration = await registerAgent({ name, description, ip });
 
     if (isErc8004Configured() && registration.wallet_address && registration.encrypted_private_key) {
-      const onChainPromise = registerAgentOnChain(
-        registration.agent_id,
-        registration.wallet_address as Address,
-        registration.encrypted_private_key,
-      ).then((tokenId) => {
-        return updateAgentErc8004(registration.agent_id, tokenId);
-      }).catch((error) => {
-        console.error(`ERC-8004 on-chain registration failed for ${registration.agent_id}:`, error);
+      const identityPromise = registerAgentIdentity(registration.agent_id)
+        .then(async (tokenId) => {
+          await updateAgentErc8004(registration.agent_id, tokenId);
+          return tokenId;
+        })
+        .catch((error) => {
+          console.error(`ERC-8004 identity registration failed for ${registration.agent_id}:`, error);
+          return null;
+        });
+
+      const walletPromise = identityPromise.then((tokenId) => {
+        if (tokenId === null) return;
+        return setAgentWalletOnChain(
+          tokenId,
+          registration.wallet_address as Address,
+          registration.encrypted_private_key!,
+        ).catch((error) => {
+          console.error(`ERC-8004 wallet assignment failed for token #${tokenId}:`, error);
+        });
       });
 
-      waitUntil(onChainPromise);
+      waitUntil(identityPromise);
+      waitUntil(walletPromise);
     }
 
     return NextResponse.json({
