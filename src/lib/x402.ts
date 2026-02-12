@@ -4,6 +4,7 @@ import type { FacilitatorConfig } from '@x402/core/server';
 import type { Network } from '@x402/core/types';
 import { ExactEvmScheme } from '@x402/evm/exact/server';
 import { bazaarResourceServerExtension, declareDiscoveryExtension } from '@x402/extensions/bazaar';
+import { createFacilitatorConfig } from '@coinbase/x402';
 
 const DEFAULT_FACILITATOR_URL = 'https://x402.org/facilitator';
 
@@ -59,7 +60,16 @@ let _initPromise: Promise<void> | null = null;
 
 export function getResourceServer(): x402ResourceServer {
   if (!_resourceServer) {
-    const clients = getFacilitatorUrls().map(url => new HTTPFacilitatorClient({ url }));
+    const cdpKeyId = process.env.CDP_API_KEY_ID;
+    const cdpKeySecret = process.env.CDP_API_KEY_SECRET;
+
+    let clients: HTTPFacilitatorClient[];
+    if (cdpKeyId && cdpKeySecret) {
+      clients = [new HTTPFacilitatorClient(createFacilitatorConfig(cdpKeyId, cdpKeySecret))];
+    } else {
+      clients = getFacilitatorUrls().map(url => new HTTPFacilitatorClient({ url }));
+    }
+
     _resourceServer = new x402ResourceServer(clients);
     _resourceServer.register(getX402Network(), new ExactEvmScheme());
     _resourceServer.registerExtension(bazaarResourceServerExtension);
