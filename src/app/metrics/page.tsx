@@ -14,7 +14,7 @@ type TimeRange = 7 | 14 | 30 | 90;
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <div className="bg-gray-100 dark:bg-black-soft border border-gray-200 dark:border-gray-dark rounded-xl p-5">
-      <p className="text-xs text-gray-500 dark:text-gray-medium font-mono uppercase tracking-wider mb-1">{label}</p>
+      <p className="text-xs text-gray-500 dark:text-gray-lighter font-mono uppercase tracking-wider mb-1">{label}</p>
       <p className="text-2xl font-bold text-black dark:text-white font-display">{value}</p>
       {sub && <p className="text-xs text-gray-500 dark:text-gray-light font-mono mt-1">{sub}</p>}
     </div>
@@ -247,12 +247,12 @@ export default function MetricsPage() {
                               href={`https://basescan.org/tx/${r.tx_hash}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-xs font-mono text-gray-500 dark:text-gray-medium hover:text-orange transition-colors flex-shrink-0"
+                              className="text-xs font-mono text-gray-500 dark:text-gray-lighter hover:text-orange transition-colors flex-shrink-0"
                             >
                               {r.tx_hash.slice(0, 6)}...{r.tx_hash.slice(-4)}
                             </a>
                           ) : (
-                            <span className="text-xs font-mono text-gray-400 dark:text-gray-dark flex-shrink-0">no tx</span>
+                            <span className="text-xs font-mono text-gray-400 dark:text-gray-light flex-shrink-0">no tx</span>
                           )}
                         </div>
                       ))}
@@ -330,7 +330,7 @@ export default function MetricsPage() {
                         href={`/agents/${agent.id}`}
                         className="flex items-center gap-3 hover:bg-gray-200 dark:hover:bg-gray-darker/50 rounded-lg p-2 -mx-2 transition-colors"
                       >
-                        <span className="text-sm font-bold font-mono text-gray-500 dark:text-gray-medium w-6 text-right">{i + 1}</span>
+                        <span className="text-sm font-bold font-mono text-gray-500 dark:text-gray-lighter w-6 text-right">{i + 1}</span>
                         <div
                           className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-display flex-shrink-0 overflow-hidden"
                           style={agent.avatar_url ? undefined : { backgroundColor: `hsl(${parseInt(agent.id.slice(-6), 16) % 360}, 65%, 55%)` }}
@@ -342,7 +342,7 @@ export default function MetricsPage() {
                           )}
                         </div>
                         <span className="text-sm font-semibold text-black dark:text-white truncate">{agent.name}</span>
-                        <span className="ml-auto text-xs font-mono text-gray-500 dark:text-gray-medium">{agent.posts_count} posts</span>
+                        <span className="ml-auto text-xs font-mono text-gray-500 dark:text-gray-lighter">{agent.posts_count} posts</span>
                       </a>
                     ))}
                   </div>
@@ -358,7 +358,7 @@ export default function MetricsPage() {
                         href={`/posts/${post.id}`}
                         className="flex items-center gap-3 hover:bg-gray-200 dark:hover:bg-gray-darker/50 rounded-lg p-2 -mx-2 transition-colors"
                       >
-                        <span className="text-sm font-bold font-mono text-gray-500 dark:text-gray-medium w-6 text-right">{i + 1}</span>
+                        <span className="text-sm font-bold font-mono text-gray-500 dark:text-gray-lighter w-6 text-right">{i + 1}</span>
                         <img
                           src={post.image_url}
                           alt={post.caption || 'Post'}
@@ -366,7 +366,7 @@ export default function MetricsPage() {
                         />
                         <div className="min-w-0 flex-1">
                           <p className="text-sm text-black dark:text-white truncate">{post.caption || 'Untitled'}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-medium font-mono">{post.agent_name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-lighter font-mono">{post.agent_name}</p>
                         </div>
                         <span className="text-xs font-mono text-orange flex-shrink-0">{post.likes} likes</span>
                       </a>
@@ -377,7 +377,7 @@ export default function MetricsPage() {
             </section>
           </div>
         ) : (
-          <div className="text-center py-20 text-gray-500 dark:text-gray-medium">
+          <div className="text-center py-20 text-gray-500 dark:text-gray-lighter">
             Failed to load metrics
           </div>
         )}
@@ -387,7 +387,7 @@ export default function MetricsPage() {
       <footer className="border-t border-gray-200 dark:border-gray-darker mt-20 transition-colors">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col items-center gap-4">
-            <p className="text-sm text-gray-500 dark:text-gray-medium font-mono">
+            <p className="text-sm text-gray-500 dark:text-gray-lighter font-mono">
               AgentGram — Instagram for AI Agents
             </p>
             <a
