@@ -1,89 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { Address } from 'viem';
-import { getAddress } from 'viem';
-import { useFacilitator } from 'x402/verify';
-import { exact } from 'x402/schemes';
-import {
-  processPriceToAtomicAmount,
-  findMatchingPaymentRequirements,
-  toJsonSafe,
-} from 'x402/shared';
-import { SupportedEVMNetworks } from 'x402/types';
-import { safeBase64Encode } from 'x402/shared';
-import type {
-  FacilitatorConfig,
-  RouteConfig,
-  PaymentRequirements,
-  Network,
-} from 'x402/types';
+import { x402HTTPResourceServer } from '@x402/core/server';
+import type { HTTPAdapter, RouteConfig } from '@x402/core/server';
+import { ensureResourceServerInit } from './x402';
 
-type Resource = `${string}://${string}`;
-type RouteConfigArg = RouteConfig | ((req: NextRequest) => Promise<RouteConfig>);
 type WrappedHandler = (request: NextRequest) => Promise<NextResponse>;
-
-const NON_RETRYABLE_PATTERNS = [
-  'invalid payment',
-  'unable to find matching payment requirements',
-  'insufficient',
-  'expired',
-  'invalid signature',
-  'already settled',
-  'nonce',
-];
-
-function isRetryable(errorMsg: string): boolean {
-  const lower = errorMsg.toLowerCase();
-  return NON_RETRYABLE_PATTERNS.every(pattern => !lower.includes(pattern));
-}
-
-function buildPaymentRequirements(
-  payTo: Address,
-  resource: string,
-  routeConfig: RouteConfig,
-  method: string,
-): PaymentRequirements[] {
-  const result = processPriceToAtomicAmount(routeConfig.price, routeConfig.network);
-  if ('error' in result) {
-    throw new Error(`x402: invalid price config — ${result.error}`);
-  }
-
-  if (!SupportedEVMNetworks.includes(routeConfig.network as Network)) {
-    throw new Error(`x402: unsupported network — ${routeConfig.network}`);
-  }
-
-  return [{
-    scheme: 'exact' as const,
-    network: routeConfig.network,
-    maxAmountRequired: result.maxAmountRequired,
-    asset: getAddress(result.asset.address),
-    payTo: getAddress(payTo),
-    resource,
-    description: routeConfig.config?.description ?? '',
-    mimeType: routeConfig.config?.mimeType ?? 'application/json',
-    maxTimeoutSeconds: routeConfig.config?.maxTimeoutSeconds ?? 300,
-    outputSchema: {
-      input: {
-        type: 'http',
-        method,
-        discoverable: true,
-        ...routeConfig.config?.inputSchema,
-      },
-      output: routeConfig.config?.outputSchema,
-    },
-    extra: 'eip712' in result.asset ? result.asset.eip712 : undefined,
-  }];
-}
-
-function make402Response(requirements: PaymentRequirements[]): NextResponse {
-  const body = {
-    x402Version: 1,
-    accepts: requirements,
-  };
-  return new NextResponse(JSON.stringify(toJsonSafe(body)), {
-    status: 402,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
 
 export interface PaymentSettlement {
   transaction?: string;
@@ -91,127 +11,105 @@ export interface PaymentSettlement {
   payer?: string;
 }
 
+class NextJSAdapter implements HTTPAdapter {
+  constructor(private req: NextRequest) {}
+
+  getHeader(name: string): string | undefined {
+    return this.req.headers.get(name) ?? undefined;
+  }
+
+  getMethod(): string {
+    return this.req.method;
+  }
+
+  getPath(): string {
+    return this.req.nextUrl.pathname;
+  }
+
+  getUrl(): string {
+    return this.req.url;
+  }
+
+  getAcceptHeader(): string {
+    return this.req.headers.get('accept') ?? '';
+  }
+
+  getUserAgent(): string {
+    return this.req.headers.get('user-agent') ?? '';
+  }
+}
+
 export function withX402Fallback<T = unknown>(
   handler: (request: NextRequest) => Promise<NextResponse<T>>,
-  payTo: Address,
-  routeConfig: RouteConfigArg,
-  facilitatorUrls: Resource[],
+  routeConfig: RouteConfig,
   onPaymentSettled?: (req: NextRequest, settlement: PaymentSettlement) => Promise<void>,
 ): WrappedHandler {
-  return async function settleFirstHandler(request: NextRequest): Promise<NextResponse> {
-    const resolvedConfig = typeof routeConfig === 'function'
-      ? await routeConfig(request)
-      : routeConfig;
+  let httpServer: x402HTTPResourceServer | null = null;
+  let initPromise: Promise<void> | null = null;
 
-    const method = request.method.toUpperCase();
-    const resource = `${request.nextUrl.protocol}//${request.nextUrl.host}${request.nextUrl.pathname}` as Resource;
-    const requirements = buildPaymentRequirements(payTo, resource, resolvedConfig, method);
+  async function lazyInit(): Promise<x402HTTPResourceServer> {
+    if (!httpServer) {
+      const resourceServer = await ensureResourceServerInit();
+      httpServer = new x402HTTPResourceServer(resourceServer, routeConfig);
+      initPromise = httpServer.initialize();
+    }
+    await initPromise;
+    return httpServer;
+  }
 
-    const paymentHeader = request.headers.get('X-PAYMENT');
-    if (!paymentHeader) {
-      return make402Response(requirements);
+  return async function protectedHandler(request: NextRequest): Promise<NextResponse> {
+    const server = await lazyInit();
+    const adapter = new NextJSAdapter(request);
+    const context = {
+      adapter,
+      path: adapter.getPath(),
+      method: adapter.getMethod(),
+    };
+
+    const result = await server.processHTTPRequest(context);
+
+    if (result.type === 'no-payment-required') {
+      return handler(request);
     }
 
-    let payment;
-    try {
-      payment = exact.evm.decodePayment(paymentHeader);
-      payment.x402Version = 1;
-    } catch (err) {
-      console.warn('x402: failed to decode X-PAYMENT header:', err instanceof Error ? err.message : err);
+    if (result.type === 'payment-error') {
+      const { status, headers, body, isHtml } = result.response;
       return new NextResponse(
-        JSON.stringify({ x402Version: 1, error: 'invalid_payment' }),
-        { status: 402, headers: { 'Content-Type': 'application/json' } },
+        typeof body === 'string' ? body : JSON.stringify(body),
+        {
+          status,
+          headers: {
+            'Content-Type': isHtml ? 'text/html' : 'application/json',
+            ...headers,
+          },
+        },
       );
     }
 
-    const matched = findMatchingPaymentRequirements(requirements, payment);
-    if (!matched) {
-      return new NextResponse(
-        JSON.stringify({
-          x402Version: 1,
-          error: 'unable to find matching payment requirements',
-          accepts: requirements,
-        }),
-        { status: 402, headers: { 'Content-Type': 'application/json' } },
-      );
-    }
+    const response = await handler(request) as NextResponse;
 
-    let lastError: string | undefined;
+    const settleResult = await server.processSettlement(
+      result.paymentPayload,
+      result.paymentRequirements,
+      result.declaredExtensions,
+    );
 
-    for (let i = 0; i < facilitatorUrls.length; i++) {
-      const url = facilitatorUrls[i];
-      const facilitator: FacilitatorConfig = { url };
-      const { verify, settle } = useFacilitator(facilitator);
+    if (settleResult.success) {
+      for (const [key, value] of Object.entries(settleResult.headers)) {
+        response.headers.set(key, value);
+      }
 
-      try {
-        const verifyResult = await verify(payment, matched);
-        if (!verifyResult.isValid) {
-          const reason = verifyResult.invalidReason ?? 'verification failed';
-          console.warn(`x402 facilitator [${url}]: verify rejected — ${reason}`);
-
-          if (!isRetryable(reason)) {
-            return new NextResponse(
-              JSON.stringify({ x402Version: 1, error: reason, payer: verifyResult.payer }),
-              { status: 402, headers: { 'Content-Type': 'application/json' } },
-            );
-          }
-          lastError = reason;
-          continue;
-        }
-
-        const settleResult = await settle(payment, matched);
-        if (!settleResult.success) {
-          const reason = settleResult.errorReason ?? 'settlement failed';
-          console.warn(`x402 facilitator [${url}]: settle failed — ${reason}`);
-
-          if (!isRetryable(reason)) {
-            return new NextResponse(
-              JSON.stringify({ x402Version: 1, error: reason, payer: settleResult.payer }),
-              { status: 402, headers: { 'Content-Type': 'application/json' } },
-            );
-          }
-          lastError = reason;
-          continue;
-        }
-
-        console.log(`x402 facilitator [${url}]: payment settled (tx: ${settleResult.transaction})`);
-
-        const response = await handler(request) as NextResponse;
-        response.headers.set('X-PAYMENT-RESPONSE', safeBase64Encode(JSON.stringify({
-          success: true,
+      if (onPaymentSettled) {
+        onPaymentSettled(request, {
           transaction: settleResult.transaction,
           network: settleResult.network,
           payer: settleResult.payer,
-        })));
-
-        if (onPaymentSettled) {
-          onPaymentSettled(request, {
-            transaction: settleResult.transaction,
-            network: settleResult.network,
-            payer: settleResult.payer,
-          }).catch(err => console.error('onPaymentSettled callback error:', err));
-        }
-
-        return response;
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.warn(`x402 facilitator error [${url}]:`, msg);
-
-        if (!isRetryable(msg)) {
-          return new NextResponse(
-            JSON.stringify({ x402Version: 1, error: msg }),
-            { status: 402, headers: { 'Content-Type': 'application/json' } },
-          );
-        }
-        lastError = msg;
-        if (i < facilitatorUrls.length - 1) continue;
-        throw err;
+        }).catch(err => console.error('onPaymentSettled callback error:', err));
       }
+    } else {
+      console.warn('x402: settlement failed after handler —', settleResult.errorReason);
     }
 
-    return new NextResponse(
-      JSON.stringify({ x402Version: 1, error: lastError ?? 'all facilitators failed' }),
-      { status: 402, headers: { 'Content-Type': 'application/json' } },
-    );
+    return response;
   };
 }

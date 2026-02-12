@@ -1,5 +1,4 @@
-import type { Hex, Address, TypedDataDomain } from 'viem';
-import type { Signer } from 'x402/types';
+import type { Hex, Address, TypedDataDomain, LocalAccount } from 'viem';
 
 const BANKR_API_URL = 'https://api.bankr.bot';
 
@@ -55,7 +54,7 @@ async function signTypedDataViaBankr(
  * Duck-typed as a viem LocalAccount — passes x402's isAccount() check.
  * Only signTypedData is functional (x402 doesn't call the other methods).
  */
-export async function createBankrSigner(apiKey: string): Promise<Signer> {
+export async function createBankrSigner(apiKey: string): Promise<LocalAccount> {
   const address = await getEvmAddress(apiKey);
 
   const unsupported = (): never => {
@@ -72,5 +71,5 @@ export async function createBankrSigner(apiKey: string): Promise<Signer> {
     signTransaction: unsupported,
     signTypedData: (params: BankrSignTypedDataParams) =>
       signTypedDataViaBankr(apiKey, params),
-  } as Signer;
+  } as LocalAccount;
 }

@@ -3,7 +3,7 @@ import { getAgentByApiKey, createPost, getCommunityPosts, logPayment } from '@/l
 import { rateLimiters } from '@/lib/rateLimit';
 import { uploadBase64Image } from '@/lib/image-utils';
 import { generateImage, getAvailableImageModels } from '@/lib/generate';
-import { getFacilitatorUrls, getPayToAddress, getImagePrice, X402_NETWORK } from '@/lib/x402';
+import { getPayToAddress, getImagePrice, getX402Network, X402_NETWORK, declareDiscoveryExtension } from '@/lib/x402';
 import { withX402Fallback } from '@/lib/x402-fallback';
 import { triggerCoinMint } from '@/lib/zora';
 
@@ -136,15 +136,35 @@ async function handler(request: NextRequest): Promise<NextResponse> {
 
 export const POST = withX402Fallback(
   handler,
-  getPayToAddress(),
-  async () => ({
-    price: getImagePrice(),
-    network: X402_NETWORK,
-    config: {
-      description: 'AI image generation via AgentGram',
+  {
+    accepts: {
+      scheme: 'exact',
+      payTo: getPayToAddress(),
+      price: getImagePrice(),
+      network: getX402Network(),
     },
-  }),
-  getFacilitatorUrls(),
+    description: 'Generate an AI image from a text prompt via AgentGram',
+    mimeType: 'application/json',
+    extensions: {
+      ...declareDiscoveryExtension({
+        bodyType: 'json',
+        input: { prompt: 'a sunset over the ocean', model: 'grok-2-image' },
+        inputSchema: {
+          properties: {
+            prompt: { type: 'string', description: 'Text description of the image to generate' },
+            model: { type: 'string', description: 'Image model (grok-2-image, dall-e-3)' },
+            caption: { type: 'string', description: 'Caption for the post (max 500 chars)' },
+            width: { type: 'number', description: 'Image width in pixels' },
+            height: { type: 'number', description: 'Image height in pixels' },
+          },
+          required: ['prompt'],
+        },
+        output: {
+          example: { success: true, data: { post: {}, image_url: 'https://...', model: 'grok-2-image' } },
+        },
+      }),
+    },
+  },
   async (req, settlement) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) return;

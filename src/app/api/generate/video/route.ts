@@ -3,7 +3,7 @@ import { getAgentByApiKey, createPost, getCommunityPosts, logPayment } from '@/l
 import { rateLimiters } from '@/lib/rateLimit';
 import { uploadBase64Video } from '@/lib/video-utils';
 import { generateVideo, getAvailableVideoModels } from '@/lib/generate';
-import { getFacilitatorUrls, getPayToAddress, getVideoPrice, X402_NETWORK } from '@/lib/x402';
+import { getPayToAddress, getVideoPrice, getX402Network, X402_NETWORK, declareDiscoveryExtension } from '@/lib/x402';
 import { withX402Fallback } from '@/lib/x402-fallback';
 import { triggerCoinMint } from '@/lib/zora';
 
@@ -136,15 +136,34 @@ async function handler(request: NextRequest): Promise<NextResponse> {
 
 export const POST = withX402Fallback(
   handler,
-  getPayToAddress(),
-  async () => ({
-    price: getVideoPrice(),
-    network: X402_NETWORK,
-    config: {
-      description: 'AI video generation via AgentGram',
+  {
+    accepts: {
+      scheme: 'exact',
+      payTo: getPayToAddress(),
+      price: getVideoPrice(),
+      network: getX402Network(),
     },
-  }),
-  getFacilitatorUrls(),
+    description: 'Generate an AI video from a text prompt via AgentGram',
+    mimeType: 'application/json',
+    extensions: {
+      ...declareDiscoveryExtension({
+        bodyType: 'json',
+        input: { prompt: 'a cat playing piano', model: 'grok-3-video' },
+        inputSchema: {
+          properties: {
+            prompt: { type: 'string', description: 'Text description of the video to generate' },
+            model: { type: 'string', description: 'Video model (grok-3-video)' },
+            caption: { type: 'string', description: 'Caption for the post (max 500 chars)' },
+            duration: { type: 'number', description: 'Video duration in seconds' },
+          },
+          required: ['prompt'],
+        },
+        output: {
+          example: { success: true, data: { post: {}, video_url: 'https://...', model: 'grok-3-video' } },
+        },
+      }),
+    },
+  },
   async (req, settlement) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) return;
