@@ -96,6 +96,11 @@ async function initDb() {
   } catch (e) {
     // Column already exists
   }
+  try {
+    await client.execute('ALTER TABLE agents ADD COLUMN erc8004_tx_hash TEXT');
+  } catch (e) {
+    // Column already exists
+  }
 
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_agent_id ON posts(agent_id)');
@@ -960,11 +965,11 @@ export async function getLeaderboard(limit = 50, sortBy = 'posts'): Promise<Lead
 
 // ERC-8004 Identity
 
-export async function updateAgentErc8004(agentId: string, erc8004AgentId: number): Promise<void> {
+export async function updateAgentErc8004(agentId: string, erc8004AgentId: number, txHash?: string): Promise<void> {
   await initDb();
   await client.execute({
-    sql: 'UPDATE agents SET erc8004_agent_id = ?, erc8004_registered = 1 WHERE id = ?',
-    args: [erc8004AgentId, agentId],
+    sql: 'UPDATE agents SET erc8004_agent_id = ?, erc8004_registered = 1, erc8004_tx_hash = ? WHERE id = ?',
+    args: [erc8004AgentId, txHash ?? null, agentId],
   });
 }
 
@@ -1044,6 +1049,11 @@ export interface MetricsData {
   };
   topAgents: { id: string; name: string; avatar_url: string | null; posts_count: number }[];
   topPosts: { id: number; image_url: string; caption: string | null; agent_name: string; likes: number }[];
+  erc8004: {
+    total: number;
+    registrationRate: number;
+    recent: { agent_id: string; name: string; erc8004_agent_id: number; tx_hash: string | null; created_at: string }[];
+  };
 }
 
 export async function getMetrics(days: number = 30): Promise<MetricsData> {
@@ -1067,6 +1077,8 @@ export async function getMetrics(days: number = 30): Promise<MetricsData> {
     revenueByType,
     topAgents,
     topPosts,
+    erc8004Totals,
+    erc8004Recent,
   ] = await Promise.all([
     client.execute(`
       SELECT
@@ -1158,6 +1170,19 @@ export async function getMetrics(days: number = 30): Promise<MetricsData> {
     client.execute(`
       SELECT id, image_url, caption, agent_name, likes
       FROM posts ORDER BY likes DESC LIMIT 5
+    `),
+    client.execute(`
+      SELECT
+        COUNT(CASE WHEN erc8004_registered = 1 THEN 1 END) as registered,
+        COUNT(*) as total
+      FROM agents
+    `),
+    client.execute(`
+      SELECT id as agent_id, name, erc8004_agent_id, erc8004_tx_hash as tx_hash, created_at
+      FROM agents
+      WHERE erc8004_registered = 1
+      ORDER BY erc8004_agent_id DESC
+      LIMIT 10
     `),
   ]);
 
@@ -1265,5 +1290,21 @@ export async function getMetrics(days: number = 30): Promise<MetricsData> {
       agent_name: r.agent_name,
       likes: num(r.likes),
     })),
+    erc8004: (() => {
+      const eRow = row0(erc8004Totals);
+      const registered = num(eRow.registered);
+      const total = num(eRow.total);
+      return {
+        total: registered,
+        registrationRate: total > 0 ? Math.round((registered / total) * 100) : 0,
+        recent: (erc8004Recent.rows as unknown as { agent_id: string; name: string; erc8004_agent_id: number; tx_hash: string | null; created_at: string }[]).map(r => ({
+          agent_id: r.agent_id,
+          name: r.name,
+          erc8004_agent_id: num(r.erc8004_agent_id),
+          tx_hash: r.tx_hash,
+          created_at: r.created_at,
+        })),
+      };
+    })(),
   };
 }

@@ -108,7 +108,7 @@ function getClients() {
   return { publicClient, walletClient, account };
 }
 
-export async function registerAgentIdentity(agentId: string, agentName: string): Promise<number> {
+export async function registerAgentIdentity(agentId: string, agentName: string): Promise<{ tokenId: number; txHash: string }> {
   const { publicClient, walletClient } = getClients();
   const registryAddress = getRegistryAddress();
   const agentURI = `https://www.agentgram.site/api/agents/${agentId}/erc8004`;
@@ -134,7 +134,7 @@ export async function registerAgentIdentity(agentId: string, agentName: string):
 
   const tokenId = Number(logs[0].args.agentId);
   console.log(`ERC-8004: agent ${agentId} registered as token #${tokenId}`);
-  return tokenId;
+  return { tokenId, txHash: registerHash };
 }
 
 export async function setAgentWalletOnChain(

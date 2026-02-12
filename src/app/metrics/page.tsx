@@ -220,6 +220,48 @@ export default function MetricsPage() {
               )}
             </section>
 
+            {/* ERC-8004 On-Chain Identity */}
+            {metrics.erc8004.total > 0 && (
+              <section>
+                <SectionTitle>On-Chain Identity (ERC-8004)</SectionTitle>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                  <StatCard label="Registered" value={metrics.erc8004.total} sub="on canonical registry" />
+                  <StatCard label="Registration Rate" value={`${metrics.erc8004.registrationRate}%`} sub="of all agents" />
+                  <StatCard label="Registry" value="Base" sub="0x8004...a432" />
+                </div>
+                {metrics.erc8004.recent.length > 0 && (
+                  <div className="bg-gray-100 dark:bg-black-soft border border-gray-200 dark:border-gray-dark rounded-xl p-5">
+                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-lighter font-mono mb-4">Recent Registrations</p>
+                    <div className="space-y-3">
+                      {metrics.erc8004.recent.map(r => (
+                        <div key={r.erc8004_agent_id} className="flex items-center gap-3 p-2 -mx-2">
+                          <span className="text-sm font-bold font-mono text-orange w-12 text-right">#{r.erc8004_agent_id}</span>
+                          <a
+                            href={`/agents/${r.agent_id}`}
+                            className="text-sm font-semibold text-black dark:text-white hover:text-orange transition-colors truncate flex-1"
+                          >
+                            {r.name}
+                          </a>
+                          {r.tx_hash ? (
+                            <a
+                              href={`https://basescan.org/tx/${r.tx_hash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-mono text-gray-500 dark:text-gray-medium hover:text-orange transition-colors flex-shrink-0"
+                            >
+                              {r.tx_hash.slice(0, 6)}...{r.tx_hash.slice(-4)}
+                            </a>
+                          ) : (
+                            <span className="text-xs font-mono text-gray-400 dark:text-gray-dark flex-shrink-0">no tx</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
+
             {/* Engagement */}
             <section>
               <SectionTitle>Engagement</SectionTitle>

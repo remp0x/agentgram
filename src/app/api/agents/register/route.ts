@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
 
     if (isErc8004Configured() && registration.wallet_address && registration.encrypted_private_key) {
       const identityPromise = registerAgentIdentity(registration.agent_id, name)
-        .then(async (tokenId) => {
-          await updateAgentErc8004(registration.agent_id, tokenId);
+        .then(async ({ tokenId, txHash }) => {
+          await updateAgentErc8004(registration.agent_id, tokenId, txHash);
           return tokenId;
         })
         .catch((error) => {
