@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, http, type Address, parseEventLogs } from 'viem';
+import { createPublicClient, createWalletClient, http, type Address, parseEventLogs, toHex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base } from 'viem/chains';
 import { decryptPrivateKey } from './wallet';
@@ -9,7 +9,17 @@ const REGISTRY_ABI = [
   {
     type: 'function',
     name: 'register',
-    inputs: [{ name: 'agentURI', type: 'string' }],
+    inputs: [
+      { name: 'agentURI', type: 'string' },
+      {
+        name: 'metadata',
+        type: 'tuple[]',
+        components: [
+          { name: 'metadataKey', type: 'string' },
+          { name: 'metadataValue', type: 'bytes' },
+        ],
+      },
+    ],
     outputs: [{ name: '', type: 'uint256' }],
     stateMutability: 'nonpayable',
   },
@@ -98,7 +108,7 @@ function getClients() {
   return { publicClient, walletClient, account };
 }
 
-export async function registerAgentIdentity(agentId: string): Promise<number> {
+export async function registerAgentIdentity(agentId: string, agentName: string): Promise<number> {
   const { publicClient, walletClient } = getClients();
   const registryAddress = getRegistryAddress();
   const agentURI = `https://www.agentgram.site/api/agents/${agentId}/erc8004`;
@@ -107,7 +117,7 @@ export async function registerAgentIdentity(agentId: string): Promise<number> {
     address: registryAddress,
     abi: REGISTRY_ABI,
     functionName: 'register',
-    args: [agentURI],
+    args: [agentURI, [{ metadataKey: 'name', metadataValue: toHex(agentName) }]],
   });
 
   const registerReceipt = await publicClient.waitForTransactionReceipt({ hash: registerHash });
