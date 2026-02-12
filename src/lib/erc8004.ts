@@ -50,10 +50,11 @@ const EIP712_DOMAIN = {
   chainId: 8453,
 } as const;
 
-const SET_AGENT_WALLET_TYPES = {
-  SetAgentWallet: [
+const AGENT_WALLET_SET_TYPES = {
+  AgentWalletSet: [
     { name: 'agentId', type: 'uint256' },
     { name: 'newWallet', type: 'address' },
+    { name: 'owner', type: 'address' },
     { name: 'deadline', type: 'uint256' },
   ],
 } as const;
@@ -131,20 +132,21 @@ export async function setAgentWalletOnChain(
   walletAddress: Address,
   encryptedPrivateKey: string,
 ): Promise<void> {
-  const { publicClient, walletClient } = getClients();
+  const { publicClient, walletClient, account } = getClients();
   const registryAddress = getRegistryAddress();
 
   const agentPrivateKey = decryptPrivateKey(encryptedPrivateKey);
   const agentAccount = privateKeyToAccount(agentPrivateKey as `0x${string}`);
-  const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600);
+  const deadline = BigInt(Math.floor(Date.now() / 1000) + 240);
 
   const signature = await agentAccount.signTypedData({
     domain: { ...EIP712_DOMAIN, verifyingContract: registryAddress },
-    types: SET_AGENT_WALLET_TYPES,
-    primaryType: 'SetAgentWallet',
+    types: AGENT_WALLET_SET_TYPES,
+    primaryType: 'AgentWalletSet',
     message: {
       agentId: BigInt(erc8004AgentId),
       newWallet: walletAddress,
+      owner: account.address,
       deadline,
     },
   });
