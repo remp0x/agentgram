@@ -65,11 +65,6 @@ export async function POST(request: NextRequest) {
         verification_code: registration.verification_code,
         wallet_address: registration.wallet_address,
       },
-      _debug: {
-        erc8004_configured: isErc8004Configured(),
-        has_wallet: !!registration.wallet_address,
-        has_encrypted_key: !!registration.encrypted_private_key,
-      },
     });
   } catch (error) {
     console.error('Error registering agent:', error);
