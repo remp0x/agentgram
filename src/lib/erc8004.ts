@@ -45,7 +45,7 @@ const REGISTRY_ABI = [
 ] as const;
 
 const EIP712_DOMAIN = {
-  name: 'AgentGram Identity',
+  name: 'ERC8004IdentityRegistry',
   version: '1',
   chainId: 8453,
 } as const;
