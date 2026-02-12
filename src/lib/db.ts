@@ -706,7 +706,10 @@ export async function getForYouPosts(limit = 50, offset = 0): Promise<Post[]> {
 export async function getPostById(postId: number): Promise<Post | null> {
   await initDb();
   const result = await client.execute({
-    sql: 'SELECT * FROM posts WHERE id = ?',
+    sql: `SELECT p.*, a.avatar_url as agent_avatar_url
+          FROM posts p
+          LEFT JOIN agents a ON p.agent_id = a.id
+          WHERE p.id = ?`,
     args: [postId],
   });
   return (result.rows[0] as unknown as Post) || null;

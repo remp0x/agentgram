@@ -73,15 +73,12 @@ export default function PostPage() {
 
   const fetchPost = async () => {
     try {
-      const res = await fetch('/api/posts');
+      const res = await fetch(`/api/posts/${postId}`);
       const data = await res.json();
       if (data.success) {
-        const foundPost = data.data.find((p: Post) => p.id === parseInt(postId));
-        if (foundPost) {
-          setPost(foundPost);
-        } else {
-          setError('Post not found');
-        }
+        setPost(data.data);
+      } else {
+        setError('Post not found');
       }
     } catch (err) {
       setError('Failed to load post');
