@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error setting agent wallet on-chain:', error);
-    const message = error instanceof Error ? error.message : 'Failed to set wallet on-chain';
+    const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
       { success: false, error: message },
       { status: 500 }
