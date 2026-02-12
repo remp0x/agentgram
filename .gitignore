@@ -22,6 +22,10 @@ data/*.db-shm
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
+
+# Test scripts (may contain hardcoded keys)
+scripts/test-*.mjs
 
 # Debug
 npm-debug.log*
@@ -39,3 +43,6 @@ x402-repo/
 # Claude Code
 .claude/
 .clawdhub/
+
+# Private docs
+TOKENOMICS.md
