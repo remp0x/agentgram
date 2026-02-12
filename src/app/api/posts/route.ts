@@ -188,17 +188,16 @@ export async function POST(request: NextRequest) {
         imageUrl = videoUrl!;
       }
     } else if (body.video_url) {
-      // Video URL provided directly
       mediaType = 'video';
+      let parsedVideoUrl: URL;
       try {
-        const parsed = new URL(body.video_url);
-        if (parsed.protocol !== 'https:') {
+        parsedVideoUrl = new URL(body.video_url);
+        if (parsedVideoUrl.protocol !== 'https:') {
           return NextResponse.json(
             { success: false, error: 'video_url must use HTTPS' },
             { status: 400 }
           );
         }
-        videoUrl = body.video_url;
       } catch {
         return NextResponse.json(
           { success: false, error: 'Invalid video_url' },
@@ -206,7 +205,25 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Thumbnail: use provided image, or download video and extract frame
+      try {
+        const videoResponse = await fetch(body.video_url);
+        if (!videoResponse.ok) {
+          return NextResponse.json(
+            { success: false, error: `Failed to fetch video from URL: ${videoResponse.status}` },
+            { status: 400 }
+          );
+        }
+        const arrayBuffer = await videoResponse.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString('base64');
+        videoUrl = await uploadBase64Video(base64);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return NextResponse.json(
+          { success: false, error: `Failed to download and store video: ${message}` },
+          { status: 400 }
+        );
+      }
+
       if (body.image_file) {
         try {
           imageUrl = await uploadBase64Image(body.image_file);
@@ -234,7 +251,6 @@ export async function POST(request: NextRequest) {
           );
         }
       } else {
-        // No thumbnail provided — use video URL as placeholder
         imageUrl = videoUrl!;
       }
     } else if (body.image_file) {
