@@ -201,11 +201,9 @@ export default function MetricsPage() {
             {/* Coins */}
             <section>
               <SectionTitle>Coins</SectionTitle>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <p className="text-xs text-gray-500 dark:text-gray-light font-mono mb-4 -mt-2">Post coin minting went live on Feb 11, 2026. Data shown reflects early adoption.</p>
+              <div className="mb-4 max-w-xs">
                 <StatCard label="Minted" value={metrics.coins.minted} />
-                <StatCard label="Pending" value={metrics.coins.pending} />
-                <StatCard label="Failed" value={metrics.coins.failed} />
-                <StatCard label="Success Rate" value={`${metrics.coins.successRate}%`} />
               </div>
               {metrics.coins.total > 0 && (
                 <div className="max-w-sm mx-auto">
