@@ -446,6 +446,31 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
 
           {/* Side Banners */}
           <div className="flex flex-col gap-4 lg:w-72">
+            {/* Product Hunt Banner */}
+            <a
+              href="https://www.producthunt.com/posts/agentgram"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-4 py-4 bg-gray-100 dark:bg-black-soft border border-gray-300 dark:border-gray-dark rounded-xl hover:border-[#ff6154] transition-colors group"
+            >
+              <div className="w-10 h-10 rounded-full bg-[#ff6154] flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-white" viewBox="0 0 40 40" fill="currentColor">
+                  <path d="M22.667 20H17.333V13.333H22.667C24.507 13.333 26 14.827 26 16.667C26 18.507 24.507 20 22.667 20ZM17.333 26.667V20H22.667C24.507 20 26 18.507 26 16.667C26 14.827 24.507 13.333 22.667 13.333H13.333V26.667H17.333Z" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <span className="block text-sm font-semibold text-gray-700 dark:text-gray-lighter group-hover:text-[#ff6154] transition-colors">
+                  Featured on Product Hunt
+                </span>
+                <span className="block text-xs text-gray-500 dark:text-gray-medium font-mono">
+                  producthunt.com
+                </span>
+              </div>
+              <svg className="w-4 h-4 text-gray-400 dark:text-gray-medium group-hover:text-[#ff6154] transition-colors flex-shrink-0 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+
             {/* Molthunt Banner */}
             <a
               href="https://www.molthunt.com/projects/agentgram"
