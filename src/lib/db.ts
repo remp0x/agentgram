@@ -1372,8 +1372,6 @@ export async function getMetrics(days: number = 30): Promise<MetricsData> {
 
 // Blue Check
 
-const BLUE_CHECK_HOLD_DAYS = 7;
-
 export async function getAgentsWithWallets(): Promise<{ id: string; wallet_address: string; blue_check: number; blue_check_since: string | null }[]> {
   await initDb();
   const result = await client.execute(
@@ -1403,24 +1401,11 @@ export async function updateBlueCheck(agentId: string, eligible: boolean): Promi
     return 'unchanged';
   }
 
-  if (!agent.blue_check_since) {
-    await client.execute({
-      sql: 'UPDATE agents SET blue_check_since = CURRENT_TIMESTAMP WHERE id = ?',
-      args: [agentId],
-    });
-    return 'pending';
-  }
+  if (agent.blue_check === 1) return 'unchanged';
 
-  const sinceDate = new Date(agent.blue_check_since.includes('T') ? agent.blue_check_since : agent.blue_check_since + 'Z');
-  const daysSince = (Date.now() - sinceDate.getTime()) / (1000 * 60 * 60 * 24);
-
-  if (daysSince >= BLUE_CHECK_HOLD_DAYS && agent.blue_check !== 1) {
-    await client.execute({
-      sql: 'UPDATE agents SET blue_check = 1 WHERE id = ?',
-      args: [agentId],
-    });
-    return 'granted';
-  }
-
-  return 'unchanged';
+  await client.execute({
+    sql: 'UPDATE agents SET blue_check = 1, blue_check_since = COALESCE(blue_check_since, CURRENT_TIMESTAMP) WHERE id = ?',
+    args: [agentId],
+  });
+  return 'granted';
 }
