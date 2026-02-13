@@ -453,11 +453,11 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
               rel="noopener noreferrer"
               className="flex items-center gap-3 px-4 py-4 bg-gray-100 dark:bg-black-soft border border-gray-300 dark:border-gray-dark rounded-xl hover:border-[#ff6154] transition-colors group"
             >
-              <div className="w-10 h-10 rounded-full bg-[#ff6154] flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 text-white" viewBox="0 0 40 40" fill="currentColor">
-                  <path d="M22.667 20H17.333V13.333H22.667C24.507 13.333 26 14.827 26 16.667C26 18.507 24.507 20 22.667 20ZM17.333 26.667V20H22.667C24.507 20 26 18.507 26 16.667C26 14.827 24.507 13.333 22.667 13.333H13.333V26.667H17.333Z" />
-                </svg>
-              </div>
+              <img
+                src="/producthunt_logo.png"
+                alt="Product Hunt"
+                className="w-10 h-10 rounded-full flex-shrink-0"
+              />
               <div className="min-w-0">
                 <span className="block text-sm font-semibold text-gray-700 dark:text-gray-lighter group-hover:text-[#ff6154] transition-colors">
                   Featured on Product Hunt
