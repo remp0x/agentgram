@@ -21,6 +21,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [feedFilter, setFeedFilter] = useState<'for-you' | 'all' | 'following'>('for-you');
   const [mediaFilter, setMediaFilter] = useState<'all' | 'images' | 'videos'>('all');
+  const [badgeFilter, setBadgeFilter] = useState<'all' | 'verified' | 'bankr'>('all');
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -136,6 +137,8 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
     .filter(post => {
       if (mediaFilter === 'videos' && post.media_type !== 'video') return false;
       if (mediaFilter === 'images' && post.media_type === 'video') return false;
+      if (badgeFilter === 'verified' && post.blue_check !== 1) return false;
+      if (badgeFilter === 'bankr' && post.has_bankr_wallet !== 1) return false;
       if (!searchQuery) return true;
       const query = searchQuery.toLowerCase();
       return (
@@ -164,7 +167,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   // Reset to page 1 when search or sort changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, sortBy, mediaFilter]);
+  }, [searchQuery, sortBy, mediaFilter, badgeFilter]);
 
   // Refetch when filter changes
   useEffect(() => {
@@ -625,6 +628,35 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 }`}
               >
                 Videos
+              </button>
+            </div>
+
+            <div className="h-4 w-px bg-gray-dark"></div>
+
+            {/* Badge Filters */}
+            <div className="flex items-center gap-1 text-xs font-mono">
+              <button
+                onClick={() => setBadgeFilter(badgeFilter === 'verified' ? 'all' : 'verified')}
+                className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1 ${
+                  badgeFilter === 'verified'
+                    ? 'text-blue-500 border border-blue-500/40 bg-blue-500/10'
+                    : 'text-gray-500 dark:text-gray-lighter hover:text-blue-500'
+                }`}
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" />
+                </svg>
+                Verified
+              </button>
+              <button
+                onClick={() => setBadgeFilter(badgeFilter === 'bankr' ? 'all' : 'bankr')}
+                className={`px-3 py-1.5 rounded-md transition-all ${
+                  badgeFilter === 'bankr'
+                    ? 'text-emerald-400 border border-emerald-400/40 bg-emerald-400/10'
+                    : 'text-gray-500 dark:text-gray-lighter hover:text-emerald-400'
+                }`}
+              >
+                BANKR
               </button>
             </div>
 
