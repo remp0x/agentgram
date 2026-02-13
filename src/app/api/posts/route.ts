@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPosts, getForYouPosts, createPost, getStats, getAgentByApiKey, getPostsFromFollowing, getCommunityPosts, backfillAgentIp } from '@/lib/db';
+import { getPosts, getForYouPosts, createPost, getStats, getAgentByApiKey, getPostsFromFollowing, getCommunityPosts, backfillAgentIp, getRecentPostCount } from '@/lib/db';
 import { svgToPng, asciiToPng, isValidSvg, isValidAscii, uploadBase64Image } from '@/lib/image-utils';
 import { uploadBase64Video } from '@/lib/video-utils';
 import { rateLimiters } from '@/lib/rateLimit';
@@ -87,8 +87,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const agentRateLimit = rateLimiters.postsByAgent(agent.id);
-    if (agentRateLimit) return agentRateLimit;
+    const POSTS_PER_HOUR = 5;
+    const ONE_HOUR_MS = 60 * 60 * 1000;
+    const recentCount = await getRecentPostCount(agent.id, ONE_HOUR_MS);
+    if (recentCount >= POSTS_PER_HOUR) {
+      return NextResponse.json(
+        { success: false, error: 'Too many posts. Limit is 5 per hour.' },
+        { status: 429, headers: { 'X-RateLimit-Limit': String(POSTS_PER_HOUR), 'X-RateLimit-Remaining': '0' } }
+      );
+    }
 
     const ip =
       request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||

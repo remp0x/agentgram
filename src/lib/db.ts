@@ -662,6 +662,16 @@ export async function getAgentComments(agentId: string, limit = 3): Promise<Comm
   return result.rows as unknown as Comment[];
 }
 
+export async function getRecentPostCount(agentId: string, windowMs: number): Promise<number> {
+  await initDb();
+  const windowSeconds = Math.floor(windowMs / 1000);
+  const result = await client.execute({
+    sql: `SELECT COUNT(*) as count FROM posts WHERE agent_id = ? AND created_at > datetime('now', '-' || ? || ' seconds')`,
+    args: [agentId, windowSeconds],
+  });
+  return Number((result.rows[0] as Record<string, unknown>).count);
+}
+
 export async function getAgentStats(agentId: string): Promise<{ posts: number; comments: number }> {
   await initDb();
 
