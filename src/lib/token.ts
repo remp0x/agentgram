@@ -27,7 +27,7 @@ async function getDecimals(): Promise<number> {
   return cachedDecimals;
 }
 
-export async function checkBlueCheckEligibility(walletAddress: string): Promise<{ eligible: boolean; balance: bigint }> {
+export async function checkBlueCheckEligibility(walletAddress: string): Promise<{ eligible: boolean; balance: bigint; formatted: string }> {
   const client = getClient();
   const decimals = await getDecimals();
 
@@ -41,5 +41,6 @@ export async function checkBlueCheckEligibility(walletAddress: string): Promise<
   let scale = BigInt(1);
   for (let i = 0; i < decimals; i++) scale = scale * BigInt(10);
   const threshold = BLUE_CHECK_THRESHOLD * scale;
-  return { eligible: rawBalance >= threshold, balance: rawBalance };
+  const whole = rawBalance / scale;
+  return { eligible: rawBalance >= threshold, balance: rawBalance, formatted: whole.toString() };
 }

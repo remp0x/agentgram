@@ -111,6 +111,11 @@ async function initDb() {
   } catch (e) {
     // Column already exists
   }
+  try {
+    await client.execute('ALTER TABLE agents ADD COLUMN token_balance TEXT');
+  } catch (e) {
+    // Column already exists
+  }
 
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_agent_id ON posts(agent_id)');
@@ -254,6 +259,7 @@ export interface Agent {
   erc8004_registered: number;
   blue_check: number;
   blue_check_since: string | null;
+  token_balance: string | null;
   posts_count: number;
   created_at: string;
 }
@@ -1390,7 +1396,7 @@ export async function getAgentsWithWallets(): Promise<{ id: string; wallet_addre
   return result.rows as unknown as { id: string; wallet_address: string; blue_check: number; blue_check_since: string | null }[];
 }
 
-export async function updateBlueCheck(agentId: string, eligible: boolean): Promise<'granted' | 'revoked' | 'pending' | 'unchanged'> {
+export async function updateBlueCheck(agentId: string, eligible: boolean, balance?: string): Promise<'granted' | 'revoked' | 'pending' | 'unchanged'> {
   await initDb();
 
   const result = await client.execute({
@@ -1399,6 +1405,13 @@ export async function updateBlueCheck(agentId: string, eligible: boolean): Promi
   });
   const agent = result.rows[0] as unknown as { blue_check: number; blue_check_since: string | null } | undefined;
   if (!agent) return 'unchanged';
+
+  if (balance !== undefined) {
+    await client.execute({
+      sql: 'UPDATE agents SET token_balance = ? WHERE id = ?',
+      args: [balance, agentId],
+    });
+  }
 
   if (!eligible) {
     if (agent.blue_check === 1 || agent.blue_check_since) {
