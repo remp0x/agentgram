@@ -21,7 +21,8 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [feedFilter, setFeedFilter] = useState<'for-you' | 'all' | 'following'>('for-you');
   const [mediaFilter, setMediaFilter] = useState<'all' | 'images' | 'videos'>('all');
-  const [badgeFilter, setBadgeFilter] = useState<'all' | 'verified' | 'bankr'>('all');
+  const [verifiedFilter, setVerifiedFilter] = useState(false);
+  const [bankrFilter, setBankrFilter] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -96,7 +97,10 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
       else if (feedFilter === 'following' && apiKey) params.set('filter', 'following');
       if (mediaFilter === 'images') params.set('mediaType', 'image');
       if (mediaFilter === 'videos') params.set('mediaType', 'video');
-      if (badgeFilter !== 'all') params.set('badge', badgeFilter);
+      const badges: string[] = [];
+      if (verifiedFilter) badges.push('verified');
+      if (bankrFilter) badges.push('bankr');
+      if (badges.length > 0) params.set('badge', badges.join(','));
       const qs = params.toString();
       const url = `/api/posts${qs ? `?${qs}` : ''}`;
       const headers: HeadersInit = {};
@@ -112,7 +116,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
     } catch (error) {
       console.error('Error fetching posts:', error);
     }
-  }, [feedFilter, mediaFilter, badgeFilter, apiKey]);
+  }, [feedFilter, mediaFilter, verifiedFilter, bankrFilter, apiKey]);
 
   // Poll for new posts every 10 seconds
   useEffect(() => {
@@ -166,7 +170,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
   // Reset to page 1 when search or sort changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, sortBy, mediaFilter, badgeFilter]);
+  }, [searchQuery, sortBy, mediaFilter, verifiedFilter, bankrFilter]);
 
   // Refetch when filter changes
   useEffect(() => {
@@ -559,7 +563,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
           </div>
 
           {/* Filters, Search & Sort — single row */}
-          <div className="mb-8 flex flex-wrap items-center gap-3">
+          <div className="mb-8 flex w-full items-center gap-3">
             {/* Feed Filters */}
             <div className="flex items-center gap-1 text-xs font-mono">
               <button
@@ -594,7 +598,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
               </button>
             </div>
 
-            <div className="h-4 w-px bg-gray-dark"></div>
+            <div className="h-4 w-px bg-gray-300 dark:bg-gray-dark"></div>
 
             {/* Media Filters */}
             <div className="flex items-center gap-1 text-xs font-mono">
@@ -630,29 +634,29 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
               </button>
             </div>
 
-            <div className="h-4 w-px bg-gray-dark"></div>
+            <div className="h-4 w-px bg-gray-300 dark:bg-gray-dark"></div>
 
             {/* Badge Filters */}
-            <div className="flex items-center gap-1 text-xs font-mono">
+            <div className="flex items-center gap-1.5 text-xs font-mono">
               <button
-                onClick={() => setBadgeFilter(badgeFilter === 'verified' ? 'all' : 'verified')}
-                className={`p-1.5 rounded-md transition-all ${
-                  badgeFilter === 'verified'
+                onClick={() => setVerifiedFilter(v => !v)}
+                className={`px-2.5 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
+                  verifiedFilter
                     ? 'text-blue-500 border border-blue-500/40 bg-blue-500/10'
-                    : 'text-gray-500 dark:text-gray-lighter hover:text-blue-500'
+                    : 'text-gray-500 dark:text-gray-lighter hover:text-blue-500 border border-transparent'
                 }`}
                 title="Verified agents"
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="currentColor" style={{ width: 18, height: 18 }}>
                   <path d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" />
                 </svg>
               </button>
               <button
-                onClick={() => setBadgeFilter(badgeFilter === 'bankr' ? 'all' : 'bankr')}
-                className={`px-1.5 py-1 rounded-md transition-all text-[9px] font-bold font-mono ${
-                  badgeFilter === 'bankr'
+                onClick={() => setBankrFilter(v => !v)}
+                className={`px-2.5 py-1.5 rounded-md transition-all text-[10px] font-bold font-mono leading-none ${
+                  bankrFilter
                     ? 'text-emerald-400 border border-emerald-400/40 bg-emerald-400/10'
-                    : 'text-gray-500 dark:text-gray-lighter hover:text-emerald-400'
+                    : 'text-gray-500 dark:text-gray-lighter hover:text-emerald-400 border border-transparent'
                 }`}
                 title="Bankr wallet agents"
               >
@@ -660,10 +664,12 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
               </button>
             </div>
 
+            <div className="flex-1"></div>
+
             {/* Search Bar */}
-            <div className="relative w-32">
+            <div className="relative w-36">
               <svg
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-medium"
+                className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-medium"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -676,7 +682,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-8 py-1.5 bg-transparent border border-gray-dark rounded-md text-black dark:text-white placeholder-gray-medium focus:outline-none focus:border-orange transition-colors font-mono text-xs"
+                className="w-full pl-8 pr-7 py-1.5 bg-transparent border border-gray-300 dark:border-gray-dark rounded-md text-black dark:text-white placeholder-gray-medium focus:outline-none focus:border-orange transition-colors font-mono text-xs"
               />
               {searchQuery && (
                 <button
@@ -694,7 +700,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'likes')}
-                className="px-3 py-1.5 bg-transparent border border-gray-dark rounded-md text-xs font-mono text-gray-light focus:outline-none focus:border-orange transition-colors cursor-pointer appearance-none pr-7 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23888%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_8px_center] bg-no-repeat"
+                className="px-3 py-1.5 bg-transparent border border-gray-300 dark:border-gray-dark rounded-md text-xs font-mono text-gray-600 dark:text-gray-light focus:outline-none focus:border-orange transition-colors cursor-pointer appearance-none pr-7 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23888%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_8px_center] bg-no-repeat"
               >
                 <option value="newest">Newest</option>
                 <option value="oldest">Oldest</option>

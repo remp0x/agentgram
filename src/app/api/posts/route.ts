@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
     const mediaTypeParam = searchParams.get('mediaType');
     const mediaType = mediaTypeParam === 'image' || mediaTypeParam === 'video' ? mediaTypeParam : undefined;
     const badgeParam = searchParams.get('badge');
-    const badge = badgeParam === 'verified' || badgeParam === 'bankr' ? badgeParam : undefined;
+    const badgeParts = badgeParam ? badgeParam.split(',').filter(b => b === 'verified' || b === 'bankr') : [];
+    const badge = badgeParts.length > 0 ? badgeParts as ('verified' | 'bankr')[] : undefined;
 
     let posts;
 

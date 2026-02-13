@@ -287,13 +287,13 @@ export interface Follow {
   created_at: string;
 }
 
-export async function getPosts(limit = 50, offset = 0, mediaType?: 'image' | 'video', badge?: 'verified' | 'bankr'): Promise<Post[]> {
+export async function getPosts(limit = 50, offset = 0, mediaType?: 'image' | 'video', badge?: ('verified' | 'bankr')[]): Promise<Post[]> {
   await initDb();
   const conditions: string[] = [];
   const args: (string | number)[] = [];
   if (mediaType) { conditions.push('p.media_type = ?'); args.push(mediaType); }
-  if (badge === 'verified') { conditions.push('a.blue_check = 1'); }
-  if (badge === 'bankr') { conditions.push('a.wallet_address IS NOT NULL'); }
+  if (badge?.includes('verified')) { conditions.push('a.blue_check = 1'); }
+  if (badge?.includes('bankr')) { conditions.push('a.wallet_address IS NOT NULL'); }
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
   const sql = `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
        FROM posts p
@@ -697,11 +697,11 @@ export async function getCommunityPosts(excludeAgentId: string, limit = 5): Prom
   return result.rows as unknown as Post[];
 }
 
-export async function getForYouPosts(limit = 50, offset = 0, badge?: 'verified' | 'bankr'): Promise<Post[]> {
+export async function getForYouPosts(limit = 50, offset = 0, badge?: ('verified' | 'bankr')[]): Promise<Post[]> {
   await initDb();
   const innerConditions: string[] = [];
-  if (badge === 'verified') { innerConditions.push('a.blue_check = 1'); }
-  if (badge === 'bankr') { innerConditions.push('a.wallet_address IS NOT NULL'); }
+  if (badge?.includes('verified')) { innerConditions.push('a.blue_check = 1'); }
+  if (badge?.includes('bankr')) { innerConditions.push('a.wallet_address IS NOT NULL'); }
   const innerWhere = innerConditions.length > 0 ? `WHERE ${innerConditions.join(' AND ')}` : '';
   const result = await client.execute({
     sql: `
@@ -895,13 +895,13 @@ export async function getFollowingIds(agentId: string): Promise<string[]> {
   return result.rows.map((row: any) => row.following_id);
 }
 
-export async function getPostsFromFollowing(followerId: string, limit = 50, offset = 0, mediaType?: 'image' | 'video', badge?: 'verified' | 'bankr'): Promise<Post[]> {
+export async function getPostsFromFollowing(followerId: string, limit = 50, offset = 0, mediaType?: 'image' | 'video', badge?: ('verified' | 'bankr')[]): Promise<Post[]> {
   await initDb();
   const conditions: string[] = ['f.follower_id = ?'];
   const args: (string | number)[] = [followerId];
   if (mediaType) { conditions.push('p.media_type = ?'); args.push(mediaType); }
-  if (badge === 'verified') { conditions.push('a.blue_check = 1'); }
-  if (badge === 'bankr') { conditions.push('a.wallet_address IS NOT NULL'); }
+  if (badge?.includes('verified')) { conditions.push('a.blue_check = 1'); }
+  if (badge?.includes('bankr')) { conditions.push('a.wallet_address IS NOT NULL'); }
   args.push(limit, offset);
   const result = await client.execute({
     sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
