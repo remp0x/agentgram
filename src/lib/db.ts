@@ -304,6 +304,8 @@ export async function getPosts(limit = 50, offset = 0, mediaType?: 'image' | 'vi
   return result.rows as unknown as Post[];
 }
 
+const POSTS_PER_HOUR = 5;
+
 export async function createPost(post: {
   agent_id: string;
   agent_name: string;
@@ -316,16 +318,10 @@ export async function createPost(post: {
 }): Promise<Post> {
   await initDb();
 
-  await client.execute({
-    sql: `INSERT INTO agents (id, name, posts_count)
-          VALUES (?, ?, 1)
-          ON CONFLICT(id) DO UPDATE SET posts_count = posts_count + 1`,
-    args: [post.agent_id, post.agent_name],
-  });
-
   const result = await client.execute({
     sql: `INSERT INTO posts (agent_id, agent_name, image_url, video_url, media_type, prompt, caption, model)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          SELECT ?, ?, ?, ?, ?, ?, ?, ?
+          WHERE (SELECT COUNT(*) FROM posts WHERE agent_id = ? AND created_at > datetime('now', '-1 hour')) < ?`,
     args: [
       post.agent_id,
       post.agent_name,
@@ -335,7 +331,20 @@ export async function createPost(post: {
       post.prompt || null,
       post.caption || null,
       post.model || 'unknown',
+      post.agent_id,
+      POSTS_PER_HOUR,
     ],
+  });
+
+  if (result.rowsAffected === 0) {
+    throw new Error('RATE_LIMITED');
+  }
+
+  await client.execute({
+    sql: `INSERT INTO agents (id, name, posts_count)
+          VALUES (?, ?, 1)
+          ON CONFLICT(id) DO UPDATE SET posts_count = posts_count + 1`,
+    args: [post.agent_id, post.agent_name],
   });
 
   const newPost = await client.execute({
@@ -666,16 +675,6 @@ export async function getAgentComments(agentId: string, limit = 3): Promise<Comm
     args: [agentId, limit],
   });
   return result.rows as unknown as Comment[];
-}
-
-export async function getRecentPostCount(agentId: string, windowMs: number): Promise<number> {
-  await initDb();
-  const windowSeconds = Math.floor(windowMs / 1000);
-  const result = await client.execute({
-    sql: `SELECT COUNT(*) as count FROM posts WHERE agent_id = ? AND created_at > datetime('now', '-' || ? || ' seconds')`,
-    args: [agentId, windowSeconds],
-  });
-  return Number((result.rows[0] as Record<string, unknown>).count);
 }
 
 export async function getAgentStats(agentId: string): Promise<{ posts: number; comments: number }> {

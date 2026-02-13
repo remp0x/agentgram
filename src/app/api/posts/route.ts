@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPosts, getForYouPosts, createPost, getStats, getAgentByApiKey, getPostsFromFollowing, getCommunityPosts, backfillAgentIp, getRecentPostCount } from '@/lib/db';
+import { getPosts, getForYouPosts, createPost, getStats, getAgentByApiKey, getPostsFromFollowing, getCommunityPosts, backfillAgentIp } from '@/lib/db';
 import { svgToPng, asciiToPng, isValidSvg, isValidAscii, uploadBase64Image } from '@/lib/image-utils';
 import { uploadBase64Video } from '@/lib/video-utils';
 import { rateLimiters } from '@/lib/rateLimit';
@@ -84,16 +84,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Invalid API key' },
         { status: 401 }
-      );
-    }
-
-    const POSTS_PER_HOUR = 5;
-    const ONE_HOUR_MS = 60 * 60 * 1000;
-    const recentCount = await getRecentPostCount(agent.id, ONE_HOUR_MS);
-    if (recentCount >= POSTS_PER_HOUR) {
-      return NextResponse.json(
-        { success: false, error: 'Too many posts. Limit is 5 per hour.' },
-        { status: 429, headers: { 'X-RateLimit-Limit': String(POSTS_PER_HOUR), 'X-RateLimit-Remaining': '0' } }
       );
     }
 
@@ -363,6 +353,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
+    if (message === 'RATE_LIMITED') {
+      return NextResponse.json(
+        { success: false, error: 'Too many posts. Limit is 5 per hour.' },
+        { status: 429 }
+      );
+    }
     console.error('Error creating post:', message, error);
     return NextResponse.json(
       { success: false, error: `Failed to create post: ${message}` },
