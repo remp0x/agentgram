@@ -1,6 +1,5 @@
 import { createClient, Client } from '@libsql/client';
 import { randomBytes } from 'crypto';
-import { isWalletConfigured, generateAgentWallet } from './wallet';
 
 const client: Client = createClient({
   url: process.env.TURSO_DATABASE_URL || 'file:local.db',
@@ -239,6 +238,7 @@ export interface Post {
   coin_tx_hash: string | null;
   coin_error: string | null;
   blue_check: number | null;
+  has_bankr_wallet: number | null;
   created_at: string;
 }
 
@@ -290,12 +290,12 @@ export interface Follow {
 export async function getPosts(limit = 50, offset = 0, mediaType?: 'image' | 'video'): Promise<Post[]> {
   await initDb();
   const sql = mediaType
-    ? `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check
+    ? `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
        FROM posts p
        LEFT JOIN agents a ON p.agent_id = a.id
        WHERE p.media_type = ?
        ORDER BY p.created_at DESC LIMIT ? OFFSET ?`
-    : `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check
+    : `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
        FROM posts p
        LEFT JOIN agents a ON p.agent_id = a.id
        ORDER BY p.created_at DESC LIMIT ? OFFSET ?`;
@@ -525,8 +525,6 @@ export async function registerAgent(data: {
   api_key: string;
   verification_code: string;
   claim_url: string;
-  wallet_address: string | null;
-  encrypted_private_key: string | null;
 }> {
   await initDb();
 
@@ -535,19 +533,10 @@ export async function registerAgent(data: {
   const verificationCode = generateVerificationCode();
   const claimUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.agentgram.site'}/claim/${verificationCode}`;
 
-  let walletAddress: string | null = null;
-  let encryptedKey: string | null = null;
-
-  if (isWalletConfigured()) {
-    const wallet = generateAgentWallet();
-    walletAddress = wallet.address;
-    encryptedKey = wallet.encryptedPrivateKey;
-  }
-
   await client.execute({
-    sql: `INSERT INTO agents (id, name, description, api_key, verified, verification_code, registration_ip, wallet_address, encrypted_private_key)
-          VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?)`,
-    args: [agentId, data.name, data.description, apiKey, verificationCode, data.ip || null, walletAddress, encryptedKey],
+    sql: `INSERT INTO agents (id, name, description, api_key, verified, verification_code, registration_ip)
+          VALUES (?, ?, ?, ?, 0, ?, ?)`,
+    args: [agentId, data.name, data.description, apiKey, verificationCode, data.ip || null],
   });
 
   return {
@@ -555,8 +544,6 @@ export async function registerAgent(data: {
     api_key: apiKey,
     verification_code: verificationCode,
     claim_url: claimUrl,
-    wallet_address: walletAddress,
-    encrypted_private_key: encryptedKey,
   };
 }
 
@@ -658,7 +645,7 @@ export async function getAgentByVerificationCode(code: string): Promise<Agent | 
 export async function getAgentPosts(agentId: string, limit = 50, offset = 0): Promise<Post[]> {
   await initDb();
   const result = await client.execute({
-    sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check
+    sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
           FROM posts p
           LEFT JOIN agents a ON p.agent_id = a.id
           WHERE p.agent_id = ?
@@ -714,7 +701,7 @@ export async function getForYouPosts(limit = 50, offset = 0): Promise<Post[]> {
   const result = await client.execute({
     sql: `
       WITH post_scores AS (
-        SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check,
+        SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet,
           (p.likes * 3
            + (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) * 5
            + CASE WHEN p.created_at > datetime('now', '-1 day') THEN 20
@@ -722,6 +709,7 @@ export async function getForYouPosts(limit = 50, offset = 0): Promise<Post[]> {
                   WHEN p.created_at > datetime('now', '-7 days') THEN 5
                   ELSE 0 END
            + CASE WHEN p.media_type = 'video' THEN 5 ELSE 0 END
+           + CASE WHEN a.wallet_address IS NOT NULL THEN 15 ELSE 0 END
           ) as score,
           ROW_NUMBER() OVER (PARTITION BY p.agent_id ORDER BY p.likes DESC) as agent_rank
         FROM posts p
@@ -740,7 +728,7 @@ export async function getForYouPosts(limit = 50, offset = 0): Promise<Post[]> {
 export async function getPostById(postId: number): Promise<Post | null> {
   await initDb();
   const result = await client.execute({
-    sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check
+    sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
           FROM posts p
           LEFT JOIN agents a ON p.agent_id = a.id
           WHERE p.id = ?`,
@@ -908,7 +896,7 @@ export async function getPostsFromFollowing(followerId: string, limit = 50, offs
     ? [followerId, mediaType, limit, offset]
     : [followerId, limit, offset];
   const result = await client.execute({
-    sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check
+    sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
           FROM posts p
           INNER JOIN follows f ON p.agent_id = f.following_id
           LEFT JOIN agents a ON p.agent_id = a.id
@@ -1016,11 +1004,11 @@ export async function updateAgentErc8004(agentId: string, erc8004AgentId: number
   });
 }
 
-export async function updateAgentWallet(agentId: string, encryptedKey: string, walletAddress: string): Promise<void> {
+export async function setExternalWallet(agentId: string, walletAddress: string): Promise<void> {
   await initDb();
   await client.execute({
-    sql: 'UPDATE agents SET encrypted_private_key = ?, wallet_address = ? WHERE id = ?',
-    args: [encryptedKey, walletAddress, agentId],
+    sql: 'UPDATE agents SET wallet_address = ?, encrypted_private_key = NULL WHERE id = ?',
+    args: [walletAddress, agentId],
   });
 }
 

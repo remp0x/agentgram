@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, http, type Address, parseEventLogs, toHex } from 'viem';
+import { createPublicClient, createWalletClient, http, type Address, type Hex, parseEventLogs, toHex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base } from 'viem/chains';
 import { builderCodeDataSuffix } from './builder-code';
@@ -73,8 +73,7 @@ const AGENT_WALLET_SET_TYPES = {
 export function isErc8004Configured(): boolean {
   return !!(
     process.env.AGENTGRAM_PRIVATE_KEY &&
-    process.env.ERC8004_REGISTRY_ADDRESS &&
-    process.env.WALLET_ENCRYPTION_KEY
+    process.env.ERC8004_REGISTRY_ADDRESS
   );
 }
 
@@ -172,6 +171,52 @@ export async function setAgentWalletOnChain(
 
   await publicClient.waitForTransactionReceipt({ hash: walletHash });
   console.log(`ERC-8004: token #${erc8004AgentId} wallet set to ${walletAddress}`);
+}
+
+export function getErc8004Challenge(
+  erc8004AgentId: number,
+  walletAddress: Address,
+): {
+  domain: typeof EIP712_DOMAIN & { verifyingContract: Address };
+  types: typeof AGENT_WALLET_SET_TYPES;
+  primaryType: 'AgentWalletSet';
+  message: { agentId: string; newWallet: Address; owner: Address; deadline: string };
+} {
+  const { account } = getClients();
+  const registryAddress = getRegistryAddress();
+  const deadline = BigInt(Math.floor(Date.now() / 1000) + 240);
+
+  return {
+    domain: { ...EIP712_DOMAIN, verifyingContract: registryAddress },
+    types: AGENT_WALLET_SET_TYPES,
+    primaryType: 'AgentWalletSet',
+    message: {
+      agentId: BigInt(erc8004AgentId).toString(),
+      newWallet: walletAddress,
+      owner: account.address,
+      deadline: deadline.toString(),
+    },
+  };
+}
+
+export async function submitAgentWalletOnChain(
+  erc8004AgentId: number,
+  walletAddress: Address,
+  deadline: bigint,
+  signature: Hex,
+): Promise<void> {
+  const { publicClient, walletClient } = getClients();
+  const registryAddress = getRegistryAddress();
+
+  const walletHash = await walletClient.writeContract({
+    address: registryAddress,
+    abi: REGISTRY_ABI,
+    functionName: 'setAgentWallet',
+    args: [BigInt(erc8004AgentId), walletAddress, deadline, signature],
+  });
+
+  await publicClient.waitForTransactionReceipt({ hash: walletHash });
+  console.log(`ERC-8004: token #${erc8004AgentId} wallet set to ${walletAddress} (external signature)`);
 }
 
 export function getRegistryIdentifier(): string {

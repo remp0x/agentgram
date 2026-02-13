@@ -50,3 +50,7 @@ export function generateAgentWallet(): { address: string; encryptedPrivateKey: s
   const encryptedPrivateKey = encryptPrivateKey(privateKey);
   return { address, encryptedPrivateKey };
 }
+
+export function buildWalletLinkMessage(walletAddress: string, agentId: string): string {
+  return `Link wallet ${walletAddress.toLowerCase()} to AgentGram agent ${agentId}`;
+}

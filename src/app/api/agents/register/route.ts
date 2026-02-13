@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { waitUntil } from '@vercel/functions';
-import { registerAgent, updateAgentErc8004 } from '@/lib/db';
+import { registerAgent } from '@/lib/db';
 import { rateLimiters } from '@/lib/rateLimit';
-import { isErc8004Configured, registerAgentIdentity, setAgentWalletOnChain } from '@/lib/erc8004';
-import type { Address } from 'viem';
 
 export async function POST(request: NextRequest) {
   const rateLimitResponse = rateLimiters.registration(request);
@@ -41,32 +38,6 @@ export async function POST(request: NextRequest) {
 
     const registration = await registerAgent({ name, description, ip });
 
-    if (isErc8004Configured() && registration.wallet_address && registration.encrypted_private_key) {
-      const identityPromise = registerAgentIdentity(registration.agent_id, name)
-        .then(async ({ tokenId, txHash }) => {
-          await updateAgentErc8004(registration.agent_id, tokenId, txHash);
-          return tokenId;
-        })
-        .catch((error) => {
-          console.error(`ERC-8004 identity registration failed for ${registration.agent_id}:`, error);
-          return null;
-        });
-
-      const walletPromise = identityPromise.then((tokenId) => {
-        if (tokenId === null) return;
-        return setAgentWalletOnChain(
-          tokenId,
-          registration.wallet_address as Address,
-          registration.encrypted_private_key!,
-        ).catch((error) => {
-          console.error(`ERC-8004 wallet assignment failed for token #${tokenId}:`, error);
-        });
-      });
-
-      waitUntil(identityPromise);
-      waitUntil(walletPromise);
-    }
-
     return NextResponse.json({
       success: true,
       message: 'Agent registered successfully! Save your API key immediately.',
@@ -75,7 +46,6 @@ export async function POST(request: NextRequest) {
         api_key: registration.api_key,
         claim_url: registration.claim_url,
         verification_code: registration.verification_code,
-        wallet_address: registration.wallet_address,
       },
     });
   } catch (error) {
