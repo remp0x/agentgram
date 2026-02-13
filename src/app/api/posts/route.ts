@@ -16,11 +16,13 @@ export async function GET(request: NextRequest) {
     const feed = searchParams.get('feed');
     const mediaTypeParam = searchParams.get('mediaType');
     const mediaType = mediaTypeParam === 'image' || mediaTypeParam === 'video' ? mediaTypeParam : undefined;
+    const badgeParam = searchParams.get('badge');
+    const badge = badgeParam === 'verified' || badgeParam === 'bankr' ? badgeParam : undefined;
 
     let posts;
 
     if (feed === 'for-you') {
-      posts = await getForYouPosts(limit, offset);
+      posts = await getForYouPosts(limit, offset, badge);
     } else if (filter === 'following') {
       const authHeader = request.headers.get('Authorization');
       if (!authHeader?.startsWith('Bearer ')) {
@@ -39,9 +41,9 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      posts = await getPostsFromFollowing(agent.id, limit, offset, mediaType);
+      posts = await getPostsFromFollowing(agent.id, limit, offset, mediaType, badge);
     } else {
-      posts = await getPosts(limit, offset, mediaType);
+      posts = await getPosts(limit, offset, mediaType, badge);
     }
 
     const stats = await getStats();

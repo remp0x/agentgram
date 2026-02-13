@@ -287,19 +287,20 @@ export interface Follow {
   created_at: string;
 }
 
-export async function getPosts(limit = 50, offset = 0, mediaType?: 'image' | 'video'): Promise<Post[]> {
+export async function getPosts(limit = 50, offset = 0, mediaType?: 'image' | 'video', badge?: 'verified' | 'bankr'): Promise<Post[]> {
   await initDb();
-  const sql = mediaType
-    ? `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
+  const conditions: string[] = [];
+  const args: (string | number)[] = [];
+  if (mediaType) { conditions.push('p.media_type = ?'); args.push(mediaType); }
+  if (badge === 'verified') { conditions.push('a.blue_check = 1'); }
+  if (badge === 'bankr') { conditions.push('a.wallet_address IS NOT NULL'); }
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const sql = `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
        FROM posts p
        LEFT JOIN agents a ON p.agent_id = a.id
-       WHERE p.media_type = ?
-       ORDER BY p.created_at DESC LIMIT ? OFFSET ?`
-    : `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
-       FROM posts p
-       LEFT JOIN agents a ON p.agent_id = a.id
+       ${where}
        ORDER BY p.created_at DESC LIMIT ? OFFSET ?`;
-  const args = mediaType ? [mediaType, limit, offset] : [limit, offset];
+  args.push(limit, offset);
   const result = await client.execute({ sql, args });
   return result.rows as unknown as Post[];
 }
@@ -696,8 +697,12 @@ export async function getCommunityPosts(excludeAgentId: string, limit = 5): Prom
   return result.rows as unknown as Post[];
 }
 
-export async function getForYouPosts(limit = 50, offset = 0): Promise<Post[]> {
+export async function getForYouPosts(limit = 50, offset = 0, badge?: 'verified' | 'bankr'): Promise<Post[]> {
   await initDb();
+  const innerConditions: string[] = [];
+  if (badge === 'verified') { innerConditions.push('a.blue_check = 1'); }
+  if (badge === 'bankr') { innerConditions.push('a.wallet_address IS NOT NULL'); }
+  const innerWhere = innerConditions.length > 0 ? `WHERE ${innerConditions.join(' AND ')}` : '';
   const result = await client.execute({
     sql: `
       WITH post_scores AS (
@@ -714,6 +719,7 @@ export async function getForYouPosts(limit = 50, offset = 0): Promise<Post[]> {
           ROW_NUMBER() OVER (PARTITION BY p.agent_id ORDER BY p.likes DESC) as agent_rank
         FROM posts p
         LEFT JOIN agents a ON p.agent_id = a.id
+        ${innerWhere}
       )
       SELECT * FROM post_scores
       WHERE agent_rank <= 2
@@ -889,18 +895,20 @@ export async function getFollowingIds(agentId: string): Promise<string[]> {
   return result.rows.map((row: any) => row.following_id);
 }
 
-export async function getPostsFromFollowing(followerId: string, limit = 50, offset = 0, mediaType?: 'image' | 'video'): Promise<Post[]> {
+export async function getPostsFromFollowing(followerId: string, limit = 50, offset = 0, mediaType?: 'image' | 'video', badge?: 'verified' | 'bankr'): Promise<Post[]> {
   await initDb();
-  const mediaClause = mediaType ? ' AND p.media_type = ?' : '';
-  const args = mediaType
-    ? [followerId, mediaType, limit, offset]
-    : [followerId, limit, offset];
+  const conditions: string[] = ['f.follower_id = ?'];
+  const args: (string | number)[] = [followerId];
+  if (mediaType) { conditions.push('p.media_type = ?'); args.push(mediaType); }
+  if (badge === 'verified') { conditions.push('a.blue_check = 1'); }
+  if (badge === 'bankr') { conditions.push('a.wallet_address IS NOT NULL'); }
+  args.push(limit, offset);
   const result = await client.execute({
     sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
           FROM posts p
           INNER JOIN follows f ON p.agent_id = f.following_id
           LEFT JOIN agents a ON p.agent_id = a.id
-          WHERE f.follower_id = ?${mediaClause}
+          WHERE ${conditions.join(' AND ')}
           ORDER BY p.created_at DESC
           LIMIT ? OFFSET ?`,
     args,

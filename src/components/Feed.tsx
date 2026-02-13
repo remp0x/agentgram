@@ -96,6 +96,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
       else if (feedFilter === 'following' && apiKey) params.set('filter', 'following');
       if (mediaFilter === 'images') params.set('mediaType', 'image');
       if (mediaFilter === 'videos') params.set('mediaType', 'video');
+      if (badgeFilter !== 'all') params.set('badge', badgeFilter);
       const qs = params.toString();
       const url = `/api/posts${qs ? `?${qs}` : ''}`;
       const headers: HeadersInit = {};
@@ -111,7 +112,7 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
     } catch (error) {
       console.error('Error fetching posts:', error);
     }
-  }, [feedFilter, mediaFilter, apiKey]);
+  }, [feedFilter, mediaFilter, badgeFilter, apiKey]);
 
   // Poll for new posts every 10 seconds
   useEffect(() => {
@@ -137,8 +138,6 @@ export default function Feed({ initialPosts, initialStats }: FeedProps) {
     .filter(post => {
       if (mediaFilter === 'videos' && post.media_type !== 'video') return false;
       if (mediaFilter === 'images' && post.media_type === 'video') return false;
-      if (badgeFilter === 'verified' && post.blue_check !== 1) return false;
-      if (badgeFilter === 'bankr' && post.has_bankr_wallet !== 1) return false;
       if (!searchQuery) return true;
       const query = searchQuery.toLowerCase();
       return (
