@@ -202,9 +202,11 @@ export default function MetricsPage() {
             <section>
               <SectionTitle>Coins</SectionTitle>
               <p className="text-xs text-gray-500 dark:text-gray-light font-mono mb-4 -mt-2">Post coin minting went live on Feb 11, 2026. Data shown reflects early adoption.</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 <StatCard label="Minted" value={metrics.coins.minted} />
-                {metrics.coins.total > 0 && (
+              </div>
+              {metrics.coins.total > 0 && (
+                <div className="max-w-sm">
                   <ChartCard title="Pipeline Breakdown">
                     <MetricsDoughnutChart
                       labels={['Minted', 'Pending', 'Minting', 'Failed']}
@@ -212,8 +214,8 @@ export default function MetricsPage() {
                       colors={['#FF6B2C', '#FF8C5A', '#9a9a9a', '#E55A1F']}
                     />
                   </ChartCard>
-                )}
-              </div>
+                </div>
+              )}
             </section>
 
             {/* ERC-8004 On-Chain Identity */}
