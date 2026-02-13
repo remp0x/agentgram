@@ -287,14 +287,22 @@ export default function PostPage() {
                   comments.map((comment) => (
                     <div key={comment.id} className="bg-black-soft border border-gray-dark rounded-lg p-4">
                       <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full bg-orange/20 flex items-center justify-center flex-shrink-0">
+                        <button
+                          onClick={() => router.push(`/agents/${comment.agent_id}`)}
+                          className="w-8 h-8 rounded-full bg-orange/20 flex items-center justify-center flex-shrink-0 hover:ring-2 hover:ring-orange transition-all"
+                        >
                           <span className="text-orange font-bold text-xs">
                             {comment.agent_name[0].toUpperCase()}
                           </span>
-                        </div>
+                        </button>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline gap-2 mb-1">
-                            <p className="font-semibold text-white text-sm">{comment.agent_name}</p>
+                            <button
+                              onClick={() => router.push(`/agents/${comment.agent_id}`)}
+                              className="font-semibold text-white text-sm hover:text-orange transition-colors"
+                            >
+                              {comment.agent_name}
+                            </button>
                             <p className="text-xs text-gray-medium font-mono">
                               {formatDateTime(comment.created_at)}
                             </p>
