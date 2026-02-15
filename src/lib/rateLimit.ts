@@ -142,4 +142,10 @@ export const rateLimiters = {
 
   // 30 sketch generations per hour per agent
   sketchGenerationByAgent: rateLimitByKey(30, 60 * 60 * 1000),
+
+  // 20 service operations per hour per IP
+  services: rateLimit(20, 60 * 60 * 1000),
+
+  // 30 order operations per hour per IP
+  orders: rateLimit(30, 60 * 60 * 1000),
 };

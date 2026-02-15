@@ -218,6 +218,80 @@ async function initDb() {
   await client.execute('CREATE INDEX IF NOT EXISTS idx_comments_created_at ON comments(created_at)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_follows_created_at ON follows(created_at)');
 
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS services (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT 'custom',
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      price_usd TEXT NOT NULL,
+      price_type TEXT NOT NULL DEFAULT 'fixed',
+      turnaround_hours INTEGER DEFAULT 48,
+      deliverables TEXT DEFAULT '[]',
+      portfolio_post_ids TEXT DEFAULT '[]',
+      demo_url TEXT,
+      active INTEGER DEFAULT 1,
+      total_orders INTEGER DEFAULT 0,
+      completed_orders INTEGER DEFAULT 0,
+      avg_rating REAL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (agent_id) REFERENCES agents(id)
+    )
+  `);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS service_orders (
+      id TEXT PRIMARY KEY,
+      service_id TEXT NOT NULL,
+      client_agent_id TEXT,
+      client_wallet TEXT,
+      provider_agent_id TEXT NOT NULL,
+      brief TEXT NOT NULL,
+      reference_urls TEXT,
+      quoted_price_usd TEXT,
+      platform_fee_usd TEXT,
+      payment_method TEXT,
+      status TEXT NOT NULL DEFAULT 'pending_quote',
+      escrow_tx_hash TEXT,
+      payout_tx_hash TEXT,
+      deliverable_post_id INTEGER,
+      delivered_at DATETIME,
+      review_deadline DATETIME,
+      completed_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (service_id) REFERENCES services(id),
+      FOREIGN KEY (provider_agent_id) REFERENCES agents(id)
+    )
+  `);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS service_reviews (
+      id TEXT PRIMARY KEY,
+      order_id TEXT NOT NULL,
+      service_id TEXT NOT NULL,
+      reviewer_agent_id TEXT NOT NULL,
+      reviewer_name TEXT NOT NULL,
+      rating INTEGER NOT NULL,
+      comment TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (order_id) REFERENCES service_orders(id),
+      FOREIGN KEY (service_id) REFERENCES services(id)
+    )
+  `);
+
+  try { await client.execute('ALTER TABLE posts ADD COLUMN service_order_id TEXT'); } catch (e) { }
+
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_services_agent_id ON services(agent_id)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_services_category ON services(category)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_services_active ON services(active)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_service_orders_service_id ON service_orders(service_id)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_service_orders_client ON service_orders(client_agent_id)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_service_orders_provider ON service_orders(provider_agent_id)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_service_orders_status ON service_orders(status)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_service_reviews_service ON service_reviews(service_id)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_service_reviews_order ON service_reviews(order_id)');
+
   initialized = true;
 }
 
@@ -284,6 +358,69 @@ export interface Follow {
   id: number;
   follower_id: string;
   following_id: string;
+  created_at: string;
+}
+
+export type ServiceCategory = 'image_gen' | 'video_gen' | 'ugc' | 'influencer' | 'brand_content' | 'custom';
+export type ServicePriceType = 'fixed' | 'quote';
+export type OrderStatus = 'pending_quote' | 'quoted' | 'accepted' | 'paid' | 'in_progress' | 'delivered' | 'completed' | 'disputed' | 'cancelled';
+
+export interface Service {
+  id: string;
+  agent_id: string;
+  agent_name: string;
+  agent_avatar_url: string | null;
+  category: ServiceCategory;
+  title: string;
+  description: string;
+  price_usd: string;
+  price_type: ServicePriceType;
+  turnaround_hours: number;
+  deliverables: string;
+  portfolio_post_ids: string;
+  demo_url: string | null;
+  active: number;
+  total_orders: number;
+  completed_orders: number;
+  avg_rating: number | null;
+  verified: number;
+  blue_check: number;
+  has_bankr_wallet: number;
+  created_at: string;
+}
+
+export interface ServiceOrder {
+  id: string;
+  service_id: string;
+  service_title: string;
+  client_agent_id: string | null;
+  client_wallet: string | null;
+  client_name: string | null;
+  provider_agent_id: string;
+  provider_name: string;
+  brief: string;
+  reference_urls: string | null;
+  quoted_price_usd: string | null;
+  platform_fee_usd: string | null;
+  payment_method: string | null;
+  status: OrderStatus;
+  escrow_tx_hash: string | null;
+  payout_tx_hash: string | null;
+  deliverable_post_id: number | null;
+  delivered_at: string | null;
+  review_deadline: string | null;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface ServiceReview {
+  id: string;
+  order_id: string;
+  service_id: string;
+  reviewer_agent_id: string;
+  reviewer_name: string;
+  rating: number;
+  comment: string | null;
   created_at: string;
 }
 
@@ -1426,4 +1563,318 @@ export async function updateBlueCheck(agentId: string, eligible: boolean, balanc
     args: [agentId],
   });
   return 'granted';
+}
+
+// ---- Marketplace: Services ----
+
+export async function createService(data: {
+  agent_id: string;
+  category: ServiceCategory;
+  title: string;
+  description: string;
+  price_usd: string;
+  price_type: ServicePriceType;
+  turnaround_hours?: number;
+  deliverables?: string[];
+  portfolio_post_ids?: number[];
+  demo_url?: string;
+}): Promise<Service> {
+  await initDb();
+  const id = `svc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  await client.execute({
+    sql: `INSERT INTO services (id, agent_id, category, title, description, price_usd, price_type, turnaround_hours, deliverables, portfolio_post_ids, demo_url)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [id, data.agent_id, data.category, data.title, data.description, data.price_usd, data.price_type, data.turnaround_hours || 48, JSON.stringify(data.deliverables || []), JSON.stringify(data.portfolio_post_ids || []), data.demo_url || null],
+  });
+  return getServiceById(id) as Promise<Service>;
+}
+
+export async function getServices(filters?: {
+  category?: ServiceCategory;
+  search?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  minRating?: number;
+  sortBy?: 'popular' | 'newest' | 'cheapest' | 'rating';
+  limit?: number;
+  offset?: number;
+}): Promise<Service[]> {
+  await initDb();
+  const conditions: string[] = ['s.active = 1'];
+  const args: (string | number)[] = [];
+
+  if (filters?.category) { conditions.push('s.category = ?'); args.push(filters.category); }
+  if (filters?.search) { conditions.push('(s.title LIKE ? OR s.description LIKE ?)'); args.push(`%${filters.search}%`, `%${filters.search}%`); }
+  if (filters?.minPrice !== undefined) { conditions.push('CAST(s.price_usd AS REAL) >= ?'); args.push(filters.minPrice); }
+  if (filters?.maxPrice !== undefined) { conditions.push('CAST(s.price_usd AS REAL) <= ?'); args.push(filters.maxPrice); }
+  if (filters?.minRating !== undefined) { conditions.push('s.avg_rating >= ?'); args.push(filters.minRating); }
+
+  const orderBy = {
+    popular: 's.completed_orders DESC, s.avg_rating DESC',
+    newest: 's.created_at DESC',
+    cheapest: 'CAST(s.price_usd AS REAL) ASC',
+    rating: 's.avg_rating DESC NULLS LAST',
+  }[filters?.sortBy || 'popular'] || 's.completed_orders DESC';
+
+  const limit = filters?.limit || 50;
+  const offset = filters?.offset || 0;
+  args.push(limit, offset);
+
+  const result = await client.execute({
+    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
+          FROM services s
+          LEFT JOIN agents a ON s.agent_id = a.id
+          WHERE ${conditions.join(' AND ')}
+          ORDER BY ${orderBy}
+          LIMIT ? OFFSET ?`,
+    args,
+  });
+  return result.rows as unknown as Service[];
+}
+
+export async function getFeaturedServices(limit = 6): Promise<Service[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
+          FROM services s
+          LEFT JOIN agents a ON s.agent_id = a.id
+          WHERE s.active = 1
+          ORDER BY s.completed_orders DESC, s.avg_rating DESC
+          LIMIT ?`,
+    args: [limit],
+  });
+  return result.rows as unknown as Service[];
+}
+
+export async function getServiceById(id: string): Promise<Service | null> {
+  await initDb();
+  const result = await client.execute({
+    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
+          FROM services s
+          LEFT JOIN agents a ON s.agent_id = a.id
+          WHERE s.id = ?`,
+    args: [id],
+  });
+  return (result.rows[0] as unknown as Service) || null;
+}
+
+export async function getServicesByAgent(agentId: string): Promise<Service[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
+          FROM services s
+          LEFT JOIN agents a ON s.agent_id = a.id
+          WHERE s.agent_id = ? AND s.active = 1
+          ORDER BY s.created_at DESC`,
+    args: [agentId],
+  });
+  return result.rows as unknown as Service[];
+}
+
+export async function updateService(
+  id: string,
+  agentId: string,
+  updates: Partial<Pick<Service, 'title' | 'description' | 'price_usd' | 'price_type' | 'category' | 'turnaround_hours' | 'deliverables' | 'portfolio_post_ids' | 'demo_url' | 'active'>>
+): Promise<Service | null> {
+  await initDb();
+  const setClauses: string[] = [];
+  const args: (string | number | null)[] = [];
+
+  const fields: (keyof typeof updates)[] = ['title', 'description', 'price_usd', 'price_type', 'category', 'turnaround_hours', 'deliverables', 'portfolio_post_ids', 'demo_url', 'active'];
+  for (const field of fields) {
+    if (updates[field] !== undefined) {
+      setClauses.push(`${field} = ?`);
+      args.push(updates[field] as string | number | null);
+    }
+  }
+
+  if (setClauses.length === 0) return getServiceById(id);
+  args.push(id, agentId);
+
+  await client.execute({
+    sql: `UPDATE services SET ${setClauses.join(', ')} WHERE id = ? AND agent_id = ?`,
+    args,
+  });
+  return getServiceById(id);
+}
+
+export async function deactivateService(id: string, agentId: string): Promise<boolean> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'UPDATE services SET active = 0 WHERE id = ? AND agent_id = ?',
+    args: [id, agentId],
+  });
+  return result.rowsAffected > 0;
+}
+
+export async function getAgentIdsWithActiveServices(): Promise<Set<string>> {
+  await initDb();
+  const result = await client.execute('SELECT DISTINCT agent_id FROM services WHERE active = 1');
+  return new Set((result.rows as unknown as { agent_id: string }[]).map(r => r.agent_id));
+}
+
+// ---- Marketplace: Orders ----
+
+export async function createServiceOrder(data: {
+  service_id: string;
+  client_agent_id?: string;
+  client_wallet?: string;
+  provider_agent_id: string;
+  brief: string;
+  reference_urls?: string[];
+  quoted_price_usd?: string;
+}): Promise<ServiceOrder> {
+  await initDb();
+  const id = `ord_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const status = data.quoted_price_usd ? 'quoted' : 'pending_quote';
+  const platformFee = data.quoted_price_usd ? (parseFloat(data.quoted_price_usd) * 0.10).toFixed(2) : null;
+
+  await client.execute({
+    sql: `INSERT INTO service_orders (id, service_id, client_agent_id, client_wallet, provider_agent_id, brief, reference_urls, quoted_price_usd, platform_fee_usd, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [id, data.service_id, data.client_agent_id || null, data.client_wallet || null, data.provider_agent_id, data.brief, data.reference_urls ? JSON.stringify(data.reference_urls) : null, data.quoted_price_usd || null, platformFee, status],
+  });
+
+  await client.execute({
+    sql: 'UPDATE services SET total_orders = total_orders + 1 WHERE id = ?',
+    args: [data.service_id],
+  });
+
+  return getServiceOrderById(id) as Promise<ServiceOrder>;
+}
+
+export async function getServiceOrderById(id: string): Promise<ServiceOrder | null> {
+  await initDb();
+  const result = await client.execute({
+    sql: `SELECT o.*, s.title as service_title,
+            ca.name as client_name, pa.name as provider_name
+          FROM service_orders o
+          LEFT JOIN services s ON o.service_id = s.id
+          LEFT JOIN agents ca ON o.client_agent_id = ca.id
+          LEFT JOIN agents pa ON o.provider_agent_id = pa.id
+          WHERE o.id = ?`,
+    args: [id],
+  });
+  return (result.rows[0] as unknown as ServiceOrder) || null;
+}
+
+export async function getOrdersByAgent(agentId: string, role: 'client' | 'provider' | 'both' = 'both'): Promise<ServiceOrder[]> {
+  await initDb();
+  let condition: string;
+  if (role === 'client') condition = 'o.client_agent_id = ?';
+  else if (role === 'provider') condition = 'o.provider_agent_id = ?';
+  else condition = '(o.client_agent_id = ? OR o.provider_agent_id = ?)';
+
+  const args = role === 'both' ? [agentId, agentId] : [agentId];
+
+  const result = await client.execute({
+    sql: `SELECT o.*, s.title as service_title,
+            ca.name as client_name, pa.name as provider_name
+          FROM service_orders o
+          LEFT JOIN services s ON o.service_id = s.id
+          LEFT JOIN agents ca ON o.client_agent_id = ca.id
+          LEFT JOIN agents pa ON o.provider_agent_id = pa.id
+          WHERE ${condition}
+          ORDER BY o.created_at DESC`,
+    args,
+  });
+  return result.rows as unknown as ServiceOrder[];
+}
+
+export async function updateOrderStatus(
+  id: string,
+  updates: {
+    status: OrderStatus;
+    quoted_price_usd?: string;
+    platform_fee_usd?: string;
+    payment_method?: string;
+    escrow_tx_hash?: string;
+    payout_tx_hash?: string;
+    deliverable_post_id?: number;
+  }
+): Promise<ServiceOrder | null> {
+  await initDb();
+  const setClauses: string[] = ['status = ?'];
+  const args: (string | number | null)[] = [updates.status];
+
+  if (updates.quoted_price_usd !== undefined) { setClauses.push('quoted_price_usd = ?'); args.push(updates.quoted_price_usd); }
+  if (updates.platform_fee_usd !== undefined) { setClauses.push('platform_fee_usd = ?'); args.push(updates.platform_fee_usd); }
+  if (updates.payment_method !== undefined) { setClauses.push('payment_method = ?'); args.push(updates.payment_method); }
+  if (updates.escrow_tx_hash !== undefined) { setClauses.push('escrow_tx_hash = ?'); args.push(updates.escrow_tx_hash); }
+  if (updates.payout_tx_hash !== undefined) { setClauses.push('payout_tx_hash = ?'); args.push(updates.payout_tx_hash); }
+  if (updates.deliverable_post_id !== undefined) { setClauses.push('deliverable_post_id = ?'); args.push(updates.deliverable_post_id); }
+
+  if (updates.status === 'delivered') {
+    setClauses.push("delivered_at = CURRENT_TIMESTAMP");
+    setClauses.push("review_deadline = datetime('now', '+48 hours')");
+  }
+  if (updates.status === 'completed') {
+    setClauses.push("completed_at = CURRENT_TIMESTAMP");
+  }
+  if (updates.quoted_price_usd && !updates.platform_fee_usd) {
+    setClauses.push('platform_fee_usd = ?');
+    args.push((parseFloat(updates.quoted_price_usd) * 0.10).toFixed(2));
+  }
+
+  args.push(id);
+  await client.execute({
+    sql: `UPDATE service_orders SET ${setClauses.join(', ')} WHERE id = ?`,
+    args,
+  });
+
+  if (updates.status === 'completed') {
+    const order = await getServiceOrderById(id);
+    if (order) {
+      await client.execute({
+        sql: 'UPDATE services SET completed_orders = completed_orders + 1 WHERE id = ?',
+        args: [order.service_id],
+      });
+    }
+  }
+
+  return getServiceOrderById(id);
+}
+
+// ---- Marketplace: Reviews ----
+
+export async function createServiceReview(data: {
+  order_id: string;
+  service_id: string;
+  reviewer_agent_id: string;
+  reviewer_name: string;
+  rating: number;
+  comment?: string;
+}): Promise<ServiceReview> {
+  await initDb();
+  const id = `rev_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  await client.execute({
+    sql: `INSERT INTO service_reviews (id, order_id, service_id, reviewer_agent_id, reviewer_name, rating, comment)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    args: [id, data.order_id, data.service_id, data.reviewer_agent_id, data.reviewer_name, data.rating, data.comment || null],
+  });
+  await recalculateServiceRating(data.service_id);
+  const result = await client.execute({ sql: 'SELECT * FROM service_reviews WHERE id = ?', args: [id] });
+  return result.rows[0] as unknown as ServiceReview;
+}
+
+export async function getServiceReviews(serviceId: string): Promise<ServiceReview[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM service_reviews WHERE service_id = ? ORDER BY created_at DESC',
+    args: [serviceId],
+  });
+  return result.rows as unknown as ServiceReview[];
+}
+
+async function recalculateServiceRating(serviceId: string): Promise<void> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT AVG(rating) as avg_rating FROM service_reviews WHERE service_id = ?',
+    args: [serviceId],
+  });
+  const avgRating = result.rows[0] ? Number((result.rows[0] as unknown as { avg_rating: number }).avg_rating) : null;
+  await client.execute({
+    sql: 'UPDATE services SET avg_rating = ? WHERE id = ?',
+    args: [avgRating, serviceId],
+  });
 }
