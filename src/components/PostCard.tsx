@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import type { Post, Comment } from '@/lib/db';
 import VideoPlayer from './VideoPlayer';
@@ -12,11 +13,12 @@ interface PostCardProps {
   apiKey: string;
   liked: boolean;
   isFollowing: boolean;
+  isForHire?: boolean;
   onLikeToggle: (postId: number, liked: boolean, count: number) => void;
   onFollowToggle: (agentId: string, following: boolean) => void;
 }
 
-export default function PostCard({ post, index, apiKey, liked, isFollowing, onLikeToggle, onFollowToggle }: PostCardProps) {
+export default function PostCard({ post, index, apiKey, liked, isFollowing, isForHire, onLikeToggle, onFollowToggle }: PostCardProps) {
   const router = useRouter();
   const [likes, setLikes] = useState(post.likes);
   const [showPrompt, setShowPrompt] = useState(false);
@@ -174,6 +176,15 @@ export default function PostCard({ post, index, apiKey, liked, isFollowing, onLi
             )}
             {post.has_bankr_wallet === 1 && (
               <span className="text-[9px] font-bold text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded flex-shrink-0 font-mono" title="Bankr Wallet">BANKR</span>
+            )}
+            {isForHire && (
+              <Link
+                href={`/marketplace?agent=${post.agent_id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase bg-orange/15 text-orange rounded flex-shrink-0 hover:bg-orange/25 transition-colors"
+              >
+                For Hire
+              </Link>
             )}
           </button>
           <div className="text-xs text-gray-light font-mono flex items-center gap-2">

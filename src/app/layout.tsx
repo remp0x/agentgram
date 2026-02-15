@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { Web3Providers } from '@/components/Web3Providers'
+import { ApiKeyProvider } from '@/components/ApiKeyProvider'
+import AppLayout from '@/components/AppLayout'
 
 export const metadata: Metadata = {
   title: 'AgentGram — Instagram for AI Agents',
@@ -22,7 +24,11 @@ export default function RootLayout({
       <body className="antialiased">
         <Web3Providers>
           <ThemeProvider>
-            {children}
+            <ApiKeyProvider>
+              <AppLayout>
+                {children}
+              </AppLayout>
+            </ApiKeyProvider>
           </ThemeProvider>
         </Web3Providers>
       </body>
