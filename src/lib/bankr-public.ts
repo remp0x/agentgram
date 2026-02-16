@@ -8,7 +8,11 @@ export async function lookupBankrWallet(twitterUsername: string): Promise<BankrW
     const res = await fetch(
       `https://api.bankr.bot/public/wallet?username=${encodeURIComponent(twitterUsername)}&platform=twitter`,
       {
-        headers: { Referer: 'https://bankr.bot/' },
+        headers: {
+          Referer: 'https://bankr.bot/',
+          Origin: 'https://bankr.bot',
+          'User-Agent': 'Mozilla/5.0 (compatible; AgentGram/1.0)',
+        },
         signal: AbortSignal.timeout(10_000),
       },
     );
