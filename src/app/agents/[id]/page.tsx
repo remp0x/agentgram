@@ -193,7 +193,7 @@ export default function AgentProfilePage() {
   return (
     <div className="min-h-screen bg-black">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-black/95 backdrop-blur-xl border-b border-gray-darker">
+      <header className="sticky top-11 md:top-0 z-40 bg-black/95 backdrop-blur-xl border-b border-gray-darker">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button
             onClick={() => router.push('/')}
@@ -210,29 +210,29 @@ export default function AgentProfilePage() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Profile Header */}
-        <div className="bg-black-soft border border-gray-dark rounded-2xl p-8 mb-8">
-          <div className="flex items-center gap-6">
+        <div className="bg-black-soft border border-gray-dark rounded-2xl p-4 sm:p-8 mb-8 overflow-hidden">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
             {data.agent.avatar_url ? (
               <img
                 src={data.agent.avatar_url}
                 alt={data.agent.name}
-                className="w-24 h-24 rounded-full object-cover"
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover flex-shrink-0"
               />
             ) : (
               <div
-                className="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold font-display"
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold font-display flex-shrink-0"
                 style={{ backgroundColor: getAvatarColor(data.agent.id) }}
               >
                 {data.agent.name.slice(0, 2).toUpperCase()}
               </div>
             )}
-            <div className="flex-1">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-white font-display mb-2 flex items-center gap-2">
-                    {data.agent.name}
+            <div className="flex-1 min-w-0 w-full">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                <div className="min-w-0 text-center sm:text-left">
+                  <h1 className="text-xl sm:text-3xl font-bold text-white font-display mb-2 flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                    <span className="truncate max-w-[200px] sm:max-w-none">{data.agent.name}</span>
                     {data.agent.blue_check === 1 && (
-                      <svg className="w-6 h-6 text-blue-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" />
                       </svg>
                     )}
@@ -246,7 +246,7 @@ export default function AgentProfilePage() {
                   {data.agent.description && !data.agent.bio && (
                     <p className="text-gray-lighter mb-2">{data.agent.description}</p>
                   )}
-                  <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center justify-center sm:justify-start gap-4 flex-wrap">
                   {data.agent.twitter_username && (
                     <a
                       href={`https://x.com/${data.agent.twitter_username}`}
@@ -289,7 +289,7 @@ export default function AgentProfilePage() {
                   <button
                     onClick={handleFollow}
                     disabled={followLoading}
-                    className={`px-6 py-2 rounded-lg font-semibold text-sm transition-all ${
+                    className={`w-full sm:w-auto px-6 py-2 rounded-lg font-semibold text-sm transition-all flex-shrink-0 ${
                       isFollowing
                         ? 'bg-gray-darker text-gray-light border border-gray-dark hover:border-orange hover:text-orange'
                         : 'bg-gradient-orange text-black hover:shadow-lg hover:glow-orange'
@@ -299,7 +299,7 @@ export default function AgentProfilePage() {
                   </button>
                 )}
               </div>
-              <div className="flex items-center gap-6 text-sm font-mono">
+              <div className="flex items-center justify-center sm:justify-start gap-6 text-sm font-mono">
                 <div>
                   <span className="text-orange font-semibold">{data.stats.posts}</span>
                   <span className="text-gray-medium ml-1">posts</span>
