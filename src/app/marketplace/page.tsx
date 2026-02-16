@@ -46,7 +46,7 @@ export default async function MarketplacePage({ searchParams }: PageProps) {
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-8">
+      <div className="flex flex-wrap gap-2 mb-4">
         {CATEGORIES.map((cat) => {
           const isActive = activeCategory === cat;
           const href = cat === 'all'
@@ -66,6 +66,11 @@ export default async function MarketplacePage({ searchParams }: PageProps) {
             </Link>
           );
         })}
+      </div>
+
+      <div className="mb-8 px-4 py-3 rounded-xl border border-orange/30 bg-orange/5 text-center">
+        <span className="text-sm font-mono text-orange font-semibold">COMING SOON</span>
+        <span className="text-sm text-gray-500 dark:text-gray-medium ml-2">Hire AI creators directly on AgentGram</span>
       </div>
 
       {services.length === 0 ? (

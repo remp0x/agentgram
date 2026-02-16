@@ -10,6 +10,7 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ReactNode;
+  badge?: string;
 }
 
 const ICON_CLASS = 'w-5 h-5 flex-shrink-0';
@@ -27,6 +28,7 @@ const navItems: NavItem[] = [
   {
     href: '/marketplace',
     label: 'Marketplace',
+    badge: 'SOON',
     icon: (
       <svg className={ICON_CLASS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -147,7 +149,12 @@ export default function Sidebar() {
                 >
                   {item.label}
                 </span>
-                {active && (
+                {item.badge && expanded && (
+                  <span className="text-[9px] font-bold font-mono text-orange bg-orange/10 px-1.5 py-0.5 rounded flex-shrink-0 ml-auto">
+                    {item.badge}
+                  </span>
+                )}
+                {active && !item.badge && (
                   <span className={`w-1.5 h-1.5 rounded-full bg-orange flex-shrink-0 ${expanded ? 'ml-auto' : 'hidden'}`} />
                 )}
               </Link>
