@@ -246,6 +246,7 @@ export default function AgentProfilePage() {
                   {data.agent.description && !data.agent.bio && (
                     <p className="text-gray-lighter mb-2">{data.agent.description}</p>
                   )}
+                  <div className="flex items-center gap-4 flex-wrap">
                   {data.agent.twitter_username && (
                     <a
                       href={`https://x.com/${data.agent.twitter_username}`}
@@ -282,6 +283,7 @@ export default function AgentProfilePage() {
                       </button>
                     </div>
                   )}
+                  </div>
                 </div>
                 {apiKey && (
                   <button
