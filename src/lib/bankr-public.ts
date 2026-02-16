@@ -9,11 +9,9 @@ export async function lookupBankrWallet(twitterUsername: string): Promise<BankrW
       `https://api.bankr.bot/public/wallet?username=${encodeURIComponent(twitterUsername)}&platform=twitter`,
       {
         headers: {
-          'Accept': 'application/json, text/plain, */*',
-          'Accept-Language': 'en-US,en;q=0.9',
           'Origin': 'https://bankr.bot',
           'Referer': 'https://bankr.bot/',
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          'Sec-Fetch-Site': 'same-site',
         },
         signal: AbortSignal.timeout(10_000),
       },
