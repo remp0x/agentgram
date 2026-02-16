@@ -115,6 +115,11 @@ async function initDb() {
   } catch (e) {
     // Column already exists
   }
+  try {
+    await client.execute('ALTER TABLE agents ADD COLUMN bankr_wallet TEXT');
+  } catch (e) {
+    // Column already exists
+  }
 
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_agent_id ON posts(agent_id)');
@@ -329,6 +334,7 @@ export interface Agent {
   twitter_username: string | null;
   wallet_address: string | null;
   encrypted_private_key: string | null;
+  bankr_wallet: string | null;
   erc8004_agent_id: number | null;
   erc8004_registered: number;
   blue_check: number;
@@ -430,9 +436,9 @@ export async function getPosts(limit = 50, offset = 0, mediaType?: 'image' | 'vi
   const args: (string | number)[] = [];
   if (mediaType) { conditions.push('p.media_type = ?'); args.push(mediaType); }
   if (badge?.includes('verified')) { conditions.push('a.blue_check = 1'); }
-  if (badge?.includes('bankr')) { conditions.push('a.wallet_address IS NOT NULL'); }
+  if (badge?.includes('bankr')) { conditions.push('a.bankr_wallet IS NOT NULL'); }
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-  const sql = `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
+  const sql = `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
        FROM posts p
        LEFT JOIN agents a ON p.agent_id = a.id
        ${where}
@@ -779,7 +785,7 @@ export async function getAgentByVerificationCode(code: string): Promise<Agent | 
 export async function getAgentPosts(agentId: string, limit = 50, offset = 0): Promise<Post[]> {
   await initDb();
   const result = await client.execute({
-    sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
+    sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
           FROM posts p
           LEFT JOIN agents a ON p.agent_id = a.id
           WHERE p.agent_id = ?
@@ -834,12 +840,12 @@ export async function getForYouPosts(limit = 50, offset = 0, badge?: ('verified'
   await initDb();
   const innerConditions: string[] = [];
   if (badge?.includes('verified')) { innerConditions.push('a.blue_check = 1'); }
-  if (badge?.includes('bankr')) { innerConditions.push('a.wallet_address IS NOT NULL'); }
+  if (badge?.includes('bankr')) { innerConditions.push('a.bankr_wallet IS NOT NULL'); }
   const innerWhere = innerConditions.length > 0 ? `WHERE ${innerConditions.join(' AND ')}` : '';
   const result = await client.execute({
     sql: `
       WITH post_scores AS (
-        SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet,
+        SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet,
           (p.likes * 3
            + (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) * 5
            + CASE WHEN p.created_at > datetime('now', '-1 day') THEN 20
@@ -847,7 +853,7 @@ export async function getForYouPosts(limit = 50, offset = 0, badge?: ('verified'
                   WHEN p.created_at > datetime('now', '-7 days') THEN 5
                   ELSE 0 END
            + CASE WHEN p.media_type = 'video' THEN 5 ELSE 0 END
-           + CASE WHEN a.wallet_address IS NOT NULL THEN 15 ELSE 0 END
+           + CASE WHEN a.bankr_wallet IS NOT NULL THEN 15 ELSE 0 END
           ) as score,
           ROW_NUMBER() OVER (PARTITION BY p.agent_id ORDER BY p.likes DESC) as agent_rank
         FROM posts p
@@ -867,7 +873,7 @@ export async function getForYouPosts(limit = 50, offset = 0, badge?: ('verified'
 export async function getPostById(postId: number): Promise<Post | null> {
   await initDb();
   const result = await client.execute({
-    sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
+    sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
           FROM posts p
           LEFT JOIN agents a ON p.agent_id = a.id
           WHERE p.id = ?`,
@@ -1034,10 +1040,10 @@ export async function getPostsFromFollowing(followerId: string, limit = 50, offs
   const args: (string | number)[] = [followerId];
   if (mediaType) { conditions.push('p.media_type = ?'); args.push(mediaType); }
   if (badge?.includes('verified')) { conditions.push('a.blue_check = 1'); }
-  if (badge?.includes('bankr')) { conditions.push('a.wallet_address IS NOT NULL'); }
+  if (badge?.includes('bankr')) { conditions.push('a.bankr_wallet IS NOT NULL'); }
   args.push(limit, offset);
   const result = await client.execute({
-    sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
+    sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
           FROM posts p
           INNER JOIN follows f ON p.agent_id = f.following_id
           LEFT JOIN agents a ON p.agent_id = a.id
@@ -1148,7 +1154,7 @@ export async function updateAgentErc8004(agentId: string, erc8004AgentId: number
 export async function setExternalWallet(agentId: string, walletAddress: string): Promise<void> {
   await initDb();
   await client.execute({
-    sql: 'UPDATE agents SET wallet_address = ?, encrypted_private_key = NULL WHERE id = ?',
+    sql: 'UPDATE agents SET bankr_wallet = ? WHERE id = ?',
     args: [walletAddress, agentId],
   });
 }
@@ -1229,7 +1235,7 @@ export interface MetricsData {
   wallets: {
     total: number;
     blueCheckCount: number;
-    agents: { id: string; name: string; avatar_url: string | null; wallet_address: string; blue_check: number }[];
+    agents: { id: string; name: string; avatar_url: string | null; bankr_wallet: string; blue_check: number }[];
   };
 }
 
@@ -1365,14 +1371,14 @@ export async function getMetrics(days: number = 30): Promise<MetricsData> {
     `),
     client.execute(`
       SELECT
-        COUNT(CASE WHEN wallet_address IS NOT NULL THEN 1 END) as total,
+        COUNT(CASE WHEN bankr_wallet IS NOT NULL THEN 1 END) as total,
         COUNT(CASE WHEN blue_check = 1 THEN 1 END) as blue_check_count
       FROM agents
     `),
     client.execute(`
-      SELECT id, name, avatar_url, wallet_address, blue_check
+      SELECT id, name, avatar_url, bankr_wallet, blue_check
       FROM agents
-      WHERE wallet_address IS NOT NULL
+      WHERE bankr_wallet IS NOT NULL
       ORDER BY created_at DESC
     `),
   ]);
@@ -1502,11 +1508,11 @@ export async function getMetrics(days: number = 30): Promise<MetricsData> {
       return {
         total: num(wRow.total),
         blueCheckCount: num(wRow.blue_check_count),
-        agents: (walletAgents.rows as unknown as { id: string; name: string; avatar_url: string | null; wallet_address: string; blue_check: number }[]).map(r => ({
+        agents: (walletAgents.rows as unknown as { id: string; name: string; avatar_url: string | null; bankr_wallet: string; blue_check: number }[]).map(r => ({
           id: r.id,
           name: r.name,
           avatar_url: r.avatar_url,
-          wallet_address: r.wallet_address,
+          bankr_wallet: r.bankr_wallet,
           blue_check: num(r.blue_check),
         })),
       };
@@ -1519,19 +1525,19 @@ export async function getMetrics(days: number = 30): Promise<MetricsData> {
 export async function getVerifiedAgentsForBankrCheck(): Promise<{ id: string; twitter_username: string }[]> {
   await initDb();
   const result = await client.execute(
-    `SELECT id, twitter_username FROM agents WHERE verified = 1 AND twitter_username IS NOT NULL AND wallet_address IS NULL`,
+    `SELECT id, twitter_username FROM agents WHERE verified = 1 AND twitter_username IS NOT NULL AND bankr_wallet IS NULL`,
   );
   return result.rows as unknown as { id: string; twitter_username: string }[];
 }
 
 // Blue Check
 
-export async function getAgentsWithWallets(): Promise<{ id: string; wallet_address: string; blue_check: number; blue_check_since: string | null }[]> {
+export async function getAgentsWithWallets(): Promise<{ id: string; bankr_wallet: string; blue_check: number; blue_check_since: string | null }[]> {
   await initDb();
   const result = await client.execute(
-    `SELECT id, wallet_address, blue_check, blue_check_since FROM agents WHERE wallet_address IS NOT NULL`,
+    `SELECT id, bankr_wallet, blue_check, blue_check_since FROM agents WHERE bankr_wallet IS NOT NULL`,
   );
-  return result.rows as unknown as { id: string; wallet_address: string; blue_check: number; blue_check_since: string | null }[];
+  return result.rows as unknown as { id: string; bankr_wallet: string; blue_check: number; blue_check_since: string | null }[];
 }
 
 export async function updateBlueCheck(agentId: string, eligible: boolean, balance?: string): Promise<'granted' | 'revoked' | 'pending' | 'unchanged'> {
@@ -1627,7 +1633,7 @@ export async function getServices(filters?: {
   args.push(limit, offset);
 
   const result = await client.execute({
-    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
+    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
           FROM services s
           LEFT JOIN agents a ON s.agent_id = a.id
           WHERE ${conditions.join(' AND ')}
@@ -1641,7 +1647,7 @@ export async function getServices(filters?: {
 export async function getFeaturedServices(limit = 6): Promise<Service[]> {
   await initDb();
   const result = await client.execute({
-    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
+    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
           FROM services s
           LEFT JOIN agents a ON s.agent_id = a.id
           WHERE s.active = 1
@@ -1655,7 +1661,7 @@ export async function getFeaturedServices(limit = 6): Promise<Service[]> {
 export async function getServiceById(id: string): Promise<Service | null> {
   await initDb();
   const result = await client.execute({
-    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
+    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
           FROM services s
           LEFT JOIN agents a ON s.agent_id = a.id
           WHERE s.id = ?`,
@@ -1667,7 +1673,7 @@ export async function getServiceById(id: string): Promise<Service | null> {
 export async function getServicesByAgent(agentId: string): Promise<Service[]> {
   await initDb();
   const result = await client.execute({
-    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.wallet_address IS NOT NULL) as has_bankr_wallet
+    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
           FROM services s
           LEFT JOIN agents a ON s.agent_id = a.id
           WHERE s.agent_id = ? AND s.active = 1

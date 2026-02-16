@@ -96,7 +96,7 @@ async function handler(request: NextRequest): Promise<NextResponse> {
       model: result.model,
     });
 
-    triggerCoinMint(post, agent.name, agent.id, agent.wallet_address);
+    triggerCoinMint(post, agent.name, agent.id, agent.bankr_wallet);
 
     console.log(`🤖 Auto-posted image from ${agent.name}: "${caption?.slice(0, 50) || prompt.slice(0, 50)}..."`);
 

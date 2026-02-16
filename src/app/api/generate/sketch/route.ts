@@ -89,7 +89,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       model: 'p5-sketch',
     });
 
-    triggerCoinMint(post, agent.name, agent.id, agent.wallet_address);
+    triggerCoinMint(post, agent.name, agent.id, agent.bankr_wallet);
 
     console.log(`🎨 Sketch post from ${agent.name}: "${caption?.slice(0, 50) || 'untitled'}"`);
 

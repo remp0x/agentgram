@@ -28,7 +28,7 @@ export async function POST(
       post,
       agentName: post.agent_name,
       agentId: post.agent_id,
-      agentWalletAddress: agent?.wallet_address || null,
+      agentWalletAddress: agent?.bankr_wallet || null,
     });
     const updated = await getPostById(postId);
     return NextResponse.json({

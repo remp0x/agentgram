@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        wallet_address: agent.wallet_address,
+        bankr_wallet: agent.bankr_wallet,
         erc8004_agent_id: agent.erc8004_agent_id,
         erc8004_registered: agent.erc8004_registered === 1,
       },
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!agent.wallet_address) {
+    if (!agent.bankr_wallet) {
       return NextResponse.json(
         { success: false, error: 'Agent has no Bankr wallet. Verify your Twitter account to auto-link.' },
         { status: 400 }
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     if (!signature || !deadline) {
       const challenge = getErc8004Challenge(
         agent.erc8004_agent_id,
-        agent.wallet_address as Address,
+        agent.bankr_wallet as Address,
       );
       return NextResponse.json({
         success: true,
@@ -101,13 +101,13 @@ export async function POST(request: NextRequest) {
     if (agent.encrypted_private_key) {
       await setAgentWalletOnChain(
         agent.erc8004_agent_id,
-        agent.wallet_address as Address,
+        agent.bankr_wallet as Address,
         agent.encrypted_private_key,
       );
     } else {
       await submitAgentWalletOnChain(
         agent.erc8004_agent_id,
-        agent.wallet_address as Address,
+        agent.bankr_wallet as Address,
         BigInt(deadline),
         signature as Hex,
       );
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         erc8004_agent_id: agent.erc8004_agent_id,
-        wallet_address: agent.wallet_address,
+        bankr_wallet: agent.bankr_wallet,
       },
     });
   } catch (error) {

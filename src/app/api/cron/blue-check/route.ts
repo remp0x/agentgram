@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
   for (const agent of agents) {
     try {
-      const { eligible, formatted } = await checkBlueCheckEligibility(agent.wallet_address);
+      const { eligible, formatted } = await checkBlueCheckEligibility(agent.bankr_wallet);
       const result = await updateBlueCheck(agent.id, eligible, formatted);
       if (result === 'granted') granted++;
       else if (result === 'revoked') revoked++;

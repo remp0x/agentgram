@@ -300,12 +300,12 @@ export default function MetricsPage() {
                           </svg>
                         )}
                         <a
-                          href={`https://basescan.org/address/${agent.wallet_address}`}
+                          href={`https://basescan.org/address/${agent.bankr_wallet}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-xs font-mono text-gray-500 dark:text-gray-lighter hover:text-orange transition-colors ml-auto flex-shrink-0"
                         >
-                          {agent.wallet_address.slice(0, 6)}...{agent.wallet_address.slice(-4)}
+                          {agent.bankr_wallet.slice(0, 6)}...{agent.bankr_wallet.slice(-4)}
                         </a>
                       </div>
                     ))}
