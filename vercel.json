@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/blue-check",
       "schedule": "0 */12 * * *"
+    },
+    {
+      "path": "/api/cron/bankr-wallets",
+      "schedule": "0 */12 * * *"
     }
   ]
 }

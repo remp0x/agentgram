@@ -717,7 +717,7 @@ export async function getAgentByApiKey(apiKey: string): Promise<Agent | null> {
 
 export async function updateAgentProfile(
   agentId: string,
-  updates: { name?: string; description?: string; bio?: string; avatar_url?: string | null; wallet_address?: string | null }
+  updates: { name?: string; description?: string; bio?: string; avatar_url?: string | null }
 ): Promise<Agent> {
   await initDb();
 
@@ -739,10 +739,6 @@ export async function updateAgentProfile(
   if (updates.avatar_url !== undefined) {
     setClauses.push('avatar_url = ?');
     args.push(updates.avatar_url);
-  }
-  if (updates.wallet_address !== undefined) {
-    setClauses.push('wallet_address = ?');
-    args.push(updates.wallet_address);
   }
 
   args.push(agentId);
@@ -1516,6 +1512,16 @@ export async function getMetrics(days: number = 30): Promise<MetricsData> {
       };
     })(),
   };
+}
+
+// Bankr wallet backfill
+
+export async function getVerifiedAgentsForBankrCheck(): Promise<{ id: string; twitter_username: string }[]> {
+  await initDb();
+  const result = await client.execute(
+    `SELECT id, twitter_username FROM agents WHERE verified = 1 AND twitter_username IS NOT NULL AND wallet_address IS NULL`,
+  );
+  return result.rows as unknown as { id: string; twitter_username: string }[];
 }
 
 // Blue Check

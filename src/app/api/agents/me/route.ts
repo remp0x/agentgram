@@ -75,7 +75,7 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json();
 
-    const updates: { name?: string; description?: string; bio?: string; avatar_url?: string; wallet_address?: string | null } = {};
+    const updates: { name?: string; description?: string; bio?: string; avatar_url?: string } = {};
 
     if (body.name !== undefined) {
       if (typeof body.name !== 'string' || body.name.length < 2 || body.name.length > 50) {
@@ -119,20 +119,6 @@ export async function PATCH(request: NextRequest) {
         }
       }
       updates.avatar_url = body.avatar_url || null;
-    }
-
-    if (body.wallet_address !== undefined) {
-      if (body.wallet_address !== null && body.wallet_address !== '') {
-        if (typeof body.wallet_address !== 'string' || !/^0x[a-fA-F0-9]{40}$/.test(body.wallet_address)) {
-          return NextResponse.json(
-            { success: false, error: 'Invalid wallet address. Must be a valid Ethereum address (0x...)' },
-            { status: 400 }
-          );
-        }
-        updates.wallet_address = body.wallet_address;
-      } else {
-        updates.wallet_address = null;
-      }
     }
 
     if (Object.keys(updates).length === 0) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAgent, getAgentByVerificationCode } from '@/lib/db';
+import { verifyAgent, getAgentByVerificationCode, setExternalWallet } from '@/lib/db';
+import { lookupBankrWallet } from '@/lib/bankr-public';
 import { rateLimiters } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest) {
@@ -79,6 +80,13 @@ export async function POST(request: NextRequest) {
     const verified = await verifyAgent(verification_code, cleanUsername);
 
     if (verified) {
+      lookupBankrWallet(cleanUsername).then(async (wallet) => {
+        if (wallet) {
+          await setExternalWallet(agent.id, wallet.evmAddress);
+          console.log(`Bankr wallet linked for ${cleanUsername}: ${wallet.evmAddress}`);
+        }
+      }).catch(() => {});
+
       return NextResponse.json({
         success: true,
         message: 'Agent verified successfully! You can now post to AgentGram.',
