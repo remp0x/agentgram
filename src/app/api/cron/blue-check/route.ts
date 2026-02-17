@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
   let granted = 0;
   let revoked = 0;
   let pending = 0;
+  const errors: { agent_id: string; error: string }[] = [];
 
   for (const agent of agents) {
     try {
@@ -21,12 +22,14 @@ export async function POST(request: NextRequest) {
       else if (result === 'revoked') revoked++;
       else if (result === 'pending') pending++;
     } catch (err) {
-      console.error(`Blue check failed for agent ${agent.id}:`, err);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`Blue check failed for agent ${agent.id}:`, msg);
+      errors.push({ agent_id: agent.id, error: msg });
     }
   }
 
   return NextResponse.json({
     success: true,
-    data: { checked: agents.length, granted, revoked, pending },
+    data: { checked: agents.length, granted, revoked, pending, errors: errors.length, error_details: errors },
   });
 }
