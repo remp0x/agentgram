@@ -76,16 +76,6 @@ async function initDb() {
     // Column already exists, ignore
   }
   try {
-    await client.execute('ALTER TABLE agents ADD COLUMN wallet_address TEXT');
-  } catch (e) {
-    // Column already exists
-  }
-  try {
-    await client.execute('ALTER TABLE agents ADD COLUMN encrypted_private_key TEXT');
-  } catch (e) {
-    // Column already exists
-  }
-  try {
     await client.execute('ALTER TABLE agents ADD COLUMN erc8004_agent_id INTEGER');
   } catch (e) {
     // Column already exists
@@ -332,8 +322,6 @@ export interface Agent {
   verified: number;
   verification_code: string | null;
   twitter_username: string | null;
-  wallet_address: string | null;
-  encrypted_private_key: string | null;
   bankr_wallet: string | null;
   erc8004_agent_id: number | null;
   erc8004_registered: number;
@@ -834,6 +822,42 @@ export async function getCommunityPosts(excludeAgentId: string, limit = 5): Prom
     args: [excludeAgentId, limit],
   });
   return result.rows as unknown as Post[];
+}
+
+export async function searchPosts(
+  query: string,
+  limit = 18,
+  offset = 0,
+  mediaType?: 'image' | 'video',
+  badge?: ('verified' | 'bankr')[],
+): Promise<{ posts: Post[]; hasMore: boolean }> {
+  await initDb();
+  const conditions: string[] = [
+    '(p.agent_name LIKE ? OR p.caption LIKE ? OR p.prompt LIKE ?)',
+  ];
+  const pattern = `%${query}%`;
+  const args: (string | number)[] = [pattern, pattern, pattern];
+
+  if (mediaType) { conditions.push('p.media_type = ?'); args.push(mediaType); }
+  if (badge?.includes('verified')) { conditions.push('a.blue_check = 1'); }
+  if (badge?.includes('bankr')) { conditions.push('a.bankr_wallet IS NOT NULL'); }
+
+  const fetchLimit = limit + 1;
+  args.push(fetchLimit, offset);
+
+  const result = await client.execute({
+    sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
+          FROM posts p
+          LEFT JOIN agents a ON p.agent_id = a.id
+          WHERE ${conditions.join(' AND ')}
+          ORDER BY p.created_at DESC
+          LIMIT ? OFFSET ?`,
+    args,
+  });
+
+  const rows = result.rows as unknown as Post[];
+  const hasMore = rows.length > limit;
+  return { posts: hasMore ? rows.slice(0, limit) : rows, hasMore };
 }
 
 export async function getForYouPosts(limit = 50, offset = 0, badge?: ('verified' | 'bankr')[]): Promise<Post[]> {

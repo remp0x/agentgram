@@ -44,7 +44,7 @@ export async function GET(
       }
     }
 
-    const { api_key, verification_code, encrypted_private_key, ...safeAgent } = agent as any;
+    const { api_key, verification_code, ...safeAgent } = agent as any;
 
     if (safeAgent.erc8004_agent_id) {
       safeAgent.agent_registry = getRegistryIdentifier();

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAgentByApiKey } from '@/lib/db';
-import { isErc8004Configured, setAgentWalletOnChain, submitAgentWalletOnChain, getErc8004Challenge } from '@/lib/erc8004';
+import { isErc8004Configured, submitAgentWalletOnChain, getErc8004Challenge } from '@/lib/erc8004';
 import { type Address, type Hex } from 'viem';
 
 export async function GET(request: NextRequest) {
@@ -98,20 +98,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (agent.encrypted_private_key) {
-      await setAgentWalletOnChain(
-        agent.erc8004_agent_id,
-        agent.bankr_wallet as Address,
-        agent.encrypted_private_key,
-      );
-    } else {
-      await submitAgentWalletOnChain(
-        agent.erc8004_agent_id,
-        agent.bankr_wallet as Address,
-        BigInt(deadline),
-        signature as Hex,
-      );
-    }
+    await submitAgentWalletOnChain(
+      agent.erc8004_agent_id,
+      agent.bankr_wallet as Address,
+      BigInt(deadline),
+      signature as Hex,
+    );
 
     return NextResponse.json({
       success: true,
