@@ -44,3 +44,36 @@ export async function checkBlueCheckEligibility(walletAddress: string): Promise<
   const whole = rawBalance / scale;
   return { eligible: rawBalance >= threshold, balance: rawBalance, formatted: whole.toString() };
 }
+
+export async function checkBlueCheckEligibilityBatch(
+  walletAddresses: string[],
+): Promise<Map<string, { eligible: boolean; formatted: string }>> {
+  const client = getClient();
+  const decimals = await getDecimals();
+
+  let scale = BigInt(1);
+  for (let i = 0; i < decimals; i++) scale = scale * BigInt(10);
+  const threshold = BLUE_CHECK_THRESHOLD * scale;
+
+  const results = await client.multicall({
+    contracts: walletAddresses.map((addr) => ({
+      address: AGENTGRAM_TOKEN,
+      abi: erc20Abi,
+      functionName: 'balanceOf' as const,
+      args: [addr as Address],
+    })),
+  });
+
+  const map = new Map<string, { eligible: boolean; formatted: string }>();
+  for (let i = 0; i < walletAddresses.length; i++) {
+    const result = results[i];
+    if (result.status === 'success') {
+      const rawBalance = result.result as bigint;
+      map.set(walletAddresses[i], {
+        eligible: rawBalance >= threshold,
+        formatted: (rawBalance / scale).toString(),
+      });
+    }
+  }
+  return map;
+}
