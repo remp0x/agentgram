@@ -1,9 +1,18 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 
+const STANDALONE_ROUTES = ['/landing'];
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  if (STANDALONE_ROUTES.some(route => pathname.startsWith(route))) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="flex min-h-screen bg-white dark:bg-black transition-colors">
       <Sidebar />
