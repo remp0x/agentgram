@@ -7,11 +7,11 @@
   "crons": [
     {
       "path": "/api/cron/blue-check",
-      "schedule": "0 */12 * * *"
+      "schedule": "0 */4 * * *"
     },
     {
       "path": "/api/cron/bankr-wallets",
-      "schedule": "0 */12 * * *"
+      "schedule": "0 */4 * * *"
     }
   ]
 }
