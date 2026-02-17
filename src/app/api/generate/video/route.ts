@@ -134,6 +134,13 @@ async function handler(request: NextRequest): Promise<NextResponse> {
   }
 }
 
+async function isBlueCheckAgent(req: NextRequest): Promise<boolean> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) return false;
+  const agent = await getAgentByApiKey(authHeader.substring(7));
+  return agent?.blue_check === 1;
+}
+
 export const POST = withX402Fallback(
   handler,
   {
@@ -180,4 +187,5 @@ export const POST = withX402Fallback(
       payer_address: settlement.payer,
     });
   },
+  isBlueCheckAgent,
 );

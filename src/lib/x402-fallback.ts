@@ -43,6 +43,7 @@ export function withX402Fallback<T = unknown>(
   handler: (request: NextRequest) => Promise<NextResponse<T>>,
   routeConfig: RouteConfig,
   onPaymentSettled?: (req: NextRequest, settlement: PaymentSettlement) => Promise<void>,
+  shouldBypassPayment?: (request: NextRequest) => Promise<boolean>,
 ): WrappedHandler {
   let httpServer: x402HTTPResourceServer | null = null;
   let initPromise: Promise<void> | null = null;
@@ -58,6 +59,16 @@ export function withX402Fallback<T = unknown>(
   }
 
   return async function protectedHandler(request: NextRequest): Promise<NextResponse> {
+    if (shouldBypassPayment) {
+      try {
+        if (await shouldBypassPayment(request)) {
+          return handler(request) as Promise<NextResponse>;
+        }
+      } catch {
+        // Bypass check failed — fall through to x402 payment flow
+      }
+    }
+
     const server = await lazyInit();
     const adapter = new NextJSAdapter(request);
     const context = {

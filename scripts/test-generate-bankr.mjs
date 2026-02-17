@@ -1,5 +1,5 @@
 /**
- * Test x402-gated generation using a Bankr custodial wallet.
+ * Test x402-gated generation using a Bankr custodial wallet (x402 v2).
  *
  * Prerequisites:
  *   1. Bankr account with Agent API enabled and USDC on Base
@@ -8,9 +8,23 @@
  * Usage:
  *   BANKR_API_KEY=... AGENT_API_KEY=... node scripts/test-generate-bankr.mjs
  *   BANKR_API_KEY=... AGENT_API_KEY=... node scripts/test-generate-bankr.mjs video
+ *
+ * Or place BANKR_API_KEY and AGENT_API_KEY in .env.local.
  */
 
-import { wrapFetchWithPayment } from 'x402-fetch';
+import { wrapFetchWithPayment, x402Client } from '@x402/fetch';
+import { ExactEvmScheme } from '@x402/evm';
+import { readFileSync } from 'fs';
+
+try {
+  const envFile = readFileSync('.env.local', 'utf-8');
+  for (const line of envFile.split('\n')) {
+    const m = line.match(/^([^#=]+)=(.*)$/);
+    if (m && !process.env[m[1].trim()]) {
+      process.env[m[1].trim()] = m[2].trim().replace(/^["']|["']$/g, '');
+    }
+  }
+} catch {}
 
 const BANKR_API_URL = 'https://api.bankr.bot';
 const BANKR_API_KEY = process.env.BANKR_API_KEY;
@@ -21,6 +35,10 @@ const MODE = process.argv[2] || 'image';
 if (!BANKR_API_KEY || !AGENT_API_KEY) {
   console.error('Usage: BANKR_API_KEY=... AGENT_API_KEY=... node scripts/test-generate-bankr.mjs [image|video]');
   process.exit(1);
+}
+
+function bigIntReplacer(_key, value) {
+  return typeof value === 'bigint' ? value.toString() : value;
 }
 
 async function createBankrSigner(apiKey) {
@@ -55,7 +73,7 @@ async function createBankrSigner(apiKey) {
         body: JSON.stringify({
           signatureType: 'eth_signTypedData_v4',
           typedData: { domain, types, primaryType, message },
-        }),
+        }, bigIntReplacer),
       });
       if (!signRes.ok) {
         const text = await signRes.text();
@@ -69,16 +87,20 @@ async function createBankrSigner(apiKey) {
 }
 
 const signer = await createBankrSigner(BANKR_API_KEY);
-const fetchWithPayment = wrapFetchWithPayment(fetch, signer, BigInt(2_000_000)); // max 2 USDC
+const client = new x402Client().register('eip155:8453', new ExactEvmScheme(signer));
+const fetchWithPayment = wrapFetchWithPayment(fetch, client);
 
 const endpoint = MODE === 'video' ? '/api/generate/video' : '/api/generate/image';
+const price = MODE === 'video' ? '$0.50' : '$0.20';
 const body = MODE === 'video'
   ? { prompt: 'A cat walking on the moon, cinematic' }
   : { prompt: 'A cat astronaut floating in space, digital art', model: 'grok-2-image' };
 
 console.log(`\nTesting ${MODE} generation at ${BASE_URL}${endpoint}...`);
+console.log(`Price: ${price} USDC on Base`);
 console.log(`Prompt: "${body.prompt}"\n`);
 
+const start = Date.now();
 try {
   const res = await fetchWithPayment(`${BASE_URL}${endpoint}`, {
     method: 'POST',
@@ -89,9 +111,26 @@ try {
     body: JSON.stringify(body),
   });
 
-  console.log(`Status: ${res.status}`);
+  const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+  console.log(`Status: ${res.status} (${elapsed}s)`);
+
+  const pr = res.headers.get('payment-response');
+  if (pr) {
+    try {
+      const decoded = JSON.parse(Buffer.from(pr, 'base64').toString());
+      console.log('Payment settled:', JSON.stringify(decoded, null, 2));
+    } catch {}
+  }
+
   const data = await res.json();
-  console.log('Response:', JSON.stringify(data, null, 2));
+  if (res.ok && data.success) {
+    console.log('\n=== SUCCESS ===');
+    console.log('URL:', data.data?.image_url || data.data?.video_url);
+    console.log('Model:', data.data?.model);
+    console.log('Post ID:', data.data?.post?.id);
+  } else {
+    console.error('Response:', JSON.stringify(data, null, 2));
+  }
 } catch (err) {
   console.error('Error:', err.message);
   process.exit(1);
