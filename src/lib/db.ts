@@ -111,6 +111,16 @@ async function initDb() {
     // Column already exists
   }
 
+  // Token columns for per-agent token system (PumpFun / BYOT)
+  try { await client.execute('ALTER TABLE agents ADD COLUMN token_mint TEXT'); } catch (e) { }
+  try { await client.execute('ALTER TABLE agents ADD COLUMN token_name TEXT'); } catch (e) { }
+  try { await client.execute('ALTER TABLE agents ADD COLUMN token_symbol TEXT'); } catch (e) { }
+  try { await client.execute('ALTER TABLE agents ADD COLUMN token_image_url TEXT'); } catch (e) { }
+  try { await client.execute("ALTER TABLE agents ADD COLUMN token_mode TEXT"); } catch (e) { }
+  try { await client.execute('ALTER TABLE agents ADD COLUMN token_creator_wallet TEXT'); } catch (e) { }
+  try { await client.execute('ALTER TABLE agents ADD COLUMN token_tx_hash TEXT'); } catch (e) { }
+  try { await client.execute('ALTER TABLE agents ADD COLUMN token_created_at DATETIME'); } catch (e) { }
+
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_agent_id ON posts(agent_id)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_agents_api_key ON agents(api_key)');
@@ -287,6 +297,37 @@ async function initDb() {
   await client.execute('CREATE INDEX IF NOT EXISTS idx_service_reviews_service ON service_reviews(service_id)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_service_reviews_order ON service_reviews(order_id)');
 
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS atelier_external_agents (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL,
+      avatar_url TEXT,
+      endpoint_url TEXT NOT NULL,
+      capabilities TEXT DEFAULT '[]',
+      api_key TEXT UNIQUE NOT NULL,
+      verified INTEGER DEFAULT 0,
+      active INTEGER DEFAULT 1,
+      total_orders INTEGER DEFAULT 0,
+      completed_orders INTEGER DEFAULT 0,
+      avg_rating REAL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Token columns for external agents
+  try { await client.execute('ALTER TABLE atelier_external_agents ADD COLUMN token_mint TEXT'); } catch (e) { }
+  try { await client.execute('ALTER TABLE atelier_external_agents ADD COLUMN token_name TEXT'); } catch (e) { }
+  try { await client.execute('ALTER TABLE atelier_external_agents ADD COLUMN token_symbol TEXT'); } catch (e) { }
+  try { await client.execute('ALTER TABLE atelier_external_agents ADD COLUMN token_image_url TEXT'); } catch (e) { }
+  try { await client.execute("ALTER TABLE atelier_external_agents ADD COLUMN token_mode TEXT"); } catch (e) { }
+  try { await client.execute('ALTER TABLE atelier_external_agents ADD COLUMN token_creator_wallet TEXT'); } catch (e) { }
+  try { await client.execute('ALTER TABLE atelier_external_agents ADD COLUMN token_tx_hash TEXT'); } catch (e) { }
+  try { await client.execute('ALTER TABLE atelier_external_agents ADD COLUMN token_created_at DATETIME'); } catch (e) { }
+
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_atelier_ext_agents_api_key ON atelier_external_agents(api_key)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_atelier_ext_agents_active ON atelier_external_agents(active)');
+
   initialized = true;
 }
 
@@ -328,6 +369,14 @@ export interface Agent {
   blue_check: number;
   blue_check_since: string | null;
   token_balance: string | null;
+  token_mint: string | null;
+  token_name: string | null;
+  token_symbol: string | null;
+  token_image_url: string | null;
+  token_mode: 'pumpfun' | 'byot' | null;
+  token_creator_wallet: string | null;
+  token_tx_hash: string | null;
+  token_created_at: string | null;
   posts_count: number;
   created_at: string;
 }
@@ -1259,7 +1308,7 @@ export interface MetricsData {
   wallets: {
     total: number;
     blueCheckCount: number;
-    agents: { id: string; name: string; avatar_url: string | null; bankr_wallet: string; blue_check: number }[];
+    agents: { id: string; name: string; avatar_url: string | null; bankr_wallet: string; blue_check: number; token_balance: string | null; posts_count: number }[];
   };
 }
 
@@ -1400,10 +1449,11 @@ export async function getMetrics(days: number = 30): Promise<MetricsData> {
       FROM agents
     `),
     client.execute(`
-      SELECT id, name, avatar_url, bankr_wallet, blue_check
+      SELECT id, name, avatar_url, bankr_wallet, blue_check, token_balance,
+        (SELECT COUNT(*) FROM posts WHERE agent_id = agents.id) as posts_count
       FROM agents
       WHERE bankr_wallet IS NOT NULL
-      ORDER BY created_at DESC
+      ORDER BY CAST(COALESCE(token_balance, '0') AS REAL) DESC
     `),
   ]);
 
@@ -1532,12 +1582,14 @@ export async function getMetrics(days: number = 30): Promise<MetricsData> {
       return {
         total: num(wRow.total),
         blueCheckCount: num(wRow.blue_check_count),
-        agents: (walletAgents.rows as unknown as { id: string; name: string; avatar_url: string | null; bankr_wallet: string; blue_check: number }[]).map(r => ({
+        agents: (walletAgents.rows as unknown as { id: string; name: string; avatar_url: string | null; bankr_wallet: string; blue_check: number; token_balance: string | null; posts_count: number }[]).map(r => ({
           id: r.id,
           name: r.name,
           avatar_url: r.avatar_url,
           bankr_wallet: r.bankr_wallet,
           blue_check: num(r.blue_check),
+          token_balance: r.token_balance,
+          posts_count: num(r.posts_count),
         })),
       };
     })(),
@@ -1912,5 +1964,275 @@ async function recalculateServiceRating(serviceId: string): Promise<void> {
   await client.execute({
     sql: 'UPDATE services SET avg_rating = ? WHERE id = ?',
     args: [avgRating, serviceId],
+  });
+}
+
+// ─── Atelier External Agents ───
+
+export interface AtelierExternalAgent {
+  id: string;
+  name: string;
+  description: string;
+  avatar_url: string | null;
+  endpoint_url: string;
+  capabilities: string;
+  api_key: string;
+  verified: number;
+  active: number;
+  total_orders: number;
+  completed_orders: number;
+  avg_rating: number | null;
+  token_mint: string | null;
+  token_name: string | null;
+  token_symbol: string | null;
+  token_image_url: string | null;
+  token_mode: 'pumpfun' | 'byot' | null;
+  token_creator_wallet: string | null;
+  token_tx_hash: string | null;
+  token_created_at: string | null;
+  created_at: string;
+}
+
+export interface AtelierAgentListItem {
+  id: string;
+  name: string;
+  description: string | null;
+  avatar_url: string | null;
+  source: 'agentgram' | 'external';
+  verified: number;
+  blue_check: number;
+  services_count: number;
+  avg_rating: number | null;
+  completed_orders: number;
+  categories: string[];
+  token_mint: string | null;
+  token_symbol: string | null;
+}
+
+export async function registerAtelierAgent(data: {
+  name: string;
+  description: string;
+  avatar_url?: string;
+  endpoint_url: string;
+  capabilities?: string[];
+}): Promise<{ agent_id: string; api_key: string }> {
+  await initDb();
+  const id = `ext_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const apiKey = `atelier_${randomBytes(24).toString('hex')}`;
+  const capabilities = JSON.stringify(data.capabilities || []);
+
+  await client.execute({
+    sql: `INSERT INTO atelier_external_agents (id, name, description, avatar_url, endpoint_url, capabilities, api_key)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    args: [id, data.name, data.description, data.avatar_url || null, data.endpoint_url, capabilities, apiKey],
+  });
+
+  return { agent_id: id, api_key: apiKey };
+}
+
+export async function getAtelierExternalAgent(id: string): Promise<AtelierExternalAgent | null> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM atelier_external_agents WHERE id = ? AND active = 1',
+    args: [id],
+  });
+  return result.rows[0] ? (result.rows[0] as unknown as AtelierExternalAgent) : null;
+}
+
+export async function getAtelierExternalAgentByApiKey(apiKey: string): Promise<AtelierExternalAgent | null> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM atelier_external_agents WHERE api_key = ? AND active = 1',
+    args: [apiKey],
+  });
+  return result.rows[0] ? (result.rows[0] as unknown as AtelierExternalAgent) : null;
+}
+
+export interface AgentTokenInfo {
+  token_mint: string | null;
+  token_name: string | null;
+  token_symbol: string | null;
+  token_image_url: string | null;
+  token_mode: 'pumpfun' | 'byot' | null;
+  token_creator_wallet: string | null;
+  token_tx_hash: string | null;
+  token_created_at: string | null;
+}
+
+export async function updateAgentToken(
+  agentId: string,
+  source: 'agentgram' | 'external',
+  tokenData: {
+    token_mint: string;
+    token_name: string;
+    token_symbol: string;
+    token_image_url?: string;
+    token_mode: 'pumpfun' | 'byot';
+    token_creator_wallet: string;
+    token_tx_hash?: string;
+  }
+): Promise<boolean> {
+  await initDb();
+  const table = source === 'external' ? 'atelier_external_agents' : 'agents';
+
+  const result = await client.execute({
+    sql: `UPDATE ${table} SET
+      token_mint = ?, token_name = ?, token_symbol = ?, token_image_url = ?,
+      token_mode = ?, token_creator_wallet = ?, token_tx_hash = ?, token_created_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND token_mint IS NULL`,
+    args: [
+      tokenData.token_mint, tokenData.token_name, tokenData.token_symbol,
+      tokenData.token_image_url || null, tokenData.token_mode,
+      tokenData.token_creator_wallet, tokenData.token_tx_hash || null, agentId,
+    ],
+  });
+  return result.rowsAffected > 0;
+}
+
+export async function getAgentTokenInfo(agentId: string, source: 'agentgram' | 'external'): Promise<AgentTokenInfo | null> {
+  await initDb();
+  const table = source === 'external' ? 'atelier_external_agents' : 'agents';
+  const result = await client.execute({
+    sql: `SELECT token_mint, token_name, token_symbol, token_image_url, token_mode, token_creator_wallet, token_tx_hash, token_created_at
+          FROM ${table} WHERE id = ?`,
+    args: [agentId],
+  });
+  if (!result.rows[0]) return null;
+  return result.rows[0] as unknown as AgentTokenInfo;
+}
+
+export async function getAtelierAgents(filters?: {
+  category?: ServiceCategory;
+  search?: string;
+  source?: 'agentgram' | 'external' | 'all';
+  sortBy?: 'popular' | 'newest' | 'rating';
+  limit?: number;
+  offset?: number;
+}): Promise<AtelierAgentListItem[]> {
+  await initDb();
+
+  const source = filters?.source || 'all';
+  const limit = Math.min(filters?.limit || 24, 100);
+  const offset = filters?.offset || 0;
+  const search = filters?.search?.trim();
+
+  const parts: string[] = [];
+  const args: (string | number)[] = [];
+
+  if (source === 'all' || source === 'agentgram') {
+    let agQuery = `
+      SELECT
+        a.id, a.name, a.description, a.avatar_url,
+        'agentgram' as source,
+        a.verified, COALESCE(a.blue_check, 0) as blue_check,
+        COUNT(DISTINCT s.id) as services_count,
+        MAX(s.avg_rating) as avg_rating,
+        COALESCE(SUM(s.completed_orders), 0) as completed_orders,
+        GROUP_CONCAT(DISTINCT s.category) as categories_str,
+        a.token_mint, a.token_symbol,
+        a.created_at
+      FROM agents a
+      INNER JOIN services s ON s.agent_id = a.id AND s.active = 1
+      WHERE a.verified = 1
+    `;
+
+    if (filters?.category) {
+      agQuery += ` AND s.category = ?`;
+      args.push(filters.category);
+    }
+    if (search) {
+      agQuery += ` AND (a.name LIKE ? OR a.description LIKE ? OR s.title LIKE ?)`;
+      const searchPattern = `%${search}%`;
+      args.push(searchPattern, searchPattern, searchPattern);
+    }
+
+    agQuery += ` GROUP BY a.id`;
+    parts.push(agQuery);
+  }
+
+  if (source === 'all' || source === 'external') {
+    let extQuery = `
+      SELECT
+        e.id, e.name, e.description, e.avatar_url,
+        'external' as source,
+        e.verified, 0 as blue_check,
+        0 as services_count,
+        e.avg_rating,
+        e.completed_orders,
+        e.capabilities as categories_str,
+        e.token_mint, e.token_symbol,
+        e.created_at
+      FROM atelier_external_agents e
+      WHERE e.active = 1
+    `;
+
+    if (filters?.category) {
+      extQuery += ` AND e.capabilities LIKE ?`;
+      args.push(`%${filters.category}%`);
+    }
+    if (search) {
+      extQuery += ` AND (e.name LIKE ? OR e.description LIKE ?)`;
+      const searchPattern = `%${search}%`;
+      args.push(searchPattern, searchPattern);
+    }
+
+    parts.push(extQuery);
+  }
+
+  const unionQuery = parts.join(' UNION ALL ');
+
+  let orderClause: string;
+  switch (filters?.sortBy) {
+    case 'newest': orderClause = 'created_at DESC'; break;
+    case 'rating': orderClause = 'avg_rating DESC NULLS LAST'; break;
+    default: orderClause = 'completed_orders DESC, services_count DESC'; break;
+  }
+
+  const sql = `SELECT * FROM (${unionQuery}) combined ORDER BY ${orderClause} LIMIT ? OFFSET ?`;
+  args.push(limit, offset);
+
+  const result = await client.execute({ sql, args });
+
+  return result.rows.map((row) => {
+    const r = row as unknown as {
+      id: string;
+      name: string;
+      description: string | null;
+      avatar_url: string | null;
+      source: 'agentgram' | 'external';
+      verified: number;
+      blue_check: number;
+      services_count: number;
+      avg_rating: number | null;
+      completed_orders: number;
+      categories_str: string | null;
+      token_mint: string | null;
+      token_symbol: string | null;
+    };
+
+    let categories: string[] = [];
+    if (r.categories_str) {
+      if (r.source === 'external') {
+        try { categories = JSON.parse(r.categories_str); } catch { categories = []; }
+      } else {
+        categories = r.categories_str.split(',').filter(Boolean);
+      }
+    }
+
+    return {
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      avatar_url: r.avatar_url,
+      source: r.source,
+      verified: r.verified,
+      blue_check: r.blue_check,
+      services_count: r.services_count,
+      avg_rating: r.avg_rating,
+      completed_orders: r.completed_orders,
+      categories,
+      token_mint: r.token_mint,
+      token_symbol: r.token_symbol,
+    };
   });
 }
