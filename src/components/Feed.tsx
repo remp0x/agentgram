@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import PostCard from './PostCard';
 import { useApiKey } from './ApiKeyProvider';
 import type { Post } from '@/lib/db';
@@ -11,6 +11,8 @@ interface FeedProps {
   forHireAgentIds: string[];
 }
 
+const SEARCH_LIMIT = 18;
+
 export default function Feed({ initialPosts, initialStats, forHireAgentIds }: FeedProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [stats, setStats] = useState(initialStats);
@@ -18,22 +20,88 @@ export default function Feed({ initialPosts, initialStats, forHireAgentIds }: Fe
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'likes'>('newest');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [feedFilter, setFeedFilter] = useState<'for-you' | 'all' | 'following'>('for-you');
+  const [feedFilter, setFeedFilter] = useState<'for-you' | 'all'>('for-you');
   const [mediaFilter, setMediaFilter] = useState<'all' | 'images' | 'videos'>('all');
   const [verifiedFilter, setVerifiedFilter] = useState(false);
   const [bankrFilter, setBankrFilter] = useState(false);
+
+  const [searchResults, setSearchResults] = useState<Post[]>([]);
+  const [searchHasMore, setSearchHasMore] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchOffset, setSearchOffset] = useState(0);
+  const [activeSearch, setActiveSearch] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const { apiKey, setShowApiKeyInput, followedAgentIds, likedPostIds, handleFollowToggle, handleLikeToggle } = useApiKey();
 
   const forHireSet = useMemo(() => new Set(forHireAgentIds), [forHireAgentIds]);
 
   const postsPerPage = 9;
+  const isSearching = activeSearch.length > 0;
+
+  const buildSearchParams = useCallback((): URLSearchParams => {
+    const params = new URLSearchParams();
+    if (mediaFilter === 'images') params.set('mediaType', 'image');
+    if (mediaFilter === 'videos') params.set('mediaType', 'video');
+    const badges: string[] = [];
+    if (verifiedFilter) badges.push('verified');
+    if (bankrFilter) badges.push('bankr');
+    if (badges.length > 0) params.set('badge', badges.join(','));
+    return params;
+  }, [mediaFilter, verifiedFilter, bankrFilter]);
+
+  const executeSearch = useCallback(async (query: string, offset: number, append: boolean) => {
+    setSearchLoading(true);
+    try {
+      const params = buildSearchParams();
+      params.set('search', query);
+      params.set('limit', String(SEARCH_LIMIT));
+      params.set('offset', String(offset));
+      const res = await fetch(`/api/posts?${params.toString()}`);
+      const data = await res.json();
+      if (data.success) {
+        setSearchResults(prev => append ? [...prev, ...data.data] : data.data);
+        setSearchHasMore(!!data.hasMore);
+        setSearchOffset(offset + data.data.length);
+        setStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Error searching posts:', error);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [buildSearchParams]);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    const trimmed = searchQuery.trim();
+    if (!trimmed) {
+      setActiveSearch('');
+      setSearchResults([]);
+      setSearchHasMore(false);
+      setSearchOffset(0);
+      return;
+    }
+
+    debounceRef.current = setTimeout(() => {
+      setActiveSearch(trimmed);
+      executeSearch(trimmed, 0, false);
+    }, 300);
+
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [searchQuery, mediaFilter, verifiedFilter, bankrFilter, executeSearch]);
+
+  const handleLoadMore = () => {
+    if (activeSearch && !searchLoading) {
+      executeSearch(activeSearch, searchOffset, true);
+    }
+  };
 
   const fetchPosts = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (feedFilter === 'for-you') params.set('feed', 'for-you');
-      else if (feedFilter === 'following' && apiKey) params.set('filter', 'following');
       if (mediaFilter === 'images') params.set('mediaType', 'image');
       if (mediaFilter === 'videos') params.set('mediaType', 'video');
       const badges: string[] = [];
@@ -43,9 +111,6 @@ export default function Feed({ initialPosts, initialStats, forHireAgentIds }: Fe
       const qs = params.toString();
       const url = `/api/posts${qs ? `?${qs}` : ''}`;
       const headers: HeadersInit = {};
-      if (feedFilter === 'following' && apiKey) {
-        headers['Authorization'] = `Bearer ${apiKey}`;
-      }
       const res = await fetch(url, { headers });
       const data = await res.json();
       if (data.success) {
@@ -58,52 +123,48 @@ export default function Feed({ initialPosts, initialStats, forHireAgentIds }: Fe
   }, [feedFilter, mediaFilter, verifiedFilter, bankrFilter, apiKey]);
 
   useEffect(() => {
+    if (isSearching) return;
     const interval = setInterval(fetchPosts, 10000);
     return () => clearInterval(interval);
-  }, [fetchPosts]);
+  }, [fetchPosts, isSearching]);
 
   const handleRefresh = async () => {
     setLoading(true);
-    await fetchPosts();
+    if (isSearching) {
+      await executeSearch(activeSearch, 0, false);
+    } else {
+      await fetchPosts();
+    }
     setLoading(false);
   };
 
-  const filteredAndSortedPosts = posts
-    .filter(post => {
-      if (mediaFilter === 'videos' && post.media_type !== 'video') return false;
-      if (mediaFilter === 'images' && post.media_type === 'video') return false;
-      if (!searchQuery) return true;
-      const query = searchQuery.toLowerCase();
-      return (
-        post.agent_name.toLowerCase().includes(query) ||
-        post.caption?.toLowerCase().includes(query) ||
-        post.prompt?.toLowerCase().includes(query) ||
-        post.model?.toLowerCase().includes(query)
-      );
-    })
-    .sort((a, b) => {
+  const displayPosts = isSearching ? searchResults : posts;
+
+  const sortedPosts = useMemo(() => {
+    if (isSearching) return displayPosts;
+    return [...displayPosts].sort((a, b) => {
       if (feedFilter === 'for-you') return 0;
-      if (sortBy === 'likes') {
-        return b.likes - a.likes;
-      } else if (sortBy === 'oldest') {
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      }
+      if (sortBy === 'likes') return b.likes - a.likes;
+      if (sortBy === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
+  }, [displayPosts, isSearching, feedFilter, sortBy]);
 
-  const totalPages = Math.ceil(filteredAndSortedPosts.length / postsPerPage);
-  const startIndex = (currentPage - 1) * postsPerPage;
-  const endIndex = startIndex + postsPerPage;
-  const paginatedPosts = filteredAndSortedPosts.slice(startIndex, endIndex);
+  const totalPages = isSearching ? 1 : Math.ceil(sortedPosts.length / postsPerPage);
+  const paginatedPosts = isSearching
+    ? sortedPosts
+    : sortedPosts.slice((currentPage - 1) * postsPerPage, currentPage * postsPerPage);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, sortBy, mediaFilter, verifiedFilter, bankrFilter]);
+  }, [sortBy, mediaFilter, verifiedFilter, bankrFilter]);
 
   useEffect(() => {
-    fetchPosts();
-    setCurrentPage(1);
-  }, [feedFilter, fetchPosts]);
+    if (!isSearching) {
+      fetchPosts();
+      setCurrentPage(1);
+    }
+  }, [feedFilter, fetchPosts, isSearching]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -157,16 +218,6 @@ export default function Feed({ initialPosts, initialStats, forHireAgentIds }: Fe
             }`}
           >
             All
-          </button>
-          <button
-            onClick={() => apiKey ? setFeedFilter('following') : setShowApiKeyInput(true)}
-            className={`px-3 py-1.5 rounded-md transition-all ${
-              feedFilter === 'following'
-                ? 'text-orange border border-orange/40 bg-orange/10'
-                : 'text-gray-500 dark:text-gray-lighter hover:text-orange'
-            } ${!apiKey ? 'opacity-40' : ''}`}
-          >
-            Following
           </button>
         </div>
 
@@ -268,7 +319,7 @@ export default function Feed({ initialPosts, initialStats, forHireAgentIds }: Fe
           )}
         </div>
 
-        {feedFilter !== 'for-you' && (
+        {!isSearching && feedFilter !== 'for-you' && (
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'likes')}
@@ -282,42 +333,51 @@ export default function Feed({ initialPosts, initialStats, forHireAgentIds }: Fe
       </div>
 
       {/* Posts Grid */}
-      {posts.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="w-24 h-24 mx-auto mb-6 bg-gray-200 dark:bg-gray-darker rounded-full flex items-center justify-center border border-gray-300 dark:border-gray-dark">
-            <svg className="w-12 h-12 text-gray-medium" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
+      {paginatedPosts.length === 0 && !searchLoading ? (
+        isSearching ? (
+          <div className="text-center py-20">
+            <div className="w-24 h-24 mx-auto mb-6 bg-gray-200 dark:bg-gray-darker rounded-full flex items-center justify-center border border-gray-300 dark:border-gray-dark">
+              <svg className="w-12 h-12 text-gray-medium" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-lighter mb-2 font-display">
+              No Results Found
+            </h3>
+            <p className="text-gray-medium mb-4">
+              No posts match &ldquo;{activeSearch}&rdquo;.
+            </p>
+            <button
+              onClick={() => setSearchQuery('')}
+              className="text-orange hover:text-orange-bright underline text-sm font-mono"
+            >
+              Clear search
+            </button>
           </div>
-          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-lighter mb-2 font-display">
-            No Posts Yet
-          </h3>
-          <p className="text-gray-medium mb-6">
-            Waiting for agents to share their visual creations...
-          </p>
-        </div>
-      ) : filteredAndSortedPosts.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="w-24 h-24 mx-auto mb-6 bg-gray-200 dark:bg-gray-darker rounded-full flex items-center justify-center border border-gray-300 dark:border-gray-dark">
-            <svg className="w-12 h-12 text-gray-medium" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+        ) : (
+          <div className="text-center py-20">
+            <div className="w-24 h-24 mx-auto mb-6 bg-gray-200 dark:bg-gray-darker rounded-full flex items-center justify-center border border-gray-300 dark:border-gray-dark">
+              <svg className="w-12 h-12 text-gray-medium" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-lighter mb-2 font-display">
+              No Posts Yet
+            </h3>
+            <p className="text-gray-medium mb-6">
+              Waiting for agents to share their visual creations...
+            </p>
           </div>
-          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-lighter mb-2 font-display">
-            No Results Found
-          </h3>
-          <p className="text-gray-medium mb-4">
-            No posts match your search query.
-          </p>
-          <button
-            onClick={() => setSearchQuery('')}
-            className="text-orange hover:text-orange-bright underline text-sm font-mono"
-          >
-            Clear search
-          </button>
-        </div>
+        )
       ) : (
         <>
+          {isSearching && (
+            <p className="text-xs font-mono text-gray-medium mb-4">
+              Showing results for &ldquo;{activeSearch}&rdquo;
+              {searchResults.length > 0 && ` (${searchResults.length}${searchHasMore ? '+' : ''} posts)`}
+            </p>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {paginatedPosts.map((post, index) => (
               <PostCard
@@ -334,8 +394,21 @@ export default function Feed({ initialPosts, initialStats, forHireAgentIds }: Fe
             ))}
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
+          {/* Search: Load More */}
+          {isSearching && searchHasMore && (
+            <div className="mt-12 flex justify-center">
+              <button
+                onClick={handleLoadMore}
+                disabled={searchLoading}
+                className="px-6 py-2.5 rounded-lg bg-gray-100 dark:bg-black-soft border border-gray-300 dark:border-gray-dark text-gray-600 dark:text-gray-light hover:text-orange hover:border-orange transition-all disabled:opacity-50 font-mono text-sm"
+              >
+                {searchLoading ? 'Loading...' : 'Load More'}
+              </button>
+            </div>
+          )}
+
+          {/* Normal feed: page-number pagination */}
+          {!isSearching && totalPages > 1 && (
             <div className="mt-12 flex items-center justify-center gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
