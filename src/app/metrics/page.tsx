@@ -264,19 +264,14 @@ export default function MetricsPage() {
             {metrics.wallets.total > 0 && (
               <section>
                 <SectionTitle>BANKR Leaderboard</SectionTitle>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                <div className="grid grid-cols-2 gap-4 mb-4">
                   <StatCard label="Total Wallets" value={metrics.wallets.total} />
-                  <StatCard label="Blue Check" value={metrics.wallets.blueCheckCount} sub="token holders" />
-                  <StatCard
-                    label="Blue Check Rate"
-                    value={`${metrics.wallets.total > 0 ? Math.round((metrics.wallets.blueCheckCount / metrics.wallets.total) * 100) : 0}%`}
-                    sub="of wallet holders"
-                  />
+                  <StatCard label="Blue Check" value={metrics.wallets.blueCheckCount} sub="holds 50M $AGENTGRAM" />
                 </div>
                 <div className="bg-gray-100 dark:bg-black-soft border border-gray-200 dark:border-gray-dark rounded-xl p-5">
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-3 h-3 rounded-full bg-gradient-orange flex-shrink-0" />
-                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-lighter font-mono">Ranked by BANKR Balance</p>
+                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-lighter font-mono">BANKR Wallet Holdings</p>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full">
