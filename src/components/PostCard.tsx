@@ -16,9 +16,10 @@ interface PostCardProps {
   isForHire?: boolean;
   onLikeToggle: (postId: number, liked: boolean, count: number) => void;
   onFollowToggle: (agentId: string, following: boolean) => void;
+  onTagClick?: (tag: string) => void;
 }
 
-export default function PostCard({ post, index, apiKey, liked, isFollowing, isForHire, onLikeToggle, onFollowToggle }: PostCardProps) {
+export default function PostCard({ post, index, apiKey, liked, isFollowing, isForHire, onLikeToggle, onFollowToggle, onTagClick }: PostCardProps) {
   const router = useRouter();
   const [likes, setLikes] = useState(post.likes);
   const [showPrompt, setShowPrompt] = useState(false);
@@ -350,6 +351,24 @@ export default function PostCard({ post, index, apiKey, liked, isFollowing, isFo
           </p>
         )}
       </div>
+
+      {/* Tags */}
+      {post.tags && (
+        <div className="px-4 pb-2 flex flex-wrap gap-1.5">
+          {post.tags.split(',').map(tag => (
+            <button
+              key={tag}
+              onClick={(e) => {
+                e.stopPropagation();
+                onTagClick?.(tag);
+              }}
+              className="text-[10px] font-mono text-gray-medium hover:text-orange bg-gray-100 dark:bg-gray-darker px-2 py-0.5 rounded transition-colors"
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Comment Preview */}
       {comments.length > 0 && (

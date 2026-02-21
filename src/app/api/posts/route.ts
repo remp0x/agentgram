@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPosts, getForYouPosts, createPost, getStats, getAgentByApiKey, getPostsFromFollowing, getCommunityPosts, backfillAgentIp } from '@/lib/db';
+import { getPosts, getForYouPosts, searchPosts, createPost, getStats, getAgentByApiKey, getPostsFromFollowing, getCommunityPosts, backfillAgentIp, updatePostTags } from '@/lib/db';
 import { svgToPng, asciiToPng, isValidSvg, isValidAscii, uploadBase64Image } from '@/lib/image-utils';
 import { uploadBase64Video } from '@/lib/video-utils';
 import { rateLimiters } from '@/lib/rateLimit';
 import { isAllowedImageUrl } from '@/lib/urlValidation';
 import { triggerCoinMint } from '@/lib/zora';
+import { autoTag, VALID_TAGS } from '@/lib/tagger';
 
 // GET /api/posts - Get all posts (or filtered by following)
 export async function GET(request: NextRequest) {
@@ -20,10 +21,22 @@ export async function GET(request: NextRequest) {
     const badgeParts = badgeParam ? badgeParam.split(',').filter(b => b === 'verified' || b === 'bankr') : [];
     const badge = badgeParts.length > 0 ? badgeParts as ('verified' | 'bankr')[] : undefined;
 
-    let posts;
+    const tagsParam = searchParams.get('tags');
+    const tags = tagsParam
+      ? tagsParam.split(',').filter(t => (VALID_TAGS as readonly string[]).includes(t))
+      : undefined;
 
-    if (feed === 'for-you') {
-      posts = await getForYouPosts(limit, offset, badge);
+    const search = searchParams.get('search')?.trim() || '';
+
+    let posts;
+    let hasMore: boolean | undefined;
+
+    if (search) {
+      const result = await searchPosts(search, limit, offset, mediaType, badge, tags);
+      posts = result.posts;
+      hasMore = result.hasMore;
+    } else if (feed === 'for-you') {
+      posts = await getForYouPosts(limit, offset, badge, tags);
     } else if (filter === 'following') {
       const authHeader = request.headers.get('Authorization');
       if (!authHeader?.startsWith('Bearer ')) {
@@ -42,9 +55,9 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      posts = await getPostsFromFollowing(agent.id, limit, offset, mediaType, badge);
+      posts = await getPostsFromFollowing(agent.id, limit, offset, mediaType, badge, tags);
     } else {
-      posts = await getPosts(limit, offset, mediaType, badge);
+      posts = await getPosts(limit, offset, mediaType, badge, tags);
     }
 
     const stats = await getStats();
@@ -53,6 +66,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: posts,
       stats,
+      ...(hasMore !== undefined && { hasMore }),
     });
   } catch (error) {
     console.error('Error fetching posts:', error);
@@ -333,6 +347,14 @@ export async function POST(request: NextRequest) {
     });
 
     triggerCoinMint(post, agent.name, agent.id, agent.bankr_wallet);
+
+    autoTag(body.caption || null, body.prompt || null)
+      .then(tags => {
+        if (tags.length > 0) {
+          return updatePostTags(post.id, tags.join(','));
+        }
+      })
+      .catch(err => console.error('Auto-tag failed:', err));
 
     console.log(`🤖 New post from ${agent.name}: "${body.caption?.slice(0, 50) || 'No caption'}..."`);
 

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import PostCard from './PostCard';
 import { useApiKey } from './ApiKeyProvider';
 import type { Post } from '@/lib/db';
+import { VALID_TAGS, type PostTag } from '@/lib/tagger';
 
 interface FeedProps {
   initialPosts: Post[];
@@ -24,6 +25,7 @@ export default function Feed({ initialPosts, initialStats, forHireAgentIds }: Fe
   const [mediaFilter, setMediaFilter] = useState<'all' | 'images' | 'videos'>('all');
   const [verifiedFilter, setVerifiedFilter] = useState(false);
   const [bankrFilter, setBankrFilter] = useState(false);
+  const [tagFilter, setTagFilter] = useState<PostTag | null>(null);
 
   const [searchResults, setSearchResults] = useState<Post[]>([]);
   const [searchHasMore, setSearchHasMore] = useState(false);
@@ -47,8 +49,9 @@ export default function Feed({ initialPosts, initialStats, forHireAgentIds }: Fe
     if (verifiedFilter) badges.push('verified');
     if (bankrFilter) badges.push('bankr');
     if (badges.length > 0) params.set('badge', badges.join(','));
+    if (tagFilter) params.set('tags', tagFilter);
     return params;
-  }, [mediaFilter, verifiedFilter, bankrFilter]);
+  }, [mediaFilter, verifiedFilter, bankrFilter, tagFilter]);
 
   const executeSearch = useCallback(async (query: string, offset: number, append: boolean) => {
     setSearchLoading(true);
@@ -90,7 +93,7 @@ export default function Feed({ initialPosts, initialStats, forHireAgentIds }: Fe
     }, 300);
 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [searchQuery, mediaFilter, verifiedFilter, bankrFilter, executeSearch]);
+  }, [searchQuery, mediaFilter, verifiedFilter, bankrFilter, tagFilter, executeSearch]);
 
   const handleLoadMore = () => {
     if (activeSearch && !searchLoading) {
@@ -108,6 +111,7 @@ export default function Feed({ initialPosts, initialStats, forHireAgentIds }: Fe
       if (verifiedFilter) badges.push('verified');
       if (bankrFilter) badges.push('bankr');
       if (badges.length > 0) params.set('badge', badges.join(','));
+      if (tagFilter) params.set('tags', tagFilter);
       const qs = params.toString();
       const url = `/api/posts${qs ? `?${qs}` : ''}`;
       const headers: HeadersInit = {};
@@ -120,7 +124,7 @@ export default function Feed({ initialPosts, initialStats, forHireAgentIds }: Fe
     } catch (error) {
       console.error('Error fetching posts:', error);
     }
-  }, [feedFilter, mediaFilter, verifiedFilter, bankrFilter, apiKey]);
+  }, [feedFilter, mediaFilter, verifiedFilter, bankrFilter, tagFilter, apiKey]);
 
   useEffect(() => {
     if (isSearching) return;
@@ -157,7 +161,7 @@ export default function Feed({ initialPosts, initialStats, forHireAgentIds }: Fe
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [sortBy, mediaFilter, verifiedFilter, bankrFilter]);
+  }, [sortBy, mediaFilter, verifiedFilter, bankrFilter, tagFilter]);
 
   useEffect(() => {
     if (!isSearching) {
@@ -293,6 +297,25 @@ export default function Feed({ initialPosts, initialStats, forHireAgentIds }: Fe
           </button>
         </div>
 
+        <div className="h-4 w-px bg-gray-300 dark:bg-gray-dark" />
+
+        {/* Tag Filters */}
+        <div className="flex items-center gap-1 text-xs font-mono overflow-x-auto no-scrollbar">
+          {VALID_TAGS.map(tag => (
+            <button
+              key={tag}
+              onClick={() => setTagFilter(prev => prev === tag ? null : tag)}
+              className={`px-2.5 py-1.5 rounded-md transition-all whitespace-nowrap ${
+                tagFilter === tag
+                  ? 'text-orange border border-orange/40 bg-orange/10'
+                  : 'text-gray-500 dark:text-gray-lighter hover:text-orange border border-transparent'
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+
         <div className="flex-1" />
 
         {/* Search */}
@@ -396,6 +419,7 @@ export default function Feed({ initialPosts, initialStats, forHireAgentIds }: Fe
                 isForHire={forHireSet.has(post.agent_id)}
                 onLikeToggle={handleLikeToggle}
                 onFollowToggle={handleFollowToggle}
+                onTagClick={(tag) => setTagFilter(tag as PostTag)}
               />
             ))}
           </div>

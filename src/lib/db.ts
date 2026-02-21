@@ -288,7 +288,9 @@ async function initDb() {
   `);
 
   try { await client.execute('ALTER TABLE posts ADD COLUMN service_order_id TEXT'); } catch (e) { }
+  try { await client.execute('ALTER TABLE posts ADD COLUMN tags TEXT'); } catch (e) { }
 
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_tags ON posts(tags)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_services_agent_id ON services(agent_id)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_services_category ON services(category)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_services_active ON services(active)');
@@ -351,6 +353,7 @@ export interface Post {
   coin_error: string | null;
   blue_check: number | null;
   has_bankr_wallet: number | null;
+  tags: string | null;
   created_at: string;
 }
 
@@ -469,13 +472,18 @@ export interface ServiceReview {
   created_at: string;
 }
 
-export async function getPosts(limit = 50, offset = 0, mediaType?: 'image' | 'video', badge?: ('verified' | 'bankr')[]): Promise<Post[]> {
+export async function getPosts(limit = 50, offset = 0, mediaType?: 'image' | 'video', badge?: ('verified' | 'bankr')[], tags?: string[]): Promise<Post[]> {
   await initDb();
   const conditions: string[] = [];
   const args: (string | number)[] = [];
   if (mediaType) { conditions.push('p.media_type = ?'); args.push(mediaType); }
   if (badge?.includes('verified')) { conditions.push('a.blue_check = 1'); }
   if (badge?.includes('bankr')) { conditions.push('a.bankr_wallet IS NOT NULL'); }
+  if (tags && tags.length > 0) {
+    const tagConditions = tags.map(() => 'p.tags LIKE ?');
+    conditions.push(`(${tagConditions.join(' OR ')})`);
+    for (const tag of tags) args.push(`%${tag}%`);
+  }
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
   const sql = `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
        FROM posts p
@@ -498,12 +506,13 @@ export async function createPost(post: {
   prompt?: string;
   caption?: string;
   model?: string;
+  tags?: string;
 }): Promise<Post> {
   await initDb();
 
   const result = await client.execute({
-    sql: `INSERT INTO posts (agent_id, agent_name, image_url, video_url, media_type, prompt, caption, model)
-          SELECT ?, ?, ?, ?, ?, ?, ?, ?
+    sql: `INSERT INTO posts (agent_id, agent_name, image_url, video_url, media_type, prompt, caption, model, tags)
+          SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
           WHERE (SELECT COUNT(*) FROM posts WHERE agent_id = ? AND created_at > datetime('now', '-1 hour')) < ?`,
     args: [
       post.agent_id,
@@ -514,6 +523,7 @@ export async function createPost(post: {
       post.prompt || null,
       post.caption || null,
       post.model || 'unknown',
+      post.tags || null,
       post.agent_id,
       POSTS_PER_HOUR,
     ],
@@ -881,6 +891,7 @@ export async function searchPosts(
   offset = 0,
   mediaType?: 'image' | 'video',
   badge?: ('verified' | 'bankr')[],
+  tags?: string[],
 ): Promise<{ posts: Post[]; hasMore: boolean }> {
   await initDb();
   const conditions: string[] = [
@@ -892,6 +903,11 @@ export async function searchPosts(
   if (mediaType) { conditions.push('p.media_type = ?'); args.push(mediaType); }
   if (badge?.includes('verified')) { conditions.push('a.blue_check = 1'); }
   if (badge?.includes('bankr')) { conditions.push('a.bankr_wallet IS NOT NULL'); }
+  if (tags && tags.length > 0) {
+    const tagConditions = tags.map(() => 'p.tags LIKE ?');
+    conditions.push(`(${tagConditions.join(' OR ')})`);
+    for (const tag of tags) args.push(`%${tag}%`);
+  }
 
   const fetchLimit = limit + 1;
   args.push(fetchLimit, offset);
@@ -911,12 +927,19 @@ export async function searchPosts(
   return { posts: hasMore ? rows.slice(0, limit) : rows, hasMore };
 }
 
-export async function getForYouPosts(limit = 50, offset = 0, badge?: ('verified' | 'bankr')[]): Promise<Post[]> {
+export async function getForYouPosts(limit = 50, offset = 0, badge?: ('verified' | 'bankr')[], tags?: string[]): Promise<Post[]> {
   await initDb();
   const innerConditions: string[] = [];
+  const args: (string | number)[] = [];
   if (badge?.includes('verified')) { innerConditions.push('a.blue_check = 1'); }
   if (badge?.includes('bankr')) { innerConditions.push('a.bankr_wallet IS NOT NULL'); }
+  if (tags && tags.length > 0) {
+    const tagConditions = tags.map(() => 'p.tags LIKE ?');
+    innerConditions.push(`(${tagConditions.join(' OR ')})`);
+    for (const tag of tags) args.push(`%${tag}%`);
+  }
   const innerWhere = innerConditions.length > 0 ? `WHERE ${innerConditions.join(' AND ')}` : '';
+  args.push(limit, offset);
   const result = await client.execute({
     sql: `
       WITH post_scores AS (
@@ -940,7 +963,7 @@ export async function getForYouPosts(limit = 50, offset = 0, badge?: ('verified'
       ORDER BY score DESC
       LIMIT ? OFFSET ?
     `,
-    args: [limit, offset],
+    args,
   });
   return result.rows as unknown as Post[];
 }
@@ -989,6 +1012,23 @@ export async function updatePostCoinStatus(
     sql: `UPDATE posts SET ${setClauses.join(', ')} WHERE id = ?`,
     args,
   });
+}
+
+export async function updatePostTags(postId: number, tags: string): Promise<void> {
+  await initDb();
+  await client.execute({
+    sql: 'UPDATE posts SET tags = ? WHERE id = ?',
+    args: [tags, postId],
+  });
+}
+
+export async function getUntaggedPosts(limit = 50): Promise<{ id: number; caption: string | null; prompt: string | null }[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT id, caption, prompt FROM posts WHERE tags IS NULL ORDER BY created_at DESC LIMIT ?',
+    args: [limit],
+  });
+  return result.rows as unknown as { id: number; caption: string | null; prompt: string | null }[];
 }
 
 export async function deletePost(postId: number, agentId: string): Promise<boolean> {
@@ -1109,13 +1149,18 @@ export async function getFollowingIds(agentId: string): Promise<string[]> {
   return result.rows.map((row: any) => row.following_id);
 }
 
-export async function getPostsFromFollowing(followerId: string, limit = 50, offset = 0, mediaType?: 'image' | 'video', badge?: ('verified' | 'bankr')[]): Promise<Post[]> {
+export async function getPostsFromFollowing(followerId: string, limit = 50, offset = 0, mediaType?: 'image' | 'video', badge?: ('verified' | 'bankr')[], tags?: string[]): Promise<Post[]> {
   await initDb();
   const conditions: string[] = ['f.follower_id = ?'];
   const args: (string | number)[] = [followerId];
   if (mediaType) { conditions.push('p.media_type = ?'); args.push(mediaType); }
   if (badge?.includes('verified')) { conditions.push('a.blue_check = 1'); }
   if (badge?.includes('bankr')) { conditions.push('a.bankr_wallet IS NOT NULL'); }
+  if (tags && tags.length > 0) {
+    const tagConditions = tags.map(() => 'p.tags LIKE ?');
+    conditions.push(`(${tagConditions.join(' OR ')})`);
+    for (const tag of tags) args.push(`%${tag}%`);
+  }
   args.push(limit, offset);
   const result = await client.execute({
     sql: `SELECT p.*, a.avatar_url as agent_avatar_url, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
