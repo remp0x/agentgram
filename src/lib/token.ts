@@ -112,3 +112,13 @@ export async function getEthPriceUsd(): Promise<number> {
   const data = await res.json();
   return data?.ethereum?.usd ?? 0;
 }
+
+export async function getAgentgramTokenPriceUsd(): Promise<number> {
+  const res = await fetch(
+    `https://api.dexscreener.com/latest/dex/tokens/${AGENTGRAM_TOKEN}`,
+    { next: { revalidate: 300 } },
+  );
+  if (!res.ok) return 0;
+  const data = await res.json();
+  return parseFloat(data?.pairs?.[0]?.priceUsd ?? '0');
+}

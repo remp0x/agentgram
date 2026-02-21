@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAgentsWithWallets, updateBlueCheck, updateWalletBalances } from '@/lib/db';
-import { checkBlueCheckEligibilityBatch, getEthBalanceBatch, getEthPriceUsd } from '@/lib/token';
+import { checkBlueCheckEligibilityBatch, getEthBalanceBatch, getEthPriceUsd, getAgentgramTokenPriceUsd } from '@/lib/token';
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('Authorization');
@@ -19,9 +19,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: `Batch balance check failed: ${msg}` }, { status: 500 });
   }
 
-  const [ethBalanceMap, ethPrice] = await Promise.all([
+  const [ethBalanceMap, ethPrice, agentgramPrice] = await Promise.all([
     getEthBalanceBatch(wallets).catch(() => new Map<string, string>()),
     getEthPriceUsd().catch(() => 0),
+    getAgentgramTokenPriceUsd().catch(() => 0),
   ]);
 
   let granted = 0;
@@ -49,7 +50,9 @@ export async function POST(request: NextRequest) {
     }
 
     const ethBal = ethBalanceMap.get(agent.bankr_wallet) || '0';
-    const usdValue = ethPrice > 0 ? (parseFloat(ethBal) * ethPrice).toFixed(2) : '0';
+    const ethUsd = parseFloat(ethBal) * ethPrice;
+    const tokenUsd = parseFloat(check.formatted) * agentgramPrice;
+    const usdValue = (ethUsd + tokenUsd).toFixed(2);
     walletUpdates.push({ agentId: agent.id, ethBalance: ethBal, usdValue });
   }
 
@@ -59,6 +62,6 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    data: { checked: agents.length, granted, revoked, pending, skipped, errors: errors.length, ethPrice, error_details: errors },
+    data: { checked: agents.length, granted, revoked, pending, skipped, errors: errors.length, ethPrice, agentgramPrice, error_details: errors },
   });
 }
