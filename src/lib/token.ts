@@ -77,3 +77,38 @@ export async function checkBlueCheckEligibilityBatch(
   }
   return map;
 }
+
+export async function getEthBalanceBatch(
+  walletAddresses: string[],
+): Promise<Map<string, string>> {
+  const client = getClient();
+  let ethDecimals = BigInt(1);
+  for (let i = 0; i < 18; i++) ethDecimals = ethDecimals * BigInt(10);
+  let remainderScale = BigInt(1);
+  for (let i = 0; i < 14; i++) remainderScale = remainderScale * BigInt(10);
+
+  const results = await Promise.allSettled(
+    walletAddresses.map((addr) => client.getBalance({ address: addr as Address })),
+  );
+
+  const map = new Map<string, string>();
+  for (let i = 0; i < walletAddresses.length; i++) {
+    const result = results[i];
+    if (result.status === 'fulfilled') {
+      const whole = result.value / ethDecimals;
+      const remainder = (result.value % ethDecimals) / remainderScale;
+      map.set(walletAddresses[i], `${whole}.${remainder.toString().padStart(4, '0')}`);
+    }
+  }
+  return map;
+}
+
+export async function getEthPriceUsd(): Promise<number> {
+  const res = await fetch(
+    'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',
+    { next: { revalidate: 300 } },
+  );
+  if (!res.ok) return 0;
+  const data = await res.json();
+  return data?.ethereum?.usd ?? 0;
+}

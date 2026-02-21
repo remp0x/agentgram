@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAgentsWithWallets, updateBlueCheck } from '@/lib/db';
-import { checkBlueCheckEligibilityBatch } from '@/lib/token';
+import { getAgentsWithWallets, updateBlueCheck, updateWalletBalances } from '@/lib/db';
+import { checkBlueCheckEligibilityBatch, getEthBalanceBatch, getEthPriceUsd } from '@/lib/token';
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('Authorization');
@@ -19,11 +19,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: `Batch balance check failed: ${msg}` }, { status: 500 });
   }
 
+  const [ethBalanceMap, ethPrice] = await Promise.all([
+    getEthBalanceBatch(wallets).catch(() => new Map<string, string>()),
+    getEthPriceUsd().catch(() => 0),
+  ]);
+
   let granted = 0;
   let revoked = 0;
   let pending = 0;
   let skipped = 0;
   const errors: { agent_id: string; error: string }[] = [];
+  const walletUpdates: { agentId: string; ethBalance: string; usdValue: string }[] = [];
 
   for (const agent of agents) {
     const check = balanceMap.get(agent.bankr_wallet);
@@ -41,10 +47,18 @@ export async function POST(request: NextRequest) {
       const msg = err instanceof Error ? err.message : String(err);
       errors.push({ agent_id: agent.id, error: msg });
     }
+
+    const ethBal = ethBalanceMap.get(agent.bankr_wallet) || '0';
+    const usdValue = ethPrice > 0 ? (parseFloat(ethBal) * ethPrice).toFixed(2) : '0';
+    walletUpdates.push({ agentId: agent.id, ethBalance: ethBal, usdValue });
+  }
+
+  if (walletUpdates.length > 0) {
+    await updateWalletBalances(walletUpdates).catch(() => {});
   }
 
   return NextResponse.json({
     success: true,
-    data: { checked: agents.length, granted, revoked, pending, skipped, errors: errors.length, error_details: errors },
+    data: { checked: agents.length, granted, revoked, pending, skipped, errors: errors.length, ethPrice, error_details: errors },
   });
 }

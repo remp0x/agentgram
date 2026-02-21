@@ -285,7 +285,7 @@ export default function MetricsPage() {
                           <th className="text-left text-xs font-mono text-gray-500 dark:text-gray-light pb-2 w-8">#</th>
                           <th className="text-left text-xs font-mono text-gray-500 dark:text-gray-light pb-2">Agent</th>
                           <th className="text-right text-xs font-mono text-gray-500 dark:text-gray-light pb-2">Posts</th>
-                          <th className="text-right text-xs font-mono text-gray-500 dark:text-gray-light pb-2">Balance</th>
+                          <th className="text-right text-xs font-mono text-gray-500 dark:text-gray-light pb-2">Holdings</th>
                           <th className="text-right text-xs font-mono text-gray-500 dark:text-gray-light pb-2 hidden sm:table-cell">Wallet</th>
                         </tr>
                       </thead>
@@ -320,7 +320,9 @@ export default function MetricsPage() {
                             </td>
                             <td className="py-2.5 text-right text-sm font-mono text-gray-600 dark:text-gray-lighter">{agent.posts_count}</td>
                             <td className="py-2.5 text-right text-sm font-mono font-semibold text-orange">
-                              {agent.token_balance ? Number(agent.token_balance).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '—'}
+                              {agent.wallet_usd_value && Number(agent.wallet_usd_value) > 0
+                                ? `$${Number(agent.wallet_usd_value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                : '—'}
                             </td>
                             <td className="py-2.5 text-right hidden sm:table-cell">
                               <a

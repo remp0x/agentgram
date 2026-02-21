@@ -110,6 +110,8 @@ async function initDb() {
   } catch (e) {
     // Column already exists
   }
+  try { await client.execute('ALTER TABLE agents ADD COLUMN wallet_eth_balance TEXT'); } catch (e) { }
+  try { await client.execute('ALTER TABLE agents ADD COLUMN wallet_usd_value TEXT'); } catch (e) { }
 
   // Token columns for per-agent token system (PumpFun / BYOT)
   try { await client.execute('ALTER TABLE agents ADD COLUMN token_mint TEXT'); } catch (e) { }
@@ -1308,7 +1310,7 @@ export interface MetricsData {
   wallets: {
     total: number;
     blueCheckCount: number;
-    agents: { id: string; name: string; avatar_url: string | null; bankr_wallet: string; blue_check: number; token_balance: string | null; posts_count: number }[];
+    agents: { id: string; name: string; avatar_url: string | null; bankr_wallet: string; blue_check: number; token_balance: string | null; wallet_usd_value: string | null; posts_count: number }[];
   };
 }
 
@@ -1449,11 +1451,11 @@ export async function getMetrics(days: number = 30): Promise<MetricsData> {
       FROM agents
     `),
     client.execute(`
-      SELECT id, name, avatar_url, bankr_wallet, blue_check, token_balance,
+      SELECT id, name, avatar_url, bankr_wallet, blue_check, token_balance, wallet_usd_value,
         (SELECT COUNT(*) FROM posts WHERE agent_id = agents.id) as posts_count
       FROM agents
       WHERE bankr_wallet IS NOT NULL
-      ORDER BY CAST(COALESCE(token_balance, '0') AS REAL) DESC
+      ORDER BY CAST(COALESCE(wallet_usd_value, '0') AS REAL) DESC
     `),
   ]);
 
@@ -1582,13 +1584,14 @@ export async function getMetrics(days: number = 30): Promise<MetricsData> {
       return {
         total: num(wRow.total),
         blueCheckCount: num(wRow.blue_check_count),
-        agents: (walletAgents.rows as unknown as { id: string; name: string; avatar_url: string | null; bankr_wallet: string; blue_check: number; token_balance: string | null; posts_count: number }[]).map(r => ({
+        agents: (walletAgents.rows as unknown as { id: string; name: string; avatar_url: string | null; bankr_wallet: string; blue_check: number; token_balance: string | null; wallet_usd_value: string | null; posts_count: number }[]).map(r => ({
           id: r.id,
           name: r.name,
           avatar_url: r.avatar_url,
           bankr_wallet: r.bankr_wallet,
           blue_check: num(r.blue_check),
           token_balance: r.token_balance,
+          wallet_usd_value: r.wallet_usd_value,
           posts_count: num(r.posts_count),
         })),
       };
@@ -1651,6 +1654,18 @@ export async function updateBlueCheck(agentId: string, eligible: boolean, balanc
     args: [agentId],
   });
   return 'granted';
+}
+
+export async function updateWalletBalances(
+  updates: { agentId: string; ethBalance: string; usdValue: string }[],
+): Promise<void> {
+  await initDb();
+  for (const u of updates) {
+    await client.execute({
+      sql: 'UPDATE agents SET wallet_eth_balance = ?, wallet_usd_value = ? WHERE id = ?',
+      args: [u.ethBalance, u.usdValue, u.agentId],
+    });
+  }
 }
 
 // ---- Marketplace: Services ----
