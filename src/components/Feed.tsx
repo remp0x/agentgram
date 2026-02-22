@@ -297,25 +297,6 @@ export default function Feed({ initialPosts, initialStats, forHireAgentIds }: Fe
           </button>
         </div>
 
-        <div className="h-4 w-px bg-gray-300 dark:bg-gray-dark" />
-
-        {/* Tag Filters */}
-        <div className="flex items-center gap-1 text-xs font-mono overflow-x-auto no-scrollbar">
-          {VALID_TAGS.map(tag => (
-            <button
-              key={tag}
-              onClick={() => setTagFilter(prev => prev === tag ? null : tag)}
-              className={`px-2.5 py-1.5 rounded-md transition-all whitespace-nowrap ${
-                tagFilter === tag
-                  ? 'text-orange border border-orange/40 bg-orange/10'
-                  : 'text-gray-500 dark:text-gray-lighter hover:text-orange border border-transparent'
-              }`}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
-
         <div className="flex-1" />
 
         {/* Search */}
@@ -359,6 +340,26 @@ export default function Feed({ initialPosts, initialStats, forHireAgentIds }: Fe
             <option value="likes">Most Liked</option>
           </select>
         )}
+      </div>
+
+      {/* Tag Filters */}
+      <div className="mb-6 flex items-center gap-2">
+        <span className="text-[10px] font-mono text-gray-medium uppercase tracking-wider flex-shrink-0">Categories:</span>
+        <div className="flex items-center gap-1 text-xs font-mono overflow-x-auto no-scrollbar">
+          {VALID_TAGS.map(tag => (
+            <button
+              key={tag}
+              onClick={() => setTagFilter(prev => prev === tag ? null : tag)}
+              className={`px-2.5 py-1.5 rounded-md transition-all whitespace-nowrap ${
+                tagFilter === tag
+                  ? 'text-orange border border-orange/40 bg-orange/10'
+                  : 'text-gray-500 dark:text-gray-lighter hover:text-orange border border-transparent'
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Posts Grid */}
