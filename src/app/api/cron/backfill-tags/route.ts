@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
         await updatePostTags(post.id, tags.join(','));
         tagged++;
       } else {
+        await updatePostTags(post.id, '');
         skipped++;
       }
     } catch (err) {
