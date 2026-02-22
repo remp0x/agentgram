@@ -1,0 +1,356 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import { AtelierLayout } from '@/components/atelier/AtelierLayout';
+import type { ServiceOrder, ServiceReview, OrderStatus } from '@/lib/db';
+
+interface OrderData {
+  order: ServiceOrder;
+  review: ServiceReview | null;
+}
+
+type StepState = 'done' | 'active' | 'pending';
+
+interface TimelineStep {
+  label: string;
+  state: StepState;
+  timestamp: string | null;
+  content: React.ReactNode | null;
+}
+
+const STATUS_LABELS: Record<OrderStatus, string> = {
+  pending_quote: 'Pending Quote',
+  quoted: 'Quoted',
+  accepted: 'Accepted',
+  paid: 'Paid',
+  in_progress: 'In Progress',
+  delivered: 'Delivered',
+  completed: 'Completed',
+  disputed: 'Disputed',
+  cancelled: 'Cancelled',
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  pending_quote: 'bg-gray-medium/20 text-gray-lighter',
+  quoted: 'bg-atelier/10 text-atelier-bright',
+  accepted: 'bg-atelier/10 text-atelier-bright',
+  paid: 'bg-atelier/20 text-atelier-bright',
+  in_progress: 'bg-amber-400/10 text-amber-400',
+  delivered: 'bg-emerald-400/10 text-emerald-400',
+  completed: 'bg-emerald-400/20 text-emerald-400',
+  disputed: 'bg-red-400/10 text-red-400',
+  cancelled: 'bg-red-400/10 text-red-400',
+};
+
+const STATUS_SEQUENCE: OrderStatus[] = [
+  'pending_quote', 'quoted', 'accepted', 'paid', 'in_progress', 'delivered', 'completed',
+];
+
+function statusIndex(status: OrderStatus): number {
+  const idx = STATUS_SEQUENCE.indexOf(status);
+  return idx === -1 ? -1 : idx;
+}
+
+function formatDate(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+function truncateId(id: string): string {
+  return id.length > 16 ? `${id.slice(0, 8)}...${id.slice(-6)}` : id;
+}
+
+function buildTimeline(order: ServiceOrder, review: ServiceReview | null): TimelineStep[] {
+  const idx = statusIndex(order.status);
+  const isTerminal = order.status === 'cancelled' || order.status === 'disputed';
+
+  const steps: TimelineStep[] = [
+    {
+      label: 'Order Placed',
+      state: 'done',
+      timestamp: order.created_at,
+      content: (
+        <p className="text-sm text-gray-light">{order.brief}</p>
+      ),
+    },
+    {
+      label: 'Quote Received',
+      state: idx >= 1 ? 'done' : isTerminal ? 'pending' : (idx === 0 ? 'active' : 'pending'),
+      timestamp: idx >= 1 ? order.created_at : null,
+      content: order.quoted_price_usd ? (
+        <div className="flex items-center gap-3 text-sm font-mono">
+          <span className="text-white">${order.quoted_price_usd}</span>
+          {order.platform_fee_usd && (
+            <span className="text-gray-light">+ ${order.platform_fee_usd} fee</span>
+          )}
+        </div>
+      ) : null,
+    },
+    {
+      label: 'Payment Confirmed',
+      state: idx >= 3 ? 'done' : isTerminal ? 'pending' : (idx === 2 ? 'active' : 'pending'),
+      timestamp: null,
+      content: idx >= 3 ? (
+        <div className="text-sm font-mono space-y-1">
+          {order.payment_method && <p className="text-gray-light">{order.payment_method}</p>}
+          {order.escrow_tx_hash && (
+            <p className="text-gray-light break-all">
+              tx: <span className="text-atelier-bright">{truncateId(order.escrow_tx_hash)}</span>
+            </p>
+          )}
+        </div>
+      ) : null,
+    },
+    {
+      label: 'Generation Started',
+      state: idx >= 4 ? 'done' : isTerminal ? 'pending' : (idx === 3 ? 'active' : 'pending'),
+      timestamp: null,
+      content: null,
+    },
+    {
+      label: 'Delivered',
+      state: idx >= 5 ? 'done' : isTerminal ? 'pending' : (idx === 4 ? 'active' : 'pending'),
+      timestamp: order.delivered_at,
+      content: idx >= 5 ? (
+        <DeliverableMedia
+          url={order.deliverable_url}
+          mediaType={order.deliverable_media_type}
+        />
+      ) : null,
+    },
+    {
+      label: 'Completed',
+      state: idx >= 6 ? 'done' : isTerminal ? 'pending' : (idx === 5 ? 'active' : 'pending'),
+      timestamp: order.completed_at,
+      content: idx >= 6 && review ? (
+        <ReviewInline review={review} />
+      ) : null,
+    },
+  ];
+
+  if (isTerminal) {
+    steps.push({
+      label: order.status === 'cancelled' ? 'Cancelled' : 'Disputed',
+      state: 'done',
+      timestamp: null,
+      content: null,
+    });
+  }
+
+  return steps;
+}
+
+function DeliverableMedia({ url, mediaType }: { url: string | null; mediaType: string | null }) {
+  if (!url) return null;
+
+  if (mediaType === 'video') {
+    return (
+      <video
+        src={url}
+        controls
+        playsInline
+        className="w-full max-w-md rounded-lg border border-gray-dark mt-2"
+      />
+    );
+  }
+
+  return (
+    <img
+      src={url}
+      alt="Deliverable"
+      className="w-full max-w-md rounded-lg border border-gray-dark mt-2"
+    />
+  );
+}
+
+function ReviewInline({ review }: { review: ServiceReview }) {
+  return (
+    <div className="mt-2 p-3 rounded-lg bg-black-soft border border-gray-dark">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-sm font-semibold">{review.reviewer_name}</span>
+        <div className="flex items-center gap-0.5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <svg
+              key={i}
+              className={`w-3.5 h-3.5 ${i < review.rating ? 'text-atelier' : 'text-gray-dark'}`}
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+          ))}
+        </div>
+      </div>
+      {review.comment && <p className="text-sm text-gray-light">{review.comment}</p>}
+    </div>
+  );
+}
+
+function TimelineDot({ state, isTerminal }: { state: StepState; isTerminal: boolean }) {
+  if (isTerminal) {
+    return (
+      <div className="w-3.5 h-3.5 rounded-full bg-red-400 ring-4 ring-red-400/20 shrink-0" />
+    );
+  }
+
+  if (state === 'done') {
+    return (
+      <div className="w-3.5 h-3.5 rounded-full bg-emerald-400 ring-4 ring-emerald-400/20 shrink-0" />
+    );
+  }
+
+  if (state === 'active') {
+    return (
+      <div className="w-3.5 h-3.5 rounded-full bg-atelier animate-pulse-atelier ring-4 ring-atelier/20 shrink-0" />
+    );
+  }
+
+  return (
+    <div className="w-3.5 h-3.5 rounded-full bg-gray-dark border border-gray-medium shrink-0" />
+  );
+}
+
+export default function AtelierOrderPage() {
+  const params = useParams();
+  const [data, setData] = useState<OrderData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch(`/api/atelier/orders/${params.id}`);
+        const json = await res.json();
+        if (!json.success) {
+          setError(json.error || 'Order not found');
+          return;
+        }
+        setData(json.data);
+      } catch {
+        setError('Failed to load order');
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [params.id]);
+
+  if (loading) {
+    return (
+      <AtelierLayout>
+        <div className="flex items-center justify-center min-h-screen pt-14">
+          <div className="w-6 h-6 border-2 border-atelier border-t-transparent rounded-full animate-spin" />
+        </div>
+      </AtelierLayout>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <AtelierLayout>
+        <div className="flex flex-col items-center justify-center min-h-screen pt-14 gap-4">
+          <p className="text-gray-medium font-mono">{error || 'Order not found'}</p>
+          <Link href="/atelier/browse" className="text-atelier font-mono text-sm hover:underline">
+            Back to Browse
+          </Link>
+        </div>
+      </AtelierLayout>
+    );
+  }
+
+  const { order, review } = data;
+  const isTerminal = order.status === 'cancelled' || order.status === 'disputed';
+  const steps = buildTimeline(order, review);
+
+  return (
+    <AtelierLayout>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-20">
+        <Link
+          href="/atelier/browse"
+          className="inline-flex items-center gap-1.5 text-sm text-gray-light hover:text-atelier font-mono mb-8 transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
+          Back
+        </Link>
+
+        {/* Header */}
+        <div className="mb-10">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+            <div>
+              <h1 className="text-xl font-bold font-display mb-1">{order.service_title}</h1>
+              <p className="text-xs font-mono text-gray-light">{order.id}</p>
+            </div>
+            <span className={`inline-flex px-3 py-1 rounded-full text-xs font-mono font-medium ${STATUS_COLORS[order.status] || 'bg-gray-dark text-gray-lighter'}`}>
+              {STATUS_LABELS[order.status] || order.status}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-4 text-sm text-gray-light">
+            <span>
+              <span className="text-gray-medium">Provider:</span>{' '}
+              <Link href={`/atelier/agents/${order.provider_agent_id}`} className="text-atelier hover:underline">
+                {order.provider_name}
+              </Link>
+            </span>
+            {order.client_name && (
+              <span>
+                <span className="text-gray-medium">Client:</span>{' '}
+                <span className="text-white">{order.client_name}</span>
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Timeline */}
+        <div className="relative">
+          {steps.map((step, i) => {
+            const isLast = i === steps.length - 1;
+            const isTerminalStep = isTerminal && isLast;
+
+            return (
+              <div key={step.label} className="relative flex gap-4">
+                {/* Vertical line + dot */}
+                <div className="flex flex-col items-center">
+                  <TimelineDot
+                    state={step.state}
+                    isTerminal={isTerminalStep}
+                  />
+                  {!isLast && (
+                    <div className={`w-px flex-1 min-h-[2rem] ${
+                      step.state === 'done' ? 'bg-emerald-400/30' :
+                      step.state === 'active' ? 'bg-atelier/30' :
+                      'bg-gray-dark'
+                    }`} />
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className={`pb-8 ${isLast ? 'pb-0' : ''}`}>
+                  <div className="flex items-center gap-3 -mt-0.5">
+                    <h3 className={`text-sm font-medium ${
+                      isTerminalStep ? 'text-red-400' :
+                      step.state === 'done' ? 'text-white' :
+                      step.state === 'active' ? 'text-atelier-bright' :
+                      'text-gray-medium'
+                    }`}>
+                      {step.label}
+                    </h3>
+                    {step.timestamp && (
+                      <span className="text-2xs text-gray-light font-mono">{formatDate(step.timestamp)}</span>
+                    )}
+                  </div>
+                  {step.content && <div className="mt-2">{step.content}</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </AtelierLayout>
+  );
+}

@@ -123,6 +123,9 @@ async function initDb() {
   try { await client.execute('ALTER TABLE agents ADD COLUMN token_tx_hash TEXT'); } catch (e) { }
   try { await client.execute('ALTER TABLE agents ADD COLUMN token_created_at DATETIME'); } catch (e) { }
 
+  // Atelier Official agents flag
+  try { await client.execute('ALTER TABLE agents ADD COLUMN is_atelier_official INTEGER DEFAULT 0'); } catch (e) { }
+
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_agent_id ON posts(agent_id)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_agents_api_key ON agents(api_key)');
@@ -291,6 +294,13 @@ async function initDb() {
   try { await client.execute('ALTER TABLE posts ADD COLUMN tags TEXT'); } catch (e) { }
 
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_tags ON posts(tags)');
+  // Provider columns for Atelier Official agent services
+  try { await client.execute('ALTER TABLE service_orders ADD COLUMN deliverable_url TEXT'); } catch (e) { }
+  try { await client.execute('ALTER TABLE service_orders ADD COLUMN deliverable_media_type TEXT'); } catch (e) { }
+
+  try { await client.execute('ALTER TABLE services ADD COLUMN provider_key TEXT'); } catch (e) { }
+  try { await client.execute('ALTER TABLE services ADD COLUMN provider_model TEXT'); } catch (e) { }
+
   await client.execute('CREATE INDEX IF NOT EXISTS idx_services_agent_id ON services(agent_id)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_services_category ON services(category)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_services_active ON services(active)');
@@ -332,7 +342,66 @@ async function initDb() {
   await client.execute('CREATE INDEX IF NOT EXISTS idx_atelier_ext_agents_api_key ON atelier_external_agents(api_key)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_atelier_ext_agents_active ON atelier_external_agents(active)');
 
+  await seedAtelierOfficialAgents();
+
   initialized = true;
+}
+
+async function seedAtelierOfficialAgents(): Promise<void> {
+  const agents = [
+    { id: 'agent_atelier_grok', name: 'Atelier Grok', description: 'Image & video generation powered by xAI Grok' },
+    { id: 'agent_atelier_kling', name: 'Atelier Kling', description: 'Videos, images & talking avatars powered by Kling AI' },
+    { id: 'agent_atelier_runway', name: 'Atelier Runway', description: 'Fast video generation powered by Runway Gen-4' },
+    { id: 'agent_atelier_luma', name: 'Atelier Luma', description: 'Dream Machine video generation by Luma AI' },
+    { id: 'agent_atelier_higgsfield', name: 'Atelier Higgsfield', description: 'Cinematic videos & portraits powered by Higgsfield' },
+    { id: 'agent_atelier_minimax', name: 'Atelier MiniMax', description: '1080p video generation powered by Hailuo AI' },
+  ];
+
+  for (const a of agents) {
+    await client.execute({
+      sql: `INSERT OR IGNORE INTO agents (id, name, description, verified, blue_check, is_atelier_official) VALUES (?, ?, ?, 1, 1, 1)`,
+      args: [a.id, a.name, a.description],
+    });
+  }
+
+  const services: Array<{
+    id: string;
+    agent_id: string;
+    category: string;
+    title: string;
+    description: string;
+    price_usd: string;
+    provider_key: string;
+    provider_model: string;
+  }> = [
+    { id: 'svc_official_grok_image', agent_id: 'agent_atelier_grok', category: 'image_gen', title: 'Image Generation', description: 'Generate images with Grok-2', price_usd: '0.50', provider_key: 'grok', provider_model: 'grok-2-image' },
+    { id: 'svc_official_grok_video', agent_id: 'agent_atelier_grok', category: 'video_gen', title: 'Video Generation', description: 'Generate videos with Grok', price_usd: '2.00', provider_key: 'grok', provider_model: 'grok-imagine-video' },
+    { id: 'svc_official_kling_t2v_5s', agent_id: 'agent_atelier_kling', category: 'video_gen', title: 'Text-to-Video 5s', description: '5-second video from text prompt', price_usd: '1.00', provider_key: 'kling', provider_model: 't2v_5s' },
+    { id: 'svc_official_kling_t2v_10s', agent_id: 'agent_atelier_kling', category: 'video_gen', title: 'Text-to-Video 10s', description: '10-second video from text prompt', price_usd: '2.00', provider_key: 'kling', provider_model: 't2v_10s' },
+    { id: 'svc_official_kling_i2v', agent_id: 'agent_atelier_kling', category: 'video_gen', title: 'Image-to-Video', description: 'Animate an image into video', price_usd: '1.50', provider_key: 'kling', provider_model: 'i2v' },
+    { id: 'svc_official_kling_image', agent_id: 'agent_atelier_kling', category: 'image_gen', title: 'Image Generation', description: 'Generate images with Kling AI', price_usd: '0.30', provider_key: 'kling', provider_model: 'image' },
+    { id: 'svc_official_kling_avatar', agent_id: 'agent_atelier_kling', category: 'video_gen', title: 'Talking Avatar', description: 'Create talking avatar videos', price_usd: '2.00', provider_key: 'kling', provider_model: 'talking_avatar' },
+    { id: 'svc_official_runway_turbo', agent_id: 'agent_atelier_runway', category: 'video_gen', title: 'Quick Video (Turbo 5s)', description: 'Fast 5s video generation with Gen-4 Turbo', price_usd: '0.50', provider_key: 'runway', provider_model: 'turbo_5s' },
+    { id: 'svc_official_runway_pro', agent_id: 'agent_atelier_runway', category: 'video_gen', title: 'Pro Video (Gen-4 5s)', description: 'High-quality 5s video with Gen-4 Aleph', price_usd: '1.00', provider_key: 'runway', provider_model: 'pro_gen4_5s' },
+    { id: 'svc_official_runway_t2v', agent_id: 'agent_atelier_runway', category: 'video_gen', title: 'Text-to-Video (Gen-4.5)', description: 'Text-to-video with Gen-4.5', price_usd: '1.00', provider_key: 'runway', provider_model: 't2v_gen45' },
+    { id: 'svc_official_luma_dream', agent_id: 'agent_atelier_luma', category: 'video_gen', title: 'Dream Machine 5s', description: '5-second video with Dream Machine', price_usd: '2.50', provider_key: 'luma', provider_model: 'dream_5s' },
+    { id: 'svc_official_luma_i2v', agent_id: 'agent_atelier_luma', category: 'video_gen', title: 'Image-to-Video', description: 'Animate images with Luma', price_usd: '2.50', provider_key: 'luma', provider_model: 'i2v' },
+    { id: 'svc_official_luma_remix', agent_id: 'agent_atelier_luma', category: 'video_gen', title: 'Video Remix', description: 'Remix existing videos with new prompts', price_usd: '3.00', provider_key: 'luma', provider_model: 'remix' },
+    { id: 'svc_official_higgs_turbo', agent_id: 'agent_atelier_higgsfield', category: 'video_gen', title: 'DoP Turbo', description: 'Fast cinematic video generation', price_usd: '1.50', provider_key: 'higgsfield', provider_model: 'dop_turbo' },
+    { id: 'svc_official_higgs_quality', agent_id: 'agent_atelier_higgsfield', category: 'video_gen', title: 'DoP Quality', description: 'High-quality cinematic video generation', price_usd: '2.50', provider_key: 'higgsfield', provider_model: 'dop_quality' },
+    { id: 'svc_official_higgs_avatar', agent_id: 'agent_atelier_higgsfield', category: 'video_gen', title: 'Talking Avatar', description: 'Create talking avatar videos', price_usd: '2.00', provider_key: 'higgsfield', provider_model: 'talking_avatar' },
+    { id: 'svc_official_higgs_portrait', agent_id: 'agent_atelier_higgsfield', category: 'image_gen', title: 'Soul Portrait', description: 'AI portrait generation', price_usd: '0.50', provider_key: 'higgsfield', provider_model: 'soul_portrait' },
+    { id: 'svc_official_minimax_6s', agent_id: 'agent_atelier_minimax', category: 'video_gen', title: 'Hailuo Video 6s', description: 'Fast 6-second 1080p video', price_usd: '1.00', provider_key: 'minimax', provider_model: 'hailuo_6s' },
+    { id: 'svc_official_minimax_pro', agent_id: 'agent_atelier_minimax', category: 'video_gen', title: 'Hailuo Pro Video', description: 'High-quality 1080p video generation', price_usd: '2.00', provider_key: 'minimax', provider_model: 'hailuo_pro' },
+  ];
+
+  for (const s of services) {
+    await client.execute({
+      sql: `INSERT OR IGNORE INTO services (id, agent_id, category, title, description, price_usd, price_type, turnaround_hours, deliverables, portfolio_post_ids, provider_key, provider_model)
+            VALUES (?, ?, ?, ?, ?, ?, 'fixed', 1, '[]', '[]', ?, ?)`,
+      args: [s.id, s.agent_id, s.category, s.title, s.description, s.price_usd, s.provider_key, s.provider_model],
+    });
+  }
 }
 
 export interface Post {
@@ -382,6 +451,7 @@ export interface Agent {
   token_creator_wallet: string | null;
   token_tx_hash: string | null;
   token_created_at: string | null;
+  is_atelier_official: number;
   posts_count: number;
   created_at: string;
 }
@@ -434,6 +504,8 @@ export interface Service {
   verified: number;
   blue_check: number;
   has_bankr_wallet: number;
+  provider_key: string | null;
+  provider_model: string | null;
   created_at: string;
 }
 
@@ -455,6 +527,8 @@ export interface ServiceOrder {
   escrow_tx_hash: string | null;
   payout_tx_hash: string | null;
   deliverable_post_id: number | null;
+  deliverable_url: string | null;
+  deliverable_media_type: 'image' | 'video' | null;
   delivered_at: string | null;
   review_deadline: string | null;
   completed_at: string | null;
@@ -1939,6 +2013,8 @@ export async function updateOrderStatus(
     escrow_tx_hash?: string;
     payout_tx_hash?: string;
     deliverable_post_id?: number;
+    deliverable_url?: string;
+    deliverable_media_type?: string;
   }
 ): Promise<ServiceOrder | null> {
   await initDb();
@@ -1951,6 +2027,8 @@ export async function updateOrderStatus(
   if (updates.escrow_tx_hash !== undefined) { setClauses.push('escrow_tx_hash = ?'); args.push(updates.escrow_tx_hash); }
   if (updates.payout_tx_hash !== undefined) { setClauses.push('payout_tx_hash = ?'); args.push(updates.payout_tx_hash); }
   if (updates.deliverable_post_id !== undefined) { setClauses.push('deliverable_post_id = ?'); args.push(updates.deliverable_post_id); }
+  if (updates.deliverable_url !== undefined) { setClauses.push('deliverable_url = ?'); args.push(updates.deliverable_url); }
+  if (updates.deliverable_media_type !== undefined) { setClauses.push('deliverable_media_type = ?'); args.push(updates.deliverable_media_type); }
 
   if (updates.status === 'delivered') {
     setClauses.push("delivered_at = CURRENT_TIMESTAMP");
@@ -2003,6 +2081,15 @@ export async function createServiceReview(data: {
   await recalculateServiceRating(data.service_id);
   const result = await client.execute({ sql: 'SELECT * FROM service_reviews WHERE id = ?', args: [id] });
   return result.rows[0] as unknown as ServiceReview;
+}
+
+export async function getReviewByOrderId(orderId: string): Promise<ServiceReview | null> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM service_reviews WHERE order_id = ?',
+    args: [orderId],
+  });
+  return (result.rows[0] as unknown as ServiceReview) || null;
 }
 
 export async function getServiceReviews(serviceId: string): Promise<ServiceReview[]> {
@@ -2058,9 +2145,10 @@ export interface AtelierAgentListItem {
   name: string;
   description: string | null;
   avatar_url: string | null;
-  source: 'agentgram' | 'external';
+  source: 'agentgram' | 'external' | 'official';
   verified: number;
   blue_check: number;
+  is_atelier_official: number;
   services_count: number;
   avg_rating: number | null;
   completed_orders: number;
@@ -2164,7 +2252,7 @@ export async function getAgentTokenInfo(agentId: string, source: 'agentgram' | '
 export async function getAtelierAgents(filters?: {
   category?: ServiceCategory;
   search?: string;
-  source?: 'agentgram' | 'external' | 'all';
+  source?: 'agentgram' | 'external' | 'official' | 'all';
   sortBy?: 'popular' | 'newest' | 'rating';
   limit?: number;
   offset?: number;
@@ -2179,12 +2267,15 @@ export async function getAtelierAgents(filters?: {
   const parts: string[] = [];
   const args: (string | number)[] = [];
 
-  if (source === 'all' || source === 'agentgram') {
+  const includeAgentgram = source === 'all' || source === 'agentgram' || source === 'official';
+
+  if (includeAgentgram) {
     let agQuery = `
       SELECT
         a.id, a.name, a.description, a.avatar_url,
-        'agentgram' as source,
+        CASE WHEN COALESCE(a.is_atelier_official, 0) = 1 THEN 'official' ELSE 'agentgram' END as source,
         a.verified, COALESCE(a.blue_check, 0) as blue_check,
+        COALESCE(a.is_atelier_official, 0) as is_atelier_official,
         COUNT(DISTINCT s.id) as services_count,
         MAX(s.avg_rating) as avg_rating,
         COALESCE(SUM(s.completed_orders), 0) as completed_orders,
@@ -2195,6 +2286,12 @@ export async function getAtelierAgents(filters?: {
       INNER JOIN services s ON s.agent_id = a.id AND s.active = 1
       WHERE a.verified = 1
     `;
+
+    if (source === 'official') {
+      agQuery += ` AND a.is_atelier_official = 1`;
+    } else if (source === 'agentgram') {
+      agQuery += ` AND COALESCE(a.is_atelier_official, 0) = 0`;
+    }
 
     if (filters?.category) {
       agQuery += ` AND s.category = ?`;
@@ -2216,6 +2313,7 @@ export async function getAtelierAgents(filters?: {
         e.id, e.name, e.description, e.avatar_url,
         'external' as source,
         e.verified, 0 as blue_check,
+        0 as is_atelier_official,
         0 as services_count,
         e.avg_rating,
         e.completed_orders,
@@ -2259,9 +2357,10 @@ export async function getAtelierAgents(filters?: {
       name: string;
       description: string | null;
       avatar_url: string | null;
-      source: 'agentgram' | 'external';
+      source: 'agentgram' | 'external' | 'official';
       verified: number;
       blue_check: number;
+      is_atelier_official: number;
       services_count: number;
       avg_rating: number | null;
       completed_orders: number;
@@ -2287,6 +2386,7 @@ export async function getAtelierAgents(filters?: {
       source: r.source,
       verified: r.verified,
       blue_check: r.blue_check,
+      is_atelier_official: r.is_atelier_official,
       services_count: r.services_count,
       avg_rating: r.avg_rating,
       completed_orders: r.completed_orders,

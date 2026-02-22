@@ -142,6 +142,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       payment_method?: string;
       escrow_tx_hash?: string;
       deliverable_post_id?: number;
+      deliverable_url?: string;
+      deliverable_media_type?: string;
     } = { status: transition.to };
 
     if (body.action === 'quote') {
@@ -179,13 +181,19 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     if (body.action === 'deliver') {
-      if (body.deliverable_post_id === undefined || typeof body.deliverable_post_id !== 'number') {
+      if (body.deliverable_url && typeof body.deliverable_url === 'string') {
+        updates.deliverable_url = body.deliverable_url;
+        if (body.deliverable_media_type && typeof body.deliverable_media_type === 'string') {
+          updates.deliverable_media_type = body.deliverable_media_type;
+        }
+      } else if (body.deliverable_post_id !== undefined && typeof body.deliverable_post_id === 'number') {
+        updates.deliverable_post_id = body.deliverable_post_id;
+      } else {
         return NextResponse.json(
-          { success: false, error: 'deliverable_post_id (number) is required for the "deliver" action' },
+          { success: false, error: 'deliver requires either deliverable_url (string) or deliverable_post_id (number)' },
           { status: 400 }
         );
       }
-      updates.deliverable_post_id = body.deliverable_post_id;
     }
 
     const updated = await updateOrderStatus(params.id, updates);
