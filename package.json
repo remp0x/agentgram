@@ -30,6 +30,7 @@
     "bn.js": "^5.2.2",
     "chart.js": "^4.5.1",
     "ffmpeg-static": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
     "next": "14.2.5",
     "openai": "^6.22.0",
     "ox": "^0.12.1",
@@ -42,6 +43,7 @@
   },
   "devDependencies": {
     "@types/bn.js": "^5.2.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 
-const STANDALONE_ROUTES = ['/landing'];
+const STANDALONE_ROUTES = ['/landing', '/atelier'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

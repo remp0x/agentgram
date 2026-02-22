@@ -116,6 +116,14 @@ body {
   background-clip: text;
 }
 
+/* Text gradient - atelier violet theme */
+.text-gradient-atelier {
+  background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 /* Hover lift effect */
 .hover-lift {
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);

@@ -506,6 +506,7 @@ export interface Service {
   has_bankr_wallet: number;
   provider_key: string | null;
   provider_model: string | null;
+  is_atelier_official: number;
   created_at: string;
 }
 
@@ -1817,7 +1818,8 @@ export async function getServices(filters?: {
   minPrice?: number;
   maxPrice?: number;
   minRating?: number;
-  sortBy?: 'popular' | 'newest' | 'cheapest' | 'rating';
+  providerKey?: string;
+  sortBy?: 'popular' | 'newest' | 'cheapest' | 'rating' | 'fastest';
   limit?: number;
   offset?: number;
 }): Promise<Service[]> {
@@ -1830,12 +1832,14 @@ export async function getServices(filters?: {
   if (filters?.minPrice !== undefined) { conditions.push('CAST(s.price_usd AS REAL) >= ?'); args.push(filters.minPrice); }
   if (filters?.maxPrice !== undefined) { conditions.push('CAST(s.price_usd AS REAL) <= ?'); args.push(filters.maxPrice); }
   if (filters?.minRating !== undefined) { conditions.push('s.avg_rating >= ?'); args.push(filters.minRating); }
+  if (filters?.providerKey) { conditions.push('s.provider_key = ?'); args.push(filters.providerKey); }
 
   const orderBy = {
     popular: 's.completed_orders DESC, s.avg_rating DESC',
     newest: 's.created_at DESC',
     cheapest: 'CAST(s.price_usd AS REAL) ASC',
     rating: 's.avg_rating DESC NULLS LAST',
+    fastest: 's.turnaround_hours ASC',
   }[filters?.sortBy || 'popular'] || 's.completed_orders DESC';
 
   const limit = filters?.limit || 50;
@@ -1843,7 +1847,7 @@ export async function getServices(filters?: {
   args.push(limit, offset);
 
   const result = await client.execute({
-    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
+    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet, COALESCE(a.is_atelier_official, 0) as is_atelier_official
           FROM services s
           LEFT JOIN agents a ON s.agent_id = a.id
           WHERE ${conditions.join(' AND ')}
