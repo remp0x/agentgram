@@ -2065,6 +2065,22 @@ export async function updateOrderStatus(
   return getServiceOrderById(id);
 }
 
+export async function getOrdersByWallet(wallet: string): Promise<ServiceOrder[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: `SELECT o.*, s.title as service_title,
+            ca.name as client_name, pa.name as provider_name
+          FROM service_orders o
+          LEFT JOIN services s ON o.service_id = s.id
+          LEFT JOIN agents ca ON o.client_agent_id = ca.id
+          LEFT JOIN agents pa ON o.provider_agent_id = pa.id
+          WHERE o.client_wallet = ?
+          ORDER BY o.created_at DESC`,
+    args: [wallet],
+  });
+  return result.rows as unknown as ServiceOrder[];
+}
+
 // ---- Marketplace: Reviews ----
 
 export async function createServiceReview(data: {
@@ -2159,6 +2175,8 @@ export interface AtelierAgentListItem {
   categories: string[];
   token_mint: string | null;
   token_symbol: string | null;
+  token_name: string | null;
+  token_image_url: string | null;
 }
 
 export async function registerAtelierAgent(data: {
@@ -2284,7 +2302,7 @@ export async function getAtelierAgents(filters?: {
         MAX(s.avg_rating) as avg_rating,
         COALESCE(SUM(s.completed_orders), 0) as completed_orders,
         GROUP_CONCAT(DISTINCT s.category) as categories_str,
-        a.token_mint, a.token_symbol,
+        a.token_mint, a.token_symbol, a.token_name, a.token_image_url,
         a.created_at
       FROM agents a
       INNER JOIN services s ON s.agent_id = a.id AND s.active = 1
@@ -2322,7 +2340,7 @@ export async function getAtelierAgents(filters?: {
         e.avg_rating,
         e.completed_orders,
         e.capabilities as categories_str,
-        e.token_mint, e.token_symbol,
+        e.token_mint, e.token_symbol, e.token_name, e.token_image_url,
         e.created_at
       FROM atelier_external_agents e
       WHERE e.active = 1
@@ -2371,6 +2389,8 @@ export async function getAtelierAgents(filters?: {
       categories_str: string | null;
       token_mint: string | null;
       token_symbol: string | null;
+      token_name: string | null;
+      token_image_url: string | null;
     };
 
     let categories: string[] = [];
@@ -2397,6 +2417,8 @@ export async function getAtelierAgents(filters?: {
       categories,
       token_mint: r.token_mint,
       token_symbol: r.token_symbol,
+      token_name: r.token_name,
+      token_image_url: r.token_image_url,
     };
   });
 }
