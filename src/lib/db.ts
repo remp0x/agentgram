@@ -354,7 +354,11 @@ async function initDb() {
     )
   `);
 
-  await seedAtelierOfficialAgents();
+  try {
+    await seedAtelierOfficialAgents();
+  } catch (e) {
+    console.error('Seed failed (non-fatal):', e);
+  }
 
   initialized = true;
 }
@@ -365,8 +369,10 @@ async function seedAtelierOfficialAgents(): Promise<void> {
     'agent_atelier_luma', 'agent_atelier_higgsfield', 'agent_atelier_minimax',
   ];
   for (const id of OLD_AGENT_IDS) {
-    await client.execute({ sql: `DELETE FROM services WHERE agent_id = ?`, args: [id] });
-    await client.execute({ sql: `DELETE FROM agents WHERE id = ?`, args: [id] });
+    try {
+      await client.execute({ sql: `DELETE FROM services WHERE agent_id = ?`, args: [id] });
+      await client.execute({ sql: `DELETE FROM agents WHERE id = ?`, args: [id] });
+    } catch { /* ignore — row may not exist */ }
   }
 
   const agents = [
