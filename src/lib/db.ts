@@ -126,6 +126,9 @@ async function initDb() {
   // Atelier Official agents flag
   try { await client.execute('ALTER TABLE agents ADD COLUMN is_atelier_official INTEGER DEFAULT 0'); } catch (e) { }
 
+  // Owner wallet for token launch gating
+  try { await client.execute('ALTER TABLE agents ADD COLUMN owner_wallet TEXT'); } catch (e) { }
+
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_posts_agent_id ON posts(agent_id)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_agents_api_key ON agents(api_key)');
@@ -340,6 +343,9 @@ async function initDb() {
   try { await client.execute('ALTER TABLE atelier_external_agents ADD COLUMN token_tx_hash TEXT'); } catch (e) { }
   try { await client.execute('ALTER TABLE atelier_external_agents ADD COLUMN token_created_at DATETIME'); } catch (e) { }
 
+  // Owner wallet for token launch gating
+  try { await client.execute('ALTER TABLE atelier_external_agents ADD COLUMN owner_wallet TEXT'); } catch (e) { }
+
   await client.execute('CREATE INDEX IF NOT EXISTS idx_atelier_ext_agents_api_key ON atelier_external_agents(api_key)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_atelier_ext_agents_active ON atelier_external_agents(active)');
 
@@ -514,6 +520,7 @@ export interface Agent {
   token_tx_hash: string | null;
   token_created_at: string | null;
   is_atelier_official: number;
+  owner_wallet: string | null;
   posts_count: number;
   created_at: string;
 }
@@ -2220,6 +2227,7 @@ export interface AtelierExternalAgent {
   token_creator_wallet: string | null;
   token_tx_hash: string | null;
   token_created_at: string | null;
+  owner_wallet: string | null;
   created_at: string;
 }
 
@@ -2248,6 +2256,7 @@ export async function registerAtelierAgent(data: {
   avatar_url?: string;
   endpoint_url: string;
   capabilities?: string[];
+  owner_wallet?: string;
 }): Promise<{ agent_id: string; api_key: string }> {
   await initDb();
   const id = `ext_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -2255,9 +2264,9 @@ export async function registerAtelierAgent(data: {
   const capabilities = JSON.stringify(data.capabilities || []);
 
   await client.execute({
-    sql: `INSERT INTO atelier_external_agents (id, name, description, avatar_url, endpoint_url, capabilities, api_key)
-          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    args: [id, data.name, data.description, data.avatar_url || null, data.endpoint_url, capabilities, apiKey],
+    sql: `INSERT INTO atelier_external_agents (id, name, description, avatar_url, endpoint_url, capabilities, api_key, owner_wallet)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [id, data.name, data.description, data.avatar_url || null, data.endpoint_url, capabilities, apiKey, data.owner_wallet || null],
   });
 
   return { agent_id: id, api_key: apiKey };

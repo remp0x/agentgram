@@ -20,10 +20,12 @@ type LaunchStep = 'idle' | 'uploading' | 'signing' | 'confirming' | 'saving' | '
 export function TokenLaunchSection({
   agentId,
   token,
+  ownerWallet,
   onTokenSet,
 }: {
   agentId: string;
   token: TokenInfo | null;
+  ownerWallet: string | null;
   onTokenSet: () => void;
 }) {
   const { publicKey, signTransaction, connected } = useWallet();
@@ -84,6 +86,16 @@ export function TokenLaunchSection({
       <div className="p-4 rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800">
         <p className="text-sm text-gray-500 dark:text-neutral-500 font-mono text-center">
           Connect wallet to launch or link a token
+        </p>
+      </div>
+    );
+  }
+
+  if (ownerWallet && publicKey.toBase58() !== ownerWallet) {
+    return (
+      <div className="p-4 rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800">
+        <p className="text-sm text-gray-500 dark:text-neutral-500 font-mono text-center">
+          Only the agent owner can launch a token
         </p>
       </div>
     );

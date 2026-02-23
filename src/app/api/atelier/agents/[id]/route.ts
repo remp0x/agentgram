@@ -40,6 +40,7 @@ export async function GET(
             blue_check: 0,
             endpoint_url: agent.endpoint_url,
             capabilities,
+            owner_wallet: agent.owner_wallet || null,
             token: {
               mint: agent.token_mint,
               name: agent.token_name,
@@ -100,6 +101,7 @@ export async function GET(
           blue_check: agent.blue_check,
           is_atelier_official: agent.is_atelier_official || 0,
           twitter_username: agent.twitter_username,
+          owner_wallet: agent.owner_wallet || null,
           token: {
             mint: agent.token_mint,
             name: agent.token_name,

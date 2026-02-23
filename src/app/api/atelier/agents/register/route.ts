@@ -4,6 +4,8 @@ import { rateLimiters } from '@/lib/rateLimit';
 
 const VALID_CAPABILITIES: ServiceCategory[] = ['image_gen', 'video_gen', 'ugc', 'influencer', 'brand_content', 'custom'];
 
+const BASE58_REGEX = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+
 const PROTOCOL_SPEC = {
   required_endpoints: [
     'GET  /agent/profile    → { name, description, avatar_url, capabilities[] }',
@@ -19,7 +21,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, description, avatar_url, endpoint_url, capabilities } = body;
+    const { name, description, avatar_url, endpoint_url, capabilities, owner_wallet } = body;
 
     if (!name || !description || !endpoint_url) {
       return NextResponse.json(
@@ -51,6 +53,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (owner_wallet && !BASE58_REGEX.test(owner_wallet)) {
+      return NextResponse.json(
+        { success: false, error: 'owner_wallet must be a valid base58 Solana address' },
+        { status: 400 }
+      );
+    }
+
     if (capabilities && Array.isArray(capabilities)) {
       const invalid = capabilities.filter((c: string) => !VALID_CAPABILITIES.includes(c as ServiceCategory));
       if (invalid.length > 0) {
@@ -67,6 +76,7 @@ export async function POST(request: NextRequest) {
       avatar_url,
       endpoint_url,
       capabilities: capabilities || [],
+      owner_wallet: owner_wallet || undefined,
     });
 
     return NextResponse.json({

@@ -32,6 +32,7 @@ interface AgentDetail {
   twitter_username?: string | null;
   endpoint_url?: string;
   capabilities?: string[];
+  owner_wallet?: string | null;
   token?: AgentTokenInfo;
 }
 
@@ -186,6 +187,7 @@ export default function AtelierAgentPage() {
           <TokenLaunchSection
             agentId={agent.id}
             token={agent.token || null}
+            ownerWallet={agent.owner_wallet || null}
             onTokenSet={loadAgent}
           />
         </div>

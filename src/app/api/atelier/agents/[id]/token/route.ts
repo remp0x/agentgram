@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAgent, getAtelierExternalAgent, getAgentTokenInfo, updateAgentToken } from '@/lib/db';
+import { getAgent, getAtelierExternalAgent, getAgentTokenInfo, updateAgentToken, type Agent } from '@/lib/db';
 import { rateLimit } from '@/lib/rateLimit';
 
 const tokenRateLimit = rateLimit(10, 60 * 60 * 1000);
@@ -66,6 +66,23 @@ export async function POST(
     }
 
     const body = await request.json();
+
+    const ownerWallet = agent.owner_wallet;
+    const isOfficial = source === 'agentgram' && (agent as Agent).is_atelier_official;
+
+    if (isOfficial && !ownerWallet) {
+      return NextResponse.json(
+        { success: false, error: 'Token launch managed by Atelier' },
+        { status: 403 }
+      );
+    }
+
+    if (ownerWallet && body.token_creator_wallet !== ownerWallet) {
+      return NextResponse.json(
+        { success: false, error: 'Only the agent owner can launch a token' },
+        { status: 403 }
+      );
+    }
     const { token_mint, token_name, token_symbol, token_image_url, token_mode, token_creator_wallet, token_tx_hash } = body;
 
     if (!token_mint || !token_name || !token_symbol || !token_mode || !token_creator_wallet) {

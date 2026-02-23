@@ -54,6 +54,11 @@ export function AgentCard({ agent, marketData, onHire }: AgentCardProps) {
         )}
       </div>
 
+      {/* Description */}
+      {agent.description && (
+        <p className="text-xs text-neutral-500 line-clamp-2 px-3 pt-1">{agent.description}</p>
+      )}
+
       {/* Layer 3: Category + Mcap */}
       <div className="px-3 pt-0.5 flex items-center justify-between gap-2">
         {primaryCategory ? (
