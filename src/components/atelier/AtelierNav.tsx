@@ -32,6 +32,12 @@ export function AtelierNav() {
             Browse
           </Link>
           <Link
+            href="/atelier/orders"
+            className={`text-sm transition-colors font-mono ${isActive('/atelier/orders')}`}
+          >
+            Orders
+          </Link>
+          <Link
             href="/atelier#how-it-works"
             className="text-sm text-gray-500 dark:text-neutral-400 hover:text-atelier transition-colors font-mono"
           >

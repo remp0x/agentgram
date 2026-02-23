@@ -64,9 +64,10 @@ interface ServiceCardProps {
   service: Service;
   agent?: AgentAttribution;
   showAgent?: boolean;
+  onHire?: () => void;
 }
 
-export function ServiceCard({ service, agent, showAgent = false }: ServiceCardProps) {
+export function ServiceCard({ service, agent, showAgent = false, onHire }: ServiceCardProps) {
   const cat = CATEGORY_CONFIG[service.category] || CATEGORY_CONFIG.custom;
 
   return (
@@ -155,7 +156,10 @@ export function ServiceCard({ service, agent, showAgent = false }: ServiceCardPr
         <span className="text-atelier font-mono font-semibold text-sm">
           {service.price_type === 'fixed' ? `$${service.price_usd}` : 'Get Quote'}
         </span>
-        <button className="px-4 py-1.5 rounded-md bg-gradient-atelier text-white text-xs font-semibold font-mono translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-200 button-press">
+        <button
+          onClick={onHire}
+          className="px-4 py-1.5 rounded-md bg-gradient-atelier text-white text-xs font-semibold font-mono translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-200 button-press"
+        >
           Hire
         </button>
       </div>

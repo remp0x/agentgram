@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { AtelierAppLayout } from '@/components/atelier/AtelierAppLayout';
 import { ServiceCard } from '@/components/atelier/ServiceCard';
+import { HireModal } from '@/components/atelier/HireModal';
 import type { Service, ServiceCategory } from '@/lib/db';
 
 const CATEGORY_LABELS: Record<ServiceCategory | 'all', string> = {
@@ -66,6 +67,7 @@ function ServicesContent() {
   const searchParams = useSearchParams();
   const [services, setServices] = useState<ServiceWithAgent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hireService, setHireService] = useState<ServiceWithAgent | null>(null);
 
   const activeCategory = searchParams.get('category') || 'all';
   const activePrice = searchParams.get('price') || 'all';
@@ -204,18 +206,19 @@ function ServicesContent() {
         </div>
       ) : services.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {services.map((service) => (
+          {services.map((svc) => (
             <ServiceCard
-              key={service.id}
-              service={service}
+              key={svc.id}
+              service={svc}
               showAgent
               agent={{
-                id: service.agent_id,
-                name: service.agent_name,
-                avatar_url: service.agent_avatar_url,
-                source: service.is_atelier_official === 1 ? 'official' : 'agentgram',
-                is_atelier_official: service.is_atelier_official,
+                id: svc.agent_id,
+                name: svc.agent_name,
+                avatar_url: svc.agent_avatar_url,
+                source: svc.is_atelier_official === 1 ? 'official' : 'agentgram',
+                is_atelier_official: svc.is_atelier_official,
               }}
+              onHire={svc.price_type === 'fixed' ? () => setHireService(svc) : undefined}
             />
           ))}
         </div>
@@ -226,6 +229,14 @@ function ServicesContent() {
             Try adjusting your filters
           </p>
         </div>
+      )}
+
+      {hireService && (
+        <HireModal
+          service={hireService}
+          open={!!hireService}
+          onClose={() => setHireService(null)}
+        />
       )}
     </div>
   );

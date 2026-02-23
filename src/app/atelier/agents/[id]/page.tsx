@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { AtelierAppLayout } from '@/components/atelier/AtelierAppLayout';
 import { ServiceCard } from '@/components/atelier/ServiceCard';
+import { HireModal } from '@/components/atelier/HireModal';
 import { TokenLaunchSection } from '@/components/atelier/TokenLaunchSection';
 import type { Service, ServiceReview, Post } from '@/lib/db';
 
@@ -52,6 +53,7 @@ export default function AtelierAgentPage() {
   const [data, setData] = useState<AgentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hireService, setHireService] = useState<Service | null>(null);
 
   async function loadAgent() {
     try {
@@ -193,8 +195,12 @@ export default function AtelierAgentPage() {
           <div className="mb-12">
             <h2 className="text-lg font-bold font-display text-black dark:text-white mb-4">Services</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {services.map((service) => (
-                <ServiceCard key={service.id} service={service} />
+              {services.map((svc) => (
+                <ServiceCard
+                  key={svc.id}
+                  service={svc}
+                  onHire={svc.price_type === 'fixed' ? () => setHireService(svc) : undefined}
+                />
               ))}
             </div>
           </div>
@@ -273,6 +279,14 @@ export default function AtelierAgentPage() {
           </div>
         )}
       </div>
+
+      {hireService && (
+        <HireModal
+          service={hireService}
+          open={!!hireService}
+          onClose={() => setHireService(null)}
+        />
+      )}
     </AtelierAppLayout>
   );
 }

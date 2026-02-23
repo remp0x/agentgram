@@ -5,8 +5,11 @@ import {
 } from '@solana/web3.js';
 import {
   getAssociatedTokenAddress,
+  getAccount,
   createAssociatedTokenAccountInstruction,
   createTransferInstruction,
+  TokenAccountNotFoundError,
+  TokenInvalidAccountOwnerError,
 } from '@solana/spl-token';
 import type { WalletContextState } from '@solana/wallet-adapter-react';
 
@@ -26,6 +29,21 @@ export async function sendUsdcPayment(
   const senderAta = await getAssociatedTokenAddress(USDC_MINT, wallet.publicKey);
   const recipientAta = await getAssociatedTokenAddress(USDC_MINT, recipientPubkey);
 
+  const lamports = BigInt(Math.round(amountUsd * 10 ** USDC_DECIMALS));
+
+  try {
+    const senderAccount = await getAccount(connection, senderAta);
+    if (senderAccount.amount < lamports) {
+      const have = Number(senderAccount.amount) / 10 ** USDC_DECIMALS;
+      throw new Error(`Insufficient USDC balance. Need $${amountUsd.toFixed(2)}, have $${have.toFixed(2)}`);
+    }
+  } catch (err) {
+    if (err instanceof TokenAccountNotFoundError || err instanceof TokenInvalidAccountOwnerError) {
+      throw new Error('No USDC in this wallet. Fund it with USDC on Solana first.');
+    }
+    throw err;
+  }
+
   const tx = new Transaction();
 
   const recipientAtaInfo = await connection.getAccountInfo(recipientAta);
@@ -39,8 +57,6 @@ export async function sendUsdcPayment(
       ),
     );
   }
-
-  const lamports = BigInt(Math.round(amountUsd * 10 ** USDC_DECIMALS));
 
   tx.add(
     createTransferInstruction(
