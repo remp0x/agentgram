@@ -300,6 +300,7 @@ async function initDb() {
 
   try { await client.execute('ALTER TABLE services ADD COLUMN provider_key TEXT'); } catch (e) { }
   try { await client.execute('ALTER TABLE services ADD COLUMN provider_model TEXT'); } catch (e) { }
+  try { await client.execute('ALTER TABLE services ADD COLUMN system_prompt TEXT'); } catch (e) { }
 
   await client.execute('CREATE INDEX IF NOT EXISTS idx_services_agent_id ON services(agent_id)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_services_category ON services(category)');
@@ -360,18 +361,36 @@ async function initDb() {
 
 async function seedAtelierOfficialAgents(): Promise<void> {
   const agents = [
-    { id: 'agent_atelier_grok', name: 'Atelier Grok', description: 'Image & video generation powered by xAI Grok' },
-    { id: 'agent_atelier_kling', name: 'Atelier Kling', description: 'Videos, images & talking avatars powered by Kling AI' },
-    { id: 'agent_atelier_runway', name: 'Atelier Runway', description: 'Fast video generation powered by Runway Gen-4' },
-    { id: 'agent_atelier_luma', name: 'Atelier Luma', description: 'Dream Machine video generation by Luma AI' },
-    { id: 'agent_atelier_higgsfield', name: 'Atelier Higgsfield', description: 'Cinematic videos & portraits powered by Higgsfield' },
-    { id: 'agent_atelier_minimax', name: 'Atelier MiniMax', description: '1080p video generation powered by Hailuo AI' },
+    { id: 'agent_atelier_grok', name: 'Atelier Grok', description: 'Image & video generation powered by xAI Grok', avatar_url: null },
+    { id: 'agent_atelier_kling', name: 'Atelier Kling', description: 'Videos, images & talking avatars powered by Kling AI', avatar_url: null },
+    { id: 'agent_atelier_runway', name: 'Atelier Runway', description: 'Fast video generation powered by Runway Gen-4', avatar_url: null },
+    { id: 'agent_atelier_luma', name: 'Atelier Luma', description: 'Dream Machine video generation by Luma AI', avatar_url: null },
+    { id: 'agent_atelier_higgsfield', name: 'Atelier Higgsfield', description: 'Cinematic videos & portraits powered by Higgsfield', avatar_url: null },
+    { id: 'agent_atelier_minimax', name: 'Atelier MiniMax', description: '1080p video generation powered by Hailuo AI', avatar_url: null },
+    {
+      id: 'agent_atelier_animestudio',
+      name: 'AnimeStudio',
+      description: 'Unlimited anime-style illustrations and animations. Consistent character design, manga panels, and vibrant anime aesthetics for any concept.',
+      avatar_url: 'https://api.dicebear.com/9.x/glass/svg?seed=AnimeStudio&backgroundColor=8B5CF6',
+    },
+    {
+      id: 'agent_atelier_ugcfactory',
+      name: 'UGC Factory',
+      description: 'Scroll-stopping UGC content for brands. Product unboxings, lifestyle shots, testimonial-style visuals — all on-brand, all day.',
+      avatar_url: 'https://api.dicebear.com/9.x/glass/svg?seed=UGCFactory&backgroundColor=F59E0B',
+    },
+    {
+      id: 'agent_atelier_lenscraft',
+      name: 'LensCraft',
+      description: 'Studio-quality product photography. Clean backgrounds, lifestyle flatlays, hero shots — unlimited renders in a consistent visual style.',
+      avatar_url: 'https://api.dicebear.com/9.x/glass/svg?seed=LensCraft&backgroundColor=06B6D4',
+    },
   ];
 
   for (const a of agents) {
     await client.execute({
-      sql: `INSERT OR IGNORE INTO agents (id, name, description, verified, blue_check, is_atelier_official) VALUES (?, ?, ?, 1, 1, 1)`,
-      args: [a.id, a.name, a.description],
+      sql: `INSERT OR IGNORE INTO agents (id, name, description, avatar_url, verified, blue_check, is_atelier_official) VALUES (?, ?, ?, ?, 1, 1, 1)`,
+      args: [a.id, a.name, a.description, a.avatar_url],
     });
   }
 
@@ -384,6 +403,8 @@ async function seedAtelierOfficialAgents(): Promise<void> {
     price_usd: string;
     provider_key: string;
     provider_model: string;
+    turnaround_hours?: number;
+    system_prompt?: string;
   }> = [
     { id: 'svc_official_grok_image', agent_id: 'agent_atelier_grok', category: 'image_gen', title: 'Image Generation', description: 'Generate images with Grok-2', price_usd: '0.50', provider_key: 'grok', provider_model: 'grok-2-image' },
     { id: 'svc_official_grok_video', agent_id: 'agent_atelier_grok', category: 'video_gen', title: 'Video Generation', description: 'Generate videos with Grok', price_usd: '2.00', provider_key: 'grok', provider_model: 'grok-imagine-video' },
@@ -404,13 +425,55 @@ async function seedAtelierOfficialAgents(): Promise<void> {
     { id: 'svc_official_higgs_portrait', agent_id: 'agent_atelier_higgsfield', category: 'image_gen', title: 'Soul Portrait', description: 'AI portrait generation', price_usd: '0.50', provider_key: 'higgsfield', provider_model: 'soul_portrait' },
     { id: 'svc_official_minimax_6s', agent_id: 'agent_atelier_minimax', category: 'video_gen', title: 'Hailuo Video 6s', description: 'Fast 6-second 1080p video', price_usd: '1.00', provider_key: 'minimax', provider_model: 'hailuo_6s' },
     { id: 'svc_official_minimax_pro', agent_id: 'agent_atelier_minimax', category: 'video_gen', title: 'Hailuo Pro Video', description: 'High-quality 1080p video generation', price_usd: '2.00', provider_key: 'minimax', provider_model: 'hailuo_pro' },
+
+    // AnimeStudio — unlimited anime content for 1 day
+    {
+      id: 'svc_animestudio_day',
+      agent_id: 'agent_atelier_animestudio',
+      category: 'image_gen',
+      title: 'Unlimited Anime Content — 1 Day',
+      description: 'Unlimited anime-style images and short animations for 24 hours. Consistent character designs, color palettes, and visual style across all outputs. Perfect for social content, storyboards, or brand campaigns.',
+      price_usd: '25.00',
+      provider_key: 'grok',
+      provider_model: 'grok-2-image',
+      turnaround_hours: 24,
+      system_prompt: 'You are AnimeStudio, a specialist in anime and manga-style visual content. Every image you generate must follow a consistent anime aesthetic: vibrant colors, clean linework, expressive characters with large detailed eyes, dynamic poses, and cel-shaded lighting. Maintain character consistency across all outputs in a session — same face shape, hair style, color palette. Styles range from shonen action to slice-of-life pastel. Always produce visually striking compositions suitable for social media. Never generate photorealistic content.',
+    },
+
+    // UGC Factory — unlimited UGC for brands for 1 day
+    {
+      id: 'svc_ugcfactory_day',
+      agent_id: 'agent_atelier_ugcfactory',
+      category: 'ugc',
+      title: 'Unlimited Brand UGC — 1 Day',
+      description: 'Unlimited user-generated-content-style visuals for your brand for 24 hours. Product-in-hand shots, lifestyle scenes, unboxing moments, and testimonial-ready frames — all matching your brand guidelines.',
+      price_usd: '25.00',
+      provider_key: 'grok',
+      provider_model: 'grok-2-image',
+      turnaround_hours: 24,
+      system_prompt: 'You are UGC Factory, a specialist in authentic-looking user-generated content for brands. Every image must look like it was shot by a real creator on their phone: natural lighting, casual compositions, real-world environments (kitchen tables, bathroom shelves, car dashboards, park benches). Products should be the hero but feel organic, not staged. Include human hands or partial figures when relevant. Warm, slightly saturated tones. Shoot styles: flat-lay, product-in-hand, lifestyle scene, before/after, unboxing reveal. Never produce overly polished studio-quality looks — the goal is authentic, scroll-stopping content that feels native to Instagram and TikTok.',
+    },
+
+    // LensCraft — unlimited product photography for 1 day
+    {
+      id: 'svc_lenscraft_day',
+      agent_id: 'agent_atelier_lenscraft',
+      category: 'brand_content',
+      title: 'Unlimited Product Photography — 1 Day',
+      description: 'Unlimited studio-quality product renders for 24 hours. Clean white backgrounds, lifestyle compositions, hero shots, and detail close-ups — all in a consistent, premium visual style.',
+      price_usd: '25.00',
+      provider_key: 'grok',
+      provider_model: 'grok-2-image',
+      turnaround_hours: 24,
+      system_prompt: 'You are LensCraft, a specialist in commercial product photography. Every image must look like a professional studio shoot: precise lighting with soft shadows, clean backgrounds (pure white, gradient, or contextual), sharp focus on the product, and premium feel. Styles include: hero shot (dramatic angle, single product), flat-lay (top-down arrangement with props), lifestyle (product in elegant real-world setting), detail macro (textures, materials, craftsmanship), and catalog (clean, informative, e-commerce ready). Maintain consistent lighting temperature and color grading across all outputs. Products should look aspirational and high-end. Never produce amateur or over-processed looks.',
+    },
   ];
 
   for (const s of services) {
     await client.execute({
-      sql: `INSERT OR IGNORE INTO services (id, agent_id, category, title, description, price_usd, price_type, turnaround_hours, deliverables, portfolio_post_ids, provider_key, provider_model)
-            VALUES (?, ?, ?, ?, ?, ?, 'fixed', 1, '[]', '[]', ?, ?)`,
-      args: [s.id, s.agent_id, s.category, s.title, s.description, s.price_usd, s.provider_key, s.provider_model],
+      sql: `INSERT OR IGNORE INTO services (id, agent_id, category, title, description, price_usd, price_type, turnaround_hours, deliverables, portfolio_post_ids, provider_key, provider_model, system_prompt)
+            VALUES (?, ?, ?, ?, ?, ?, 'fixed', ?, '[]', '[]', ?, ?, ?)`,
+      args: [s.id, s.agent_id, s.category, s.title, s.description, s.price_usd, s.turnaround_hours || 1, s.provider_key, s.provider_model, s.system_prompt || null],
     });
   }
 }
@@ -517,6 +580,7 @@ export interface Service {
   has_bankr_wallet: number;
   provider_key: string | null;
   provider_model: string | null;
+  system_prompt: string | null;
   is_atelier_official: number;
   created_at: string;
 }
