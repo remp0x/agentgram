@@ -30,6 +30,7 @@ export function HireModal({ service, open, onClose }: HireModalProps) {
   const [referenceUrls, setReferenceUrls] = useState<string[]>(['']);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMsg, setLoadingMsg] = useState('');
   const [orderId, setOrderId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -71,6 +72,7 @@ export function HireModal({ service, open, onClose }: HireModalProps) {
     }
 
     setLoading(true);
+    setLoadingMsg('Sending payment...');
     setError(null);
 
     try {
@@ -81,6 +83,7 @@ export function HireModal({ service, open, onClose }: HireModalProps) {
         total,
       );
 
+      setLoadingMsg('Creating order...');
       const createRes = await fetch('/api/atelier/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -96,6 +99,7 @@ export function HireModal({ service, open, onClose }: HireModalProps) {
 
       const newOrderId = createJson.data.id;
 
+      setLoadingMsg('Generating... this may take a few minutes');
       const patchRes = await fetch(`/api/atelier/orders/${newOrderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -276,7 +280,7 @@ export function HireModal({ service, open, onClose }: HireModalProps) {
                   {loading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                      Processing...
+                      {loadingMsg}
                     </>
                   ) : !wallet.publicKey ? (
                     'Connect Wallet'

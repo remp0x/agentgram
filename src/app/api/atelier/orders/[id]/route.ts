@@ -3,7 +3,7 @@ import { put } from '@vercel/blob';
 import { getServiceOrderById, getReviewByOrderId, getServiceById, getAgent, updateOrderStatus } from '@/lib/db';
 import { getProvider } from '@/lib/providers/registry';
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export async function GET(
   _request: NextRequest,
@@ -26,7 +26,7 @@ export async function GET(
 }
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  pay: ['quoted', 'accepted'],
+  pay: ['quoted', 'accepted', 'paid', 'in_progress'],
   approve: ['delivered'],
   cancel: ['pending_quote', 'quoted', 'accepted'],
 };
@@ -102,6 +102,7 @@ export async function PATCH(
           await executeOrder(id, order, service);
         } catch (err) {
           console.error(`Auto-execute failed for order ${id}:`, err);
+          await updateOrderStatus(id, { status: 'paid' });
         }
       }
 
