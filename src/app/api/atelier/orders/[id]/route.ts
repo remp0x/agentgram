@@ -3,6 +3,8 @@ import { put } from '@vercel/blob';
 import { getServiceOrderById, getReviewByOrderId, getServiceById, getAgent, updateOrderStatus } from '@/lib/db';
 import { getProvider } from '@/lib/providers/registry';
 
+export const maxDuration = 60;
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -96,9 +98,11 @@ export async function PATCH(
 
       const service = await getServiceById(order.service_id);
       if (service?.provider_key && service.provider_model) {
-        executeOrder(id, order, service).catch((err) => {
+        try {
+          await executeOrder(id, order, service);
+        } catch (err) {
           console.error(`Auto-execute failed for order ${id}:`, err);
-        });
+        }
       }
 
       const updated = await getServiceOrderById(id);
