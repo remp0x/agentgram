@@ -74,12 +74,12 @@ export function AtelierSidebar() {
 
   return (
     <aside
-      className={`hidden md:flex flex-col h-screen sticky top-0 bg-white dark:bg-black border-r border-gray-200 dark:border-gray-dark transition-all duration-300 ease-in-out z-40 overflow-hidden ${
+      className={`hidden md:flex flex-col h-screen sticky top-0 bg-white dark:bg-black border-r border-gray-200 dark:border-neutral-800 transition-all duration-300 ease-in-out z-40 overflow-hidden ${
         expanded ? 'w-56' : 'w-16'
       }`}
     >
       {/* Logo */}
-      <div className={`flex items-center h-14 border-b border-gray-200 dark:border-gray-dark flex-shrink-0 ${expanded ? 'px-4 gap-3' : 'justify-center'}`}>
+      <div className={`flex items-center h-14 border-b border-gray-200 dark:border-neutral-800 flex-shrink-0 ${expanded ? 'px-4 gap-3' : 'justify-center'}`}>
         <Link href="/atelier" className="flex items-center gap-2.5 min-w-0">
           <div className="w-8 h-8 rounded-lg bg-gradient-atelier flex items-center justify-center flex-shrink-0">
             <span className="text-white text-sm font-bold font-display">A</span>
@@ -97,7 +97,7 @@ export function AtelierSidebar() {
       {/* Toggle */}
       <button
         onClick={toggle}
-        className={`flex items-center h-9 text-gray-400 dark:text-gray-medium hover:text-atelier transition-colors flex-shrink-0 ${
+        className={`flex items-center h-9 text-gray-400 dark:text-neutral-500 hover:text-atelier transition-colors flex-shrink-0 ${
           expanded ? 'justify-end px-4' : 'justify-center'
         }`}
         title={expanded ? 'Collapse' : 'Expand'}
@@ -124,7 +124,7 @@ export function AtelierSidebar() {
               } ${
                 active
                   ? 'bg-atelier/10 text-atelier'
-                  : 'text-gray-500 dark:text-gray-light hover:bg-gray-100 dark:hover:bg-gray-darker hover:text-black dark:hover:text-white'
+                  : 'text-gray-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-900 hover:text-black dark:hover:text-white'
               }`}
               title={!expanded ? item.label : undefined}
             >
@@ -150,14 +150,14 @@ export function AtelierSidebar() {
       </nav>
 
       {/* Divider */}
-      <div className="mx-3 border-t border-gray-200 dark:border-gray-dark flex-shrink-0" />
+      <div className="mx-3 border-t border-gray-200 dark:border-neutral-800 flex-shrink-0" />
 
       {/* Bottom */}
       <div className="py-3 px-2 space-y-0.5 flex-shrink-0">
         {/* Theme */}
         <button
           onClick={toggleTheme}
-          className={`w-full flex items-center gap-3 h-10 rounded-lg transition-all text-gray-500 dark:text-gray-light hover:bg-gray-100 dark:hover:bg-gray-darker hover:text-black dark:hover:text-white ${
+          className={`w-full flex items-center gap-3 h-10 rounded-lg transition-all text-gray-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-900 hover:text-black dark:hover:text-white ${
             expanded ? 'px-3' : 'justify-center px-0'
           }`}
           title={!expanded ? (theme === 'dark' ? 'Light mode' : 'Dark mode') : undefined}
@@ -181,7 +181,7 @@ export function AtelierSidebar() {
           href="https://x.com/agentgram_"
           target="_blank"
           rel="noopener noreferrer"
-          className={`w-full flex items-center gap-3 h-10 rounded-lg transition-all text-gray-500 dark:text-gray-light hover:bg-gray-100 dark:hover:bg-gray-darker hover:text-black dark:hover:text-white ${
+          className={`w-full flex items-center gap-3 h-10 rounded-lg transition-all text-gray-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-900 hover:text-black dark:hover:text-white ${
             expanded ? 'px-3' : 'justify-center px-0'
           }`}
           title={!expanded ? 'Twitter / X' : undefined}

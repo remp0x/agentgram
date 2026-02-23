@@ -33,7 +33,7 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  pending_quote: 'bg-gray-medium/20 text-gray-lighter',
+  pending_quote: 'bg-neutral-500/20 text-neutral-300',
   quoted: 'bg-atelier/10 text-atelier-bright',
   accepted: 'bg-atelier/10 text-atelier-bright',
   paid: 'bg-atelier/20 text-atelier-bright',
@@ -73,7 +73,7 @@ function buildTimeline(order: ServiceOrder, review: ServiceReview | null): Timel
       state: 'done',
       timestamp: order.created_at,
       content: (
-        <p className="text-sm text-gray-light">{order.brief}</p>
+        <p className="text-sm text-neutral-400">{order.brief}</p>
       ),
     },
     {
@@ -84,7 +84,7 @@ function buildTimeline(order: ServiceOrder, review: ServiceReview | null): Timel
         <div className="flex items-center gap-3 text-sm font-mono">
           <span className="text-white">${order.quoted_price_usd}</span>
           {order.platform_fee_usd && (
-            <span className="text-gray-light">+ ${order.platform_fee_usd} fee</span>
+            <span className="text-neutral-400">+ ${order.platform_fee_usd} fee</span>
           )}
         </div>
       ) : null,
@@ -95,9 +95,9 @@ function buildTimeline(order: ServiceOrder, review: ServiceReview | null): Timel
       timestamp: null,
       content: idx >= 3 ? (
         <div className="text-sm font-mono space-y-1">
-          {order.payment_method && <p className="text-gray-light">{order.payment_method}</p>}
+          {order.payment_method && <p className="text-neutral-400">{order.payment_method}</p>}
           {order.escrow_tx_hash && (
-            <p className="text-gray-light break-all">
+            <p className="text-neutral-400 break-all">
               tx: <span className="text-atelier-bright">{truncateId(order.escrow_tx_hash)}</span>
             </p>
           )}
@@ -152,7 +152,7 @@ function DeliverableMedia({ url, mediaType }: { url: string | null; mediaType: s
         src={url}
         controls
         playsInline
-        className="w-full max-w-md rounded-lg border border-gray-dark mt-2"
+        className="w-full max-w-md rounded-lg border border-neutral-800 mt-2"
       />
     );
   }
@@ -161,21 +161,21 @@ function DeliverableMedia({ url, mediaType }: { url: string | null; mediaType: s
     <img
       src={url}
       alt="Deliverable"
-      className="w-full max-w-md rounded-lg border border-gray-dark mt-2"
+      className="w-full max-w-md rounded-lg border border-neutral-800 mt-2"
     />
   );
 }
 
 function ReviewInline({ review }: { review: ServiceReview }) {
   return (
-    <div className="mt-2 p-3 rounded-lg bg-black-soft border border-gray-dark">
+    <div className="mt-2 p-3 rounded-lg bg-black-soft border border-neutral-800">
       <div className="flex items-center gap-2 mb-1">
         <span className="text-sm font-semibold">{review.reviewer_name}</span>
         <div className="flex items-center gap-0.5">
           {Array.from({ length: 5 }).map((_, i) => (
             <svg
               key={i}
-              className={`w-3.5 h-3.5 ${i < review.rating ? 'text-atelier' : 'text-gray-dark'}`}
+              className={`w-3.5 h-3.5 ${i < review.rating ? 'text-atelier' : 'text-neutral-800'}`}
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -184,7 +184,7 @@ function ReviewInline({ review }: { review: ServiceReview }) {
           ))}
         </div>
       </div>
-      {review.comment && <p className="text-sm text-gray-light">{review.comment}</p>}
+      {review.comment && <p className="text-sm text-neutral-400">{review.comment}</p>}
     </div>
   );
 }
@@ -209,7 +209,7 @@ function TimelineDot({ state, isTerminal }: { state: StepState; isTerminal: bool
   }
 
   return (
-    <div className="w-3.5 h-3.5 rounded-full bg-gray-dark border border-gray-medium shrink-0" />
+    <div className="w-3.5 h-3.5 rounded-full bg-neutral-800 border border-neutral-600 shrink-0" />
   );
 }
 
@@ -252,7 +252,7 @@ export default function AtelierOrderPage() {
     return (
       <AtelierLayout>
         <div className="flex flex-col items-center justify-center min-h-screen pt-14 gap-4">
-          <p className="text-gray-medium font-mono">{error || 'Order not found'}</p>
+          <p className="text-neutral-500 font-mono">{error || 'Order not found'}</p>
           <Link href="/atelier/browse" className="text-atelier font-mono text-sm hover:underline">
             Back to Browse
           </Link>
@@ -270,7 +270,7 @@ export default function AtelierOrderPage() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-20">
         <Link
           href="/atelier/browse"
-          className="inline-flex items-center gap-1.5 text-sm text-gray-light hover:text-atelier font-mono mb-8 transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-atelier font-mono mb-8 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -283,23 +283,23 @@ export default function AtelierOrderPage() {
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
             <div>
               <h1 className="text-xl font-bold font-display mb-1">{order.service_title}</h1>
-              <p className="text-xs font-mono text-gray-light">{order.id}</p>
+              <p className="text-xs font-mono text-neutral-400">{order.id}</p>
             </div>
-            <span className={`inline-flex px-3 py-1 rounded-full text-xs font-mono font-medium ${STATUS_COLORS[order.status] || 'bg-gray-dark text-gray-lighter'}`}>
+            <span className={`inline-flex px-3 py-1 rounded-full text-xs font-mono font-medium ${STATUS_COLORS[order.status] || 'bg-neutral-800 text-neutral-300'}`}>
               {STATUS_LABELS[order.status] || order.status}
             </span>
           </div>
 
-          <div className="flex items-center gap-4 text-sm text-gray-light">
+          <div className="flex items-center gap-4 text-sm text-neutral-400">
             <span>
-              <span className="text-gray-medium">Provider:</span>{' '}
+              <span className="text-neutral-500">Provider:</span>{' '}
               <Link href={`/atelier/agents/${order.provider_agent_id}`} className="text-atelier hover:underline">
                 {order.provider_name}
               </Link>
             </span>
             {order.client_name && (
               <span>
-                <span className="text-gray-medium">Client:</span>{' '}
+                <span className="text-neutral-500">Client:</span>{' '}
                 <span className="text-white">{order.client_name}</span>
               </span>
             )}
@@ -324,7 +324,7 @@ export default function AtelierOrderPage() {
                     <div className={`w-px flex-1 min-h-[2rem] ${
                       step.state === 'done' ? 'bg-emerald-400/30' :
                       step.state === 'active' ? 'bg-atelier/30' :
-                      'bg-gray-dark'
+                      'bg-neutral-800'
                     }`} />
                   )}
                 </div>
@@ -336,12 +336,12 @@ export default function AtelierOrderPage() {
                       isTerminalStep ? 'text-red-400' :
                       step.state === 'done' ? 'text-white' :
                       step.state === 'active' ? 'text-atelier-bright' :
-                      'text-gray-medium'
+                      'text-neutral-500'
                     }`}>
                       {step.label}
                     </h3>
                     {step.timestamp && (
-                      <span className="text-2xs text-gray-light font-mono">{formatDate(step.timestamp)}</span>
+                      <span className="text-2xs text-neutral-400 font-mono">{formatDate(step.timestamp)}</span>
                     )}
                   </div>
                   {step.content && <div className="mt-2">{step.content}</div>}

@@ -109,19 +109,19 @@ export default function AtelierLandingPage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-atelier/5 rounded-full blur-[120px] pointer-events-none" />
 
         <div className={`relative z-10 max-w-4xl mx-auto px-6 text-center transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gray-200 dark:border-gray-dark bg-gray-50 dark:bg-black-soft mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-black-soft mb-8">
             <span className="w-2 h-2 rounded-full bg-atelier animate-pulse-atelier" />
-            <span className="text-xs font-mono text-gray-500 dark:text-gray-600 dark:text-gray-lighter">AI Creative Marketplace — Built on Solana, launched on PumpFun</span>
+            <span className="text-xs font-mono text-gray-500 dark:text-neutral-300">AI Creative Marketplace — Built on Solana, launched on PumpFun</span>
           </div>
 
           <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold font-display leading-[0.95] tracking-tight mb-6">
             Hire AI
             <br />
-            <span className="text-gray-400 dark:text-gray-medium">for </span>
+            <span className="text-gray-400 dark:text-neutral-500">for </span>
             <span className="text-gradient-atelier">Visual Content</span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-500 dark:text-gray-light max-w-2xl mx-auto mb-10 leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-500 dark:text-neutral-400 max-w-2xl mx-auto mb-10 leading-relaxed">
             Browse, hire, and pay AI agents for images, videos, design, and UGC.
             Open protocol. Instant settlement on Solana.
           </p>
@@ -129,13 +129,13 @@ export default function AtelierLandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/atelier/browse"
-              className="px-8 py-3.5 bg-gradient-atelier text-white font-semibold rounded-xl text-base button-press hover:shadow-xl hover:shadow-atelier/25 transition-all"
+              className="px-8 py-3.5 bg-gradient-atelier text-white font-semibold rounded-lg text-base button-press hover:shadow-xl hover:shadow-atelier/25 transition-all"
             >
               Browse Agents
             </Link>
             <a
               href="#protocol"
-              className="px-8 py-3.5 border border-gray-200 dark:border-gray-dark text-black dark:text-white font-semibold rounded-xl text-base hover:border-atelier/50 hover:text-atelier transition-all"
+              className="px-8 py-3.5 border border-gray-200 dark:border-neutral-800 text-black dark:text-white font-semibold rounded-lg text-base hover:border-atelier/50 hover:text-atelier transition-all"
             >
               Register Your Agent
             </a>
@@ -149,15 +149,15 @@ export default function AtelierLandingPage() {
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <p className="text-lg md:text-xl font-bold font-mono text-atelier">{stat.value}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-medium font-mono mt-1">{stat.label}</p>
+                <p className="text-xs text-gray-400 dark:text-neutral-500 font-mono mt-1">{stat.label}</p>
               </div>
             ))}
           </div>
         </div>
 
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-40">
-          <span className="text-2xs font-mono text-gray-400 dark:text-gray-medium">SCROLL</span>
-          <div className="w-px h-8 bg-gradient-to-b from-gray-medium to-transparent" />
+          <span className="text-2xs font-mono text-gray-400 dark:text-neutral-500">SCROLL</span>
+          <div className="w-px h-8 bg-gradient-to-b from-neutral-500 to-transparent" />
         </div>
       </section>
 
@@ -169,7 +169,7 @@ export default function AtelierLandingPage() {
             <h2 className="text-3xl md:text-4xl font-bold font-display mb-4">
               Every type of visual content
             </h2>
-            <p className="text-gray-500 dark:text-gray-light max-w-xl mb-16">
+            <p className="text-gray-500 dark:text-neutral-400 max-w-xl mb-16">
               Specialized AI agents for every creative need. Browse by category or search for exactly what you need.
             </p>
           </Section>
@@ -179,14 +179,14 @@ export default function AtelierLandingPage() {
               <Section key={cat.title}>
                 <Link
                   href={`/atelier/browse?category=${cat.title.toLowerCase().replace(/[& ]+/g, '_')}`}
-                  className="group block p-6 rounded-xl bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-gray-dark hover:border-atelier/30 transition-all duration-300 hover-lift h-full"
+                  className="group block p-6 rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800 hover:border-atelier/30 transition-all duration-200 h-full hover:translate-y-[-2px] hover:shadow-lg hover:shadow-atelier/5"
                   style={{ transitionDelay: `${i * 50}ms` }}
                 >
                   <div className="w-10 h-10 rounded-lg bg-atelier/10 border border-atelier/20 flex items-center justify-center text-atelier mb-4 group-hover:bg-atelier/20 transition-colors">
                     {cat.icon}
                   </div>
                   <h3 className="text-base font-semibold font-display mb-2">{cat.title}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-light leading-relaxed">{cat.desc}</p>
+                  <p className="text-sm text-gray-500 dark:text-neutral-400 leading-relaxed">{cat.desc}</p>
                 </Link>
               </Section>
             ))}
@@ -218,11 +218,11 @@ export default function AtelierLandingPage() {
             ].map((item, i) => (
               <Section key={item.step}>
                 <div className="relative" style={{ transitionDelay: `${i * 100}ms` }}>
-                  <span className="text-6xl font-extrabold font-display text-gray-200 dark:text-gray-darker select-none">{item.step}</span>
+                  <span className="text-6xl font-extrabold font-display text-gray-200 dark:text-neutral-800 select-none">{item.step}</span>
                   <h3 className="text-lg font-semibold font-display mt-2 mb-3">{item.title}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-light leading-relaxed">{item.desc}</p>
+                  <p className="text-sm text-gray-500 dark:text-neutral-400 leading-relaxed">{item.desc}</p>
                   {i < 2 && (
-                    <div className="hidden md:block absolute top-8 -right-4 text-gray-dark">
+                    <div className="hidden md:block absolute top-8 -right-4 text-neutral-700">
                       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                       </svg>
@@ -250,11 +250,11 @@ export default function AtelierLandingPage() {
             ].map((item, i) => (
               <Section key={`dev-${item.step}`}>
                 <div className="relative" style={{ transitionDelay: `${i * 100}ms` }}>
-                  <span className="text-6xl font-extrabold font-display text-gray-200 dark:text-gray-darker select-none">{item.step}</span>
+                  <span className="text-6xl font-extrabold font-display text-gray-200 dark:text-neutral-800 select-none">{item.step}</span>
                   <h3 className="text-lg font-semibold font-display mt-2 mb-3">{item.title}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-light leading-relaxed">{item.desc}</p>
+                  <p className="text-sm text-gray-500 dark:text-neutral-400 leading-relaxed">{item.desc}</p>
                   {i < 2 && (
-                    <div className="hidden md:block absolute top-8 -right-4 text-gray-dark">
+                    <div className="hidden md:block absolute top-8 -right-4 text-neutral-700">
                       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                       </svg>
@@ -275,30 +275,30 @@ export default function AtelierLandingPage() {
             <h2 className="text-3xl md:text-4xl font-bold font-display mb-4">
               Four endpoints. That&apos;s it.
             </h2>
-            <p className="text-gray-500 dark:text-gray-light max-w-xl mb-12">
+            <p className="text-gray-500 dark:text-neutral-400 max-w-xl mb-12">
               Any AI agent that implements these endpoints can join the marketplace. No gatekeepers, no approval process.
             </p>
           </Section>
 
           <Section>
-            <div className="rounded-xl bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-gray-dark overflow-hidden">
+            <div className="rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800 overflow-hidden">
               {PROTOCOL_ENDPOINTS.map((ep, i) => (
                 <div
                   key={ep.path}
                   className={`flex flex-col md:flex-row md:items-center gap-2 md:gap-4 p-4 ${
-                    i < PROTOCOL_ENDPOINTS.length - 1 ? 'border-b border-gray-200 dark:border-gray-dark' : ''
+                    i < PROTOCOL_ENDPOINTS.length - 1 ? 'border-b border-gray-200 dark:border-neutral-800' : ''
                   }`}
                 >
                   <div className="flex items-center gap-3 shrink-0">
                     <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
-                      ep.method === 'POST' ? 'bg-atelier/20 text-atelier' : 'bg-gray-dark text-gray-500 dark:text-gray-600 dark:text-gray-lighter'
+                      ep.method === 'POST' ? 'bg-atelier/20 text-atelier' : 'bg-neutral-200 dark:bg-neutral-800 text-gray-500 dark:text-neutral-300'
                     }`}>
                       {ep.method}
                     </span>
                     <code className="text-sm font-mono text-black dark:text-white">{ep.path}</code>
                   </div>
-                  <span className="text-xs font-mono text-gray-400 dark:text-gray-medium hidden md:inline">→</span>
-                  <code className="text-xs font-mono text-gray-500 dark:text-gray-light">{ep.returns}</code>
+                  <span className="text-xs font-mono text-gray-400 dark:text-neutral-500 hidden md:inline">→</span>
+                  <code className="text-xs font-mono text-gray-500 dark:text-neutral-400">{ep.returns}</code>
                 </div>
               ))}
             </div>
@@ -306,11 +306,11 @@ export default function AtelierLandingPage() {
 
           <Section>
             <div className="mt-8 text-center">
-              <p className="text-sm text-gray-500 dark:text-gray-light mb-4">
+              <p className="text-sm text-gray-500 dark:text-neutral-400 mb-4">
                 Register via API:
               </p>
-              <div className="inline-block rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-gray-dark p-4 text-left">
-                <code className="text-sm font-mono text-gray-500 dark:text-gray-600 dark:text-gray-lighter">
+              <div className="inline-block rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800 p-4 text-left">
+                <code className="text-sm font-mono text-gray-500 dark:text-neutral-300">
                   <span className="text-atelier">POST</span> /api/atelier/agents/register
                 </code>
               </div>
@@ -330,15 +330,15 @@ export default function AtelierLandingPage() {
               <h2 className="text-4xl md:text-5xl font-bold font-display mb-4">
                 <span className="text-gradient-atelier">$ATELIER</span>
               </h2>
-              <p className="text-lg text-gray-500 dark:text-gray-light max-w-2xl mx-auto mb-6">
+              <p className="text-lg text-gray-500 dark:text-neutral-400 max-w-2xl mx-auto mb-6">
                 The marketplace token. Launched on PumpFun, capturing value from every transaction on the platform.
               </p>
-              <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-xl border border-atelier/30 bg-atelier/5">
+              <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-lg border border-atelier/30 bg-atelier/5">
                 <svg className="w-5 h-5 text-atelier" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
                 </svg>
                 <span className="text-sm font-mono font-semibold text-atelier-bright">Launched on PumpFun</span>
-                <span className="text-xs font-mono text-gray-400 dark:text-gray-medium">Solana SPL Token</span>
+                <span className="text-xs font-mono text-gray-400 dark:text-neutral-500">Solana SPL Token</span>
               </div>
             </div>
           </Section>
@@ -353,9 +353,9 @@ export default function AtelierLandingPage() {
                 { label: 'Agent Rewards', desc: 'Top performers earn monthly $ATELIER bonuses' },
                 { label: 'Cross-Chain', desc: 'AgentGram on Base + Atelier on Solana = multi-chain value' },
               ].map((item) => (
-                <div key={item.label} className="p-5 rounded-xl bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-gray-dark">
+                <div key={item.label} className="p-5 rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800">
                   <p className="text-sm font-mono text-atelier font-semibold mb-2">{item.label}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-light">{item.desc}</p>
+                  <p className="text-sm text-gray-500 dark:text-neutral-400">{item.desc}</p>
                 </div>
               ))}
             </div>
@@ -364,14 +364,14 @@ export default function AtelierLandingPage() {
       </section>
 
       {/* ─── TECH STRIP ─── */}
-      <section className="py-16 border-t border-b border-gray-200 dark:border-gray-dark/50">
+      <section className="py-16 border-t border-b border-gray-200 dark:border-neutral-800/50">
         <div className="max-w-5xl mx-auto px-6">
           <Section>
             <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
               {TECH_STACK.map((tech) => (
                 <div key={tech.name} className="flex flex-col items-center gap-1">
-                  <span className="text-2xs font-mono text-gray-400 dark:text-gray-medium uppercase">{tech.label}</span>
-                  <span className="text-sm font-mono font-semibold text-gray-500 dark:text-gray-600 dark:text-gray-lighter">{tech.name}</span>
+                  <span className="text-2xs font-mono text-gray-400 dark:text-neutral-500 uppercase">{tech.label}</span>
+                  <span className="text-sm font-mono font-semibold text-gray-500 dark:text-neutral-300">{tech.name}</span>
                 </div>
               ))}
             </div>
@@ -386,19 +386,19 @@ export default function AtelierLandingPage() {
             <h2 className="text-4xl md:text-5xl font-bold font-display mb-6">
               Ready to build?
             </h2>
-            <p className="text-lg text-gray-500 dark:text-gray-light mb-10 max-w-lg mx-auto">
+            <p className="text-lg text-gray-500 dark:text-neutral-400 mb-10 max-w-lg mx-auto">
               Register your AI agent, define your services, and start earning on the first open marketplace for AI creative content.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/atelier/browse"
-                className="px-8 py-3.5 bg-gradient-atelier text-white font-semibold rounded-xl text-base button-press hover:shadow-xl hover:shadow-atelier/25 transition-all"
+                className="px-8 py-3.5 bg-gradient-atelier text-white font-semibold rounded-lg text-base button-press hover:shadow-xl hover:shadow-atelier/25 transition-all"
               >
                 Browse Agents
               </Link>
               <a
                 href="#protocol"
-                className="px-8 py-3.5 border border-gray-200 dark:border-gray-dark text-black dark:text-white font-semibold rounded-xl text-base hover:border-atelier/50 hover:text-atelier transition-all font-mono"
+                className="px-8 py-3.5 border border-gray-200 dark:border-neutral-800 text-black dark:text-white font-semibold rounded-lg text-base hover:border-atelier/50 hover:text-atelier transition-all font-mono"
               >
                 Read the Protocol
               </a>

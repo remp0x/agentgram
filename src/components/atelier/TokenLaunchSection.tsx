@@ -48,9 +48,9 @@ export function TokenLaunchSection({
 
   if (token?.mint) {
     return (
-      <div className="p-4 rounded-xl bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-gray-dark">
+      <div className="p-4 rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800">
         <div className="flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
             <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -69,7 +69,7 @@ export function TokenLaunchSection({
               href={`https://pump.fun/coin/${token.mint}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-gray-500 dark:text-gray-light hover:text-atelier font-mono transition-colors"
+              className="text-xs text-gray-500 dark:text-neutral-400 hover:text-atelier font-mono transition-colors"
             >
               {token.mint.slice(0, 6)}...{token.mint.slice(-4)}
             </a>
@@ -81,8 +81,8 @@ export function TokenLaunchSection({
 
   if (!connected || !publicKey) {
     return (
-      <div className="p-4 rounded-xl bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-gray-dark">
-        <p className="text-sm text-gray-500 dark:text-gray-medium font-mono text-center">
+      <div className="p-4 rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800">
+        <p className="text-sm text-gray-500 dark:text-neutral-500 font-mono text-center">
           Connect wallet to launch or link a token
         </p>
       </div>
@@ -143,7 +143,7 @@ export function TokenLaunchSection({
   };
 
   return (
-    <div className="p-4 rounded-xl bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-gray-dark">
+    <div className="p-4 rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800">
       <h3 className="text-sm font-bold font-display mb-3">Agent Token</h3>
 
       {mode === 'none' && (
@@ -174,7 +174,7 @@ export function TokenLaunchSection({
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={busy}
-              className="px-3 py-2 rounded-lg bg-white dark:bg-black-light border border-gray-200 dark:border-gray-dark text-sm font-mono placeholder:text-gray-medium focus:outline-none focus:border-atelier/50 disabled:opacity-50"
+              className="px-3 py-2 rounded-lg bg-white dark:bg-black-light border border-gray-200 dark:border-neutral-800 text-sm font-mono placeholder:text-neutral-500 focus:outline-none focus:border-atelier/50 disabled:opacity-50"
             />
             <input
               type="text"
@@ -183,7 +183,7 @@ export function TokenLaunchSection({
               onChange={(e) => setSymbol(e.target.value.toUpperCase())}
               maxLength={10}
               disabled={busy}
-              className="px-3 py-2 rounded-lg bg-white dark:bg-black-light border border-gray-200 dark:border-gray-dark text-sm font-mono placeholder:text-gray-medium focus:outline-none focus:border-atelier/50 disabled:opacity-50"
+              className="px-3 py-2 rounded-lg bg-white dark:bg-black-light border border-gray-200 dark:border-neutral-800 text-sm font-mono placeholder:text-neutral-500 focus:outline-none focus:border-atelier/50 disabled:opacity-50"
             />
           </div>
           <textarea
@@ -192,13 +192,13 @@ export function TokenLaunchSection({
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
             disabled={busy}
-            className="w-full px-3 py-2 rounded-lg bg-white dark:bg-black-light border border-gray-200 dark:border-gray-dark text-sm font-mono placeholder:text-gray-medium focus:outline-none focus:border-atelier/50 resize-none disabled:opacity-50"
+            className="w-full px-3 py-2 rounded-lg bg-white dark:bg-black-light border border-gray-200 dark:border-neutral-800 text-sm font-mono placeholder:text-neutral-500 focus:outline-none focus:border-atelier/50 resize-none disabled:opacity-50"
           />
           <div className="flex gap-3">
             <button
               onClick={() => fileRef.current?.click()}
               disabled={busy}
-              className="px-3 py-2 rounded-lg bg-white dark:bg-black-light border border-gray-200 dark:border-gray-dark text-xs font-mono text-gray-600 dark:text-gray-lighter hover:border-atelier/50 transition-colors disabled:opacity-50"
+              className="px-3 py-2 rounded-lg bg-white dark:bg-black-light border border-gray-200 dark:border-neutral-800 text-xs font-mono text-gray-600 dark:text-neutral-300 hover:border-atelier/50 transition-colors disabled:opacity-50"
             >
               {imageFile ? imageFile.name.slice(0, 20) : 'Upload Image'}
             </button>
@@ -217,7 +217,7 @@ export function TokenLaunchSection({
               min="0"
               step="0.01"
               disabled={busy}
-              className="w-32 px-3 py-2 rounded-lg bg-white dark:bg-black-light border border-gray-200 dark:border-gray-dark text-sm font-mono placeholder:text-gray-medium focus:outline-none focus:border-atelier/50 disabled:opacity-50"
+              className="w-32 px-3 py-2 rounded-lg bg-white dark:bg-black-light border border-gray-200 dark:border-neutral-800 text-sm font-mono placeholder:text-neutral-500 focus:outline-none focus:border-atelier/50 disabled:opacity-50"
             />
           </div>
 
@@ -243,7 +243,7 @@ export function TokenLaunchSection({
             <button
               onClick={() => { setMode('none'); setError(null); setStep('idle'); }}
               disabled={busy}
-              className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-dark text-xs font-mono text-gray-600 dark:text-gray-lighter hover:border-gray-medium transition-colors disabled:opacity-50"
+              className="px-3 py-2 rounded-lg border border-gray-200 dark:border-neutral-800 text-xs font-mono text-gray-600 dark:text-neutral-300 hover:border-neutral-500 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
@@ -259,7 +259,7 @@ export function TokenLaunchSection({
             value={byotMint}
             onChange={(e) => setByotMint(e.target.value)}
             disabled={busy}
-            className="w-full px-3 py-2 rounded-lg bg-white dark:bg-black-light border border-gray-200 dark:border-gray-dark text-sm font-mono placeholder:text-gray-medium focus:outline-none focus:border-atelier/50 disabled:opacity-50"
+            className="w-full px-3 py-2 rounded-lg bg-white dark:bg-black-light border border-gray-200 dark:border-neutral-800 text-sm font-mono placeholder:text-neutral-500 focus:outline-none focus:border-atelier/50 disabled:opacity-50"
           />
           <div className="grid grid-cols-2 gap-3">
             <input
@@ -268,7 +268,7 @@ export function TokenLaunchSection({
               value={byotName}
               onChange={(e) => setByotName(e.target.value)}
               disabled={busy}
-              className="px-3 py-2 rounded-lg bg-white dark:bg-black-light border border-gray-200 dark:border-gray-dark text-sm font-mono placeholder:text-gray-medium focus:outline-none focus:border-atelier/50 disabled:opacity-50"
+              className="px-3 py-2 rounded-lg bg-white dark:bg-black-light border border-gray-200 dark:border-neutral-800 text-sm font-mono placeholder:text-neutral-500 focus:outline-none focus:border-atelier/50 disabled:opacity-50"
             />
             <input
               type="text"
@@ -277,7 +277,7 @@ export function TokenLaunchSection({
               onChange={(e) => setByotSymbol(e.target.value.toUpperCase())}
               maxLength={10}
               disabled={busy}
-              className="px-3 py-2 rounded-lg bg-white dark:bg-black-light border border-gray-200 dark:border-gray-dark text-sm font-mono placeholder:text-gray-medium focus:outline-none focus:border-atelier/50 disabled:opacity-50"
+              className="px-3 py-2 rounded-lg bg-white dark:bg-black-light border border-gray-200 dark:border-neutral-800 text-sm font-mono placeholder:text-neutral-500 focus:outline-none focus:border-atelier/50 disabled:opacity-50"
             />
           </div>
 
@@ -303,7 +303,7 @@ export function TokenLaunchSection({
             <button
               onClick={() => { setMode('none'); setError(null); setStep('idle'); }}
               disabled={busy}
-              className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-dark text-xs font-mono text-gray-600 dark:text-gray-lighter hover:border-gray-medium transition-colors disabled:opacity-50"
+              className="px-3 py-2 rounded-lg border border-gray-200 dark:border-neutral-800 text-xs font-mono text-gray-600 dark:text-neutral-300 hover:border-neutral-500 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>

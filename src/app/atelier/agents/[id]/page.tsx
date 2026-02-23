@@ -87,7 +87,7 @@ export default function AtelierAgentPage() {
     return (
       <AtelierAppLayout>
         <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-          <p className="text-gray-500 dark:text-gray-medium font-mono">{error || 'Agent not found'}</p>
+          <p className="text-gray-500 dark:text-neutral-500 font-mono">{error || 'Agent not found'}</p>
           <Link href="/atelier/browse" className="text-atelier font-mono text-sm hover:underline">
             Back to Browse
           </Link>
@@ -105,7 +105,7 @@ export default function AtelierAgentPage() {
         {/* Back link */}
         <Link
           href="/atelier/browse"
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-light hover:text-atelier font-mono mb-8 transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-neutral-400 hover:text-atelier font-mono mb-8 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -120,10 +120,10 @@ export default function AtelierAgentPage() {
               <img
                 src={agent.avatar_url}
                 alt={agent.name}
-                className="w-20 h-20 rounded-2xl object-cover"
+                className="w-20 h-20 rounded-xl object-cover"
               />
             ) : (
-              <div className="w-20 h-20 rounded-2xl bg-atelier/20 flex items-center justify-center text-atelier text-2xl font-bold font-mono">
+              <div className="w-20 h-20 rounded-xl bg-atelier/20 flex items-center justify-center text-atelier text-2xl font-bold font-mono">
                 {avatarLetter}
               </div>
             )}
@@ -158,7 +158,7 @@ export default function AtelierAgentPage() {
               </span>
             </div>
 
-            <p className="text-sm text-gray-500 dark:text-gray-light mb-4">
+            <p className="text-sm text-gray-500 dark:text-neutral-400 mb-4">
               {agent.bio || agent.description}
             </p>
 
@@ -172,9 +172,9 @@ export default function AtelierAgentPage() {
                   <span className="text-sm font-mono text-black dark:text-white">{stats.avg_rating.toFixed(1)}</span>
                 </div>
               )}
-              <span className="text-sm text-gray-500 dark:text-gray-medium font-mono">{stats.completed_orders} orders</span>
-              <span className="text-sm text-gray-500 dark:text-gray-medium font-mono">{stats.followers} followers</span>
-              <span className="text-sm text-gray-500 dark:text-gray-medium font-mono">{stats.services_count} services</span>
+              <span className="text-sm text-gray-500 dark:text-neutral-500 font-mono">{stats.completed_orders} orders</span>
+              <span className="text-sm text-gray-500 dark:text-neutral-500 font-mono">{stats.followers} followers</span>
+              <span className="text-sm text-gray-500 dark:text-neutral-500 font-mono">{stats.services_count} services</span>
             </div>
           </div>
         </div>
@@ -206,7 +206,7 @@ export default function AtelierAgentPage() {
             <h2 className="text-lg font-bold font-display text-black dark:text-white mb-4">Portfolio</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {portfolio.map((post) => (
-                <div key={post.id} className="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-black-soft border border-gray-200 dark:border-gray-dark">
+                <div key={post.id} className="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-black-soft border border-gray-200 dark:border-neutral-800">
                   {post.video_url ? (
                     <video
                       src={post.video_url}
@@ -236,14 +236,14 @@ export default function AtelierAgentPage() {
             <h2 className="text-lg font-bold font-display text-black dark:text-white mb-4">Reviews</h2>
             <div className="space-y-4">
               {reviews.map((review) => (
-                <div key={review.id} className="p-4 rounded-xl bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-gray-dark">
+                <div key={review.id} className="p-4 rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-sm font-semibold text-black dark:text-white">{review.reviewer_name}</span>
                     <div className="flex items-center gap-0.5">
                       {Array.from({ length: 5 }).map((_, i) => (
                         <svg
                           key={i}
-                          className={`w-3.5 h-3.5 ${i < review.rating ? 'text-atelier' : 'text-gray-200 dark:text-gray-dark'}`}
+                          className={`w-3.5 h-3.5 ${i < review.rating ? 'text-atelier' : 'text-gray-200 dark:text-neutral-800'}`}
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
@@ -253,7 +253,7 @@ export default function AtelierAgentPage() {
                     </div>
                   </div>
                   {review.comment && (
-                    <p className="text-sm text-gray-500 dark:text-gray-light">{review.comment}</p>
+                    <p className="text-sm text-gray-500 dark:text-neutral-400">{review.comment}</p>
                   )}
                 </div>
               ))}
@@ -264,9 +264,9 @@ export default function AtelierAgentPage() {
         {/* Empty state for external agents */}
         {agent.source === 'external' && services.length === 0 && portfolio.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-medium font-mono text-sm mb-2">This is an external agent</p>
+            <p className="text-gray-500 dark:text-neutral-500 font-mono text-sm mb-2">This is an external agent</p>
             {agent.endpoint_url && (
-              <p className="text-xs text-gray-400 dark:text-gray-light">
+              <p className="text-xs text-gray-400 dark:text-neutral-400">
                 Endpoint: <code className="text-atelier">{agent.endpoint_url}</code>
               </p>
             )}

@@ -13,10 +13,10 @@ export function AtelierNav() {
   const pathname = usePathname();
 
   const isActive = (path: string) =>
-    pathname === path ? 'text-atelier' : 'text-gray-500 dark:text-gray-light hover:text-atelier';
+    pathname === path ? 'text-atelier' : 'text-gray-500 dark:text-neutral-400 hover:text-atelier';
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-gray-200 dark:border-gray-dark/50 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-gray-200 dark:border-neutral-800/50 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
         <Link href="/atelier" className="flex items-center gap-2.5">
           <span className="text-base font-bold font-display text-black dark:text-white">
@@ -33,7 +33,7 @@ export function AtelierNav() {
           </Link>
           <Link
             href="/atelier#how-it-works"
-            className="text-sm text-gray-500 dark:text-gray-light hover:text-atelier transition-colors font-mono"
+            className="text-sm text-gray-500 dark:text-neutral-400 hover:text-atelier transition-colors font-mono"
           >
             How It Works
           </Link>

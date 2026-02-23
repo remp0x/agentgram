@@ -26,7 +26,7 @@ export function AtelierMobileNav() {
   return (
     <>
       {/* Top header with logo */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-gray-200 dark:border-gray-dark">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-gray-200 dark:border-neutral-800">
         <div className="flex items-center justify-center h-11">
           <Link href="/atelier" className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-md bg-gradient-atelier flex items-center justify-center">
@@ -40,13 +40,13 @@ export function AtelierMobileNav() {
       </header>
 
       {/* Bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-dark">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-t border-gray-200 dark:border-neutral-800">
         <div className="flex items-center justify-around h-14 px-2">
           {/* Browse */}
           <Link
             href="/atelier/browse"
             className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${
-              isActive('/atelier/browse') ? 'text-atelier' : 'text-gray-500 dark:text-gray-light'
+              isActive('/atelier/browse') ? 'text-atelier' : 'text-gray-500 dark:text-neutral-400'
             }`}
           >
             <svg className={ICON_CLASS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -59,7 +59,7 @@ export function AtelierMobileNav() {
           <Link
             href="/atelier/services"
             className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${
-              isActive('/atelier/services') ? 'text-atelier' : 'text-gray-500 dark:text-gray-light'
+              isActive('/atelier/services') ? 'text-atelier' : 'text-gray-500 dark:text-neutral-400'
             }`}
           >
             <svg className={ICON_CLASS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -72,7 +72,7 @@ export function AtelierMobileNav() {
           <button
             onClick={() => setMenuOpen(true)}
             className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${
-              menuOpen ? 'text-atelier' : 'text-gray-500 dark:text-gray-light'
+              menuOpen ? 'text-atelier' : 'text-gray-500 dark:text-neutral-400'
             }`}
           >
             <svg className={ICON_CLASS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -99,13 +99,13 @@ export function AtelierMobileNav() {
         <div className="md:hidden fixed inset-0 z-[60]" onClick={() => setMenuOpen(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="absolute bottom-16 left-3 right-3 bg-white dark:bg-black-soft border border-gray-200 dark:border-gray-dark rounded-2xl p-2 shadow-2xl"
+            className="absolute bottom-16 left-3 right-3 bg-white dark:bg-black-soft border border-gray-200 dark:border-neutral-800 rounded-xl p-2 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <Link
               href="/atelier/orders"
               onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-gray-700 dark:text-gray-light hover:bg-gray-100 dark:hover:bg-gray-darker"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-700 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-900"
             >
               <svg className={ICON_CLASS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
@@ -116,11 +116,11 @@ export function AtelierMobileNav() {
               </span>
             </Link>
 
-            <div className="mx-2 my-1 border-t border-gray-200 dark:border-gray-dark" />
+            <div className="mx-2 my-1 border-t border-gray-200 dark:border-neutral-800" />
 
             <button
               onClick={() => { setMenuOpen(false); toggleTheme(); }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-gray-700 dark:text-gray-light hover:bg-gray-100 dark:hover:bg-gray-darker"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-700 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-900"
             >
               {theme === 'dark' ? (
                 <svg className={ICON_CLASS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -139,7 +139,7 @@ export function AtelierMobileNav() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-gray-700 dark:text-gray-light hover:bg-gray-100 dark:hover:bg-gray-darker"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-700 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-900"
             >
               <svg className={ICON_CLASS} fill="currentColor" viewBox="0 0 24 24">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -147,7 +147,7 @@ export function AtelierMobileNav() {
               <span className="text-sm font-mono">Twitter / X</span>
             </a>
 
-            <div className="mx-2 my-1 border-t border-gray-200 dark:border-gray-dark" />
+            <div className="mx-2 my-1 border-t border-gray-200 dark:border-neutral-800" />
 
             <div className="px-4 py-3">
               <WalletMultiButton
@@ -156,7 +156,7 @@ export function AtelierMobileNav() {
                   color: 'white',
                   fontSize: '0.75rem',
                   fontWeight: 600,
-                  borderRadius: '0.75rem',
+                  borderRadius: '0.5rem',
                   height: '2.5rem',
                   width: '100%',
                   display: 'flex',

@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export function AtelierFooter() {
   return (
-    <footer className="border-t border-gray-200 dark:border-gray-dark/50 py-8">
+    <footer className="border-t border-gray-200 dark:border-neutral-800/50 py-8">
       <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
           <span className="text-sm font-display font-semibold text-black dark:text-white">
@@ -12,7 +12,7 @@ export function AtelierFooter() {
         <div className="flex items-center gap-6">
           <Link
             href="/"
-            className="text-xs font-mono text-gray-500 dark:text-gray-medium hover:text-atelier transition-colors"
+            className="text-xs font-mono text-gray-500 dark:text-neutral-500 hover:text-atelier transition-colors"
           >
             Powered by AgentGram
           </Link>

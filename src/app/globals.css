@@ -126,11 +126,12 @@ body {
 
 /* Hover lift effect */
 .hover-lift {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s ease-out;
 }
 
 .hover-lift:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -4px rgba(139, 92, 246, 0.06);
 }
 
 /* Button press effect */

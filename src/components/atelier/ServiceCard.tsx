@@ -70,11 +70,11 @@ export function ServiceCard({ service, agent, showAgent = false }: ServiceCardPr
   const cat = CATEGORY_CONFIG[service.category] || CATEGORY_CONFIG.custom;
 
   return (
-    <div className="p-5 rounded-xl bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-gray-dark hover:border-atelier/30 dark:hover:border-atelier/30 transition-all group">
+    <div className="p-5 rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800 hover:border-atelier/40 dark:hover:border-atelier/40 transition-all duration-200 group">
       {/* Header: category + rating */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-md bg-atelier/10 flex items-center justify-center text-atelier">
+          <div className="w-7 h-7 rounded bg-atelier/10 flex items-center justify-center text-atelier">
             {cat.icon}
           </div>
           <span className="text-xs font-mono text-atelier font-medium">
@@ -82,7 +82,7 @@ export function ServiceCard({ service, agent, showAgent = false }: ServiceCardPr
           </span>
         </div>
         {service.avg_rating != null && (
-          <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-medium font-mono">
+          <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-neutral-500 font-mono">
             <svg className="w-3.5 h-3.5 text-atelier" fill="currentColor" viewBox="0 0 20 20">
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
             </svg>
@@ -98,13 +98,13 @@ export function ServiceCard({ service, agent, showAgent = false }: ServiceCardPr
           className="flex items-center gap-2 mb-3 group/agent"
         >
           {agent.avatar_url ? (
-            <img src={agent.avatar_url} alt={agent.name} className="w-5 h-5 rounded-full object-cover" />
+            <img src={agent.avatar_url} alt={agent.name} className="w-5 h-5 rounded object-cover" />
           ) : (
-            <div className="w-5 h-5 rounded-full bg-atelier/20 flex items-center justify-center text-atelier text-2xs font-bold font-mono">
+            <div className="w-5 h-5 rounded bg-atelier/15 flex items-center justify-center text-atelier text-2xs font-bold font-mono">
               {agent.name.charAt(0).toUpperCase()}
             </div>
           )}
-          <span className="text-xs font-mono text-gray-500 dark:text-gray-medium group-hover/agent:text-atelier transition-colors">
+          <span className="text-xs font-mono text-gray-500 dark:text-neutral-500 group-hover/agent:text-atelier transition-colors duration-150">
             {agent.name}
           </span>
           {agent.is_atelier_official === 1 && (
@@ -122,22 +122,22 @@ export function ServiceCard({ service, agent, showAgent = false }: ServiceCardPr
 
       {/* Title + description */}
       <h3 className="font-semibold font-display text-black dark:text-white mb-1.5">{service.title}</h3>
-      <p className="text-sm text-gray-500 dark:text-gray-light mb-4 line-clamp-2">{service.description}</p>
+      <p className="text-sm text-gray-500 dark:text-neutral-400 mb-4 line-clamp-2">{service.description}</p>
 
       {/* Stats row */}
       <div className="flex items-center gap-3 mb-3">
         {service.completed_orders > 0 && (
-          <span className="text-xs text-gray-500 dark:text-gray-medium font-mono">
+          <span className="text-xs text-gray-500 dark:text-neutral-500 font-mono">
             {service.completed_orders} orders
           </span>
         )}
         {service.turnaround_hours > 0 && (
-          <span className="text-xs text-gray-500 dark:text-gray-medium font-mono">
+          <span className="text-xs text-gray-500 dark:text-neutral-500 font-mono">
             ~{service.turnaround_hours}h delivery
           </span>
         )}
         {service.provider_model && (
-          <span className="px-1.5 py-0.5 rounded text-2xs font-mono bg-gray-200 dark:bg-gray-dark/50 text-gray-500 dark:text-gray-lighter">
+          <span className="px-1.5 py-0.5 rounded text-2xs font-mono bg-gray-200 dark:bg-neutral-800/60 text-gray-500 dark:text-neutral-400">
             {service.provider_model}
           </span>
         )}
@@ -145,17 +145,17 @@ export function ServiceCard({ service, agent, showAgent = false }: ServiceCardPr
 
       {/* Deliverables */}
       {service.deliverables && (
-        <p className="text-xs text-gray-400 dark:text-gray-medium font-mono mb-4 line-clamp-1">
+        <p className="text-xs text-gray-400 dark:text-neutral-600 font-mono mb-4 line-clamp-1">
           Deliverables: {service.deliverables}
         </p>
       )}
 
       {/* Hire CTA */}
-      <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-dark/50">
+      <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-neutral-800/50">
         <span className="text-atelier font-mono font-semibold text-sm">
           {service.price_type === 'fixed' ? `$${service.price_usd}` : 'Get Quote'}
         </span>
-        <button className="px-4 py-1.5 rounded-lg bg-gradient-atelier text-white text-xs font-semibold font-mono opacity-0 group-hover:opacity-100 transition-opacity button-press">
+        <button className="px-4 py-1.5 rounded-md bg-gradient-atelier text-white text-xs font-semibold font-mono translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-200 button-press">
           Hire
         </button>
       </div>

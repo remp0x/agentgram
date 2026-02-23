@@ -120,7 +120,7 @@ function ServicesContent() {
         <h1 className="text-2xl font-bold text-black dark:text-white font-display">
           Browse Services
         </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-medium mt-1">
+        <p className="text-sm text-gray-500 dark:text-neutral-500 mt-1">
           Find the exact service you need across all agents
         </p>
       </div>
@@ -136,7 +136,7 @@ function ServicesContent() {
               className={`px-4 py-2 rounded-full text-sm font-mono transition-colors ${
                 isActive
                   ? 'border border-atelier text-atelier bg-atelier/10'
-                  : 'border border-gray-200 dark:border-gray-dark text-gray-600 dark:text-gray-lighter hover:border-atelier/50 hover:text-atelier'
+                  : 'border border-gray-200 dark:border-neutral-800 text-gray-600 dark:text-neutral-300 hover:border-atelier/50 hover:text-atelier'
               }`}
             >
               {CATEGORY_LABELS[cat]}
@@ -148,7 +148,7 @@ function ServicesContent() {
       {/* Price + Provider + Sort filters */}
       <div className="flex flex-wrap items-center gap-4 mb-8">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400 dark:text-gray-medium font-mono">Price:</span>
+          <span className="text-xs text-gray-400 dark:text-neutral-500 font-mono">Price:</span>
           {PRICE_OPTIONS.map((opt) => (
             <Link
               key={opt.value}
@@ -156,7 +156,7 @@ function ServicesContent() {
               className={`px-3 py-1 rounded text-xs font-mono transition-colors ${
                 activePrice === opt.value
                   ? 'text-atelier bg-atelier/10'
-                  : 'text-gray-600 dark:text-gray-lighter hover:text-atelier'
+                  : 'text-gray-600 dark:text-neutral-300 hover:text-atelier'
               }`}
             >
               {opt.label}
@@ -165,13 +165,13 @@ function ServicesContent() {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400 dark:text-gray-medium font-mono">Provider:</span>
+          <span className="text-xs text-gray-400 dark:text-neutral-500 font-mono">Provider:</span>
           <select
             value={activeProvider}
             onChange={(e) => {
               window.location.href = buildHref({ provider: e.target.value });
             }}
-            className="px-2 py-1 rounded text-xs font-mono bg-transparent border border-gray-200 dark:border-gray-dark text-gray-600 dark:text-gray-lighter focus:outline-none focus:border-atelier"
+            className="px-2 py-1 rounded text-xs font-mono bg-transparent border border-gray-200 dark:border-neutral-800 text-gray-600 dark:text-neutral-300 focus:outline-none focus:border-atelier"
           >
             {PROVIDER_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -180,7 +180,7 @@ function ServicesContent() {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400 dark:text-gray-medium font-mono">Sort:</span>
+          <span className="text-xs text-gray-400 dark:text-neutral-500 font-mono">Sort:</span>
           {SORT_OPTIONS.map((opt) => (
             <Link
               key={opt.value}
@@ -188,7 +188,7 @@ function ServicesContent() {
               className={`px-3 py-1 rounded text-xs font-mono transition-colors ${
                 activeSort === opt.value
                   ? 'text-atelier bg-atelier/10'
-                  : 'text-gray-600 dark:text-gray-lighter hover:text-atelier'
+                  : 'text-gray-600 dark:text-neutral-300 hover:text-atelier'
               }`}
             >
               {opt.label}
@@ -221,8 +221,8 @@ function ServicesContent() {
         </div>
       ) : (
         <div className="text-center py-20">
-          <p className="text-gray-500 dark:text-gray-medium font-mono text-sm">No services found</p>
-          <p className="text-gray-400 dark:text-gray-light text-xs mt-2">
+          <p className="text-gray-500 dark:text-neutral-500 font-mono text-sm">No services found</p>
+          <p className="text-gray-400 dark:text-neutral-400 text-xs mt-2">
             Try adjusting your filters
           </p>
         </div>
