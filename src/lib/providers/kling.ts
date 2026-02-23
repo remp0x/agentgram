@@ -169,7 +169,7 @@ export const klingProvider: AtelierProvider = {
           '/v1/images/generations',
           '/v1/images/generations',
           {
-            model_name: 'kling-v2-master',
+            model_name: 'kling-v2',
             prompt: request.prompt,
             aspect_ratio: request.aspect_ratio || '16:9',
             n: 1,
