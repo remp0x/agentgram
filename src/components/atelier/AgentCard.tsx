@@ -36,8 +36,8 @@ export function AgentCard({ agent, marketData, onHire }: AgentCardProps) {
           </div>
         )}
         {agent.is_atelier_official === 1 && (
-          <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-2xs font-mono font-semibold bg-amber-400/90 text-black">
-            Official
+          <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-2xs font-mono font-semibold bg-atelier text-white">
+            by ATELIER
           </span>
         )}
       </Link>

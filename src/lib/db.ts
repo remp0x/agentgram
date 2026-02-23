@@ -360,29 +360,32 @@ async function initDb() {
 }
 
 async function seedAtelierOfficialAgents(): Promise<void> {
+  const OLD_AGENT_IDS = [
+    'agent_atelier_grok', 'agent_atelier_kling', 'agent_atelier_runway',
+    'agent_atelier_luma', 'agent_atelier_higgsfield', 'agent_atelier_minimax',
+  ];
+  for (const id of OLD_AGENT_IDS) {
+    await client.execute({ sql: `DELETE FROM services WHERE agent_id = ?`, args: [id] });
+    await client.execute({ sql: `DELETE FROM agents WHERE id = ?`, args: [id] });
+  }
+
   const agents = [
-    { id: 'agent_atelier_grok', name: 'Atelier Grok', description: 'Image & video generation powered by xAI Grok', avatar_url: null },
-    { id: 'agent_atelier_kling', name: 'Atelier Kling', description: 'Videos, images & talking avatars powered by Kling AI', avatar_url: null },
-    { id: 'agent_atelier_runway', name: 'Atelier Runway', description: 'Fast video generation powered by Runway Gen-4', avatar_url: null },
-    { id: 'agent_atelier_luma', name: 'Atelier Luma', description: 'Dream Machine video generation by Luma AI', avatar_url: null },
-    { id: 'agent_atelier_higgsfield', name: 'Atelier Higgsfield', description: 'Cinematic videos & portraits powered by Higgsfield', avatar_url: null },
-    { id: 'agent_atelier_minimax', name: 'Atelier MiniMax', description: '1080p video generation powered by Hailuo AI', avatar_url: null },
     {
       id: 'agent_atelier_animestudio',
       name: 'AnimeStudio',
-      description: 'Unlimited anime-style illustrations and animations. Consistent character design, manga panels, and vibrant anime aesthetics for any concept.',
+      description: 'Unlimited anime-style illustrations and animations. Consistent character design, manga panels, and vibrant anime aesthetics for any concept you can imagine.',
       avatar_url: 'https://api.dicebear.com/9.x/glass/svg?seed=AnimeStudio&backgroundColor=8B5CF6',
     },
     {
       id: 'agent_atelier_ugcfactory',
       name: 'UGC Factory',
-      description: 'Scroll-stopping UGC content for brands. Product unboxings, lifestyle shots, testimonial-style visuals — all on-brand, all day.',
+      description: 'Scroll-stopping UGC content for brands. Product unboxings, lifestyle shots, testimonial-style visuals — authentic creator aesthetics, all on-brand, all day.',
       avatar_url: 'https://api.dicebear.com/9.x/glass/svg?seed=UGCFactory&backgroundColor=F59E0B',
     },
     {
       id: 'agent_atelier_lenscraft',
       name: 'LensCraft',
-      description: 'Studio-quality product photography. Clean backgrounds, lifestyle flatlays, hero shots — unlimited renders in a consistent visual style.',
+      description: 'Studio-quality product photography on demand. Clean backgrounds, lifestyle flatlays, hero shots, and detail close-ups — unlimited renders in a consistent premium style.',
       avatar_url: 'https://api.dicebear.com/9.x/glass/svg?seed=LensCraft&backgroundColor=06B6D4',
     },
   ];
@@ -406,27 +409,6 @@ async function seedAtelierOfficialAgents(): Promise<void> {
     turnaround_hours?: number;
     system_prompt?: string;
   }> = [
-    { id: 'svc_official_grok_image', agent_id: 'agent_atelier_grok', category: 'image_gen', title: 'Image Generation', description: 'Generate images with Grok-2', price_usd: '0.50', provider_key: 'grok', provider_model: 'grok-2-image' },
-    { id: 'svc_official_grok_video', agent_id: 'agent_atelier_grok', category: 'video_gen', title: 'Video Generation', description: 'Generate videos with Grok', price_usd: '2.00', provider_key: 'grok', provider_model: 'grok-imagine-video' },
-    { id: 'svc_official_kling_t2v_5s', agent_id: 'agent_atelier_kling', category: 'video_gen', title: 'Text-to-Video 5s', description: '5-second video from text prompt', price_usd: '1.00', provider_key: 'kling', provider_model: 't2v_5s' },
-    { id: 'svc_official_kling_t2v_10s', agent_id: 'agent_atelier_kling', category: 'video_gen', title: 'Text-to-Video 10s', description: '10-second video from text prompt', price_usd: '2.00', provider_key: 'kling', provider_model: 't2v_10s' },
-    { id: 'svc_official_kling_i2v', agent_id: 'agent_atelier_kling', category: 'video_gen', title: 'Image-to-Video', description: 'Animate an image into video', price_usd: '1.50', provider_key: 'kling', provider_model: 'i2v' },
-    { id: 'svc_official_kling_image', agent_id: 'agent_atelier_kling', category: 'image_gen', title: 'Image Generation', description: 'Generate images with Kling AI', price_usd: '0.30', provider_key: 'kling', provider_model: 'image' },
-    { id: 'svc_official_kling_avatar', agent_id: 'agent_atelier_kling', category: 'video_gen', title: 'Talking Avatar', description: 'Create talking avatar videos', price_usd: '2.00', provider_key: 'kling', provider_model: 'talking_avatar' },
-    { id: 'svc_official_runway_turbo', agent_id: 'agent_atelier_runway', category: 'video_gen', title: 'Quick Video (Turbo 5s)', description: 'Fast 5s video generation with Gen-4 Turbo', price_usd: '0.50', provider_key: 'runway', provider_model: 'turbo_5s' },
-    { id: 'svc_official_runway_pro', agent_id: 'agent_atelier_runway', category: 'video_gen', title: 'Pro Video (Gen-4 5s)', description: 'High-quality 5s video with Gen-4 Aleph', price_usd: '1.00', provider_key: 'runway', provider_model: 'pro_gen4_5s' },
-    { id: 'svc_official_runway_t2v', agent_id: 'agent_atelier_runway', category: 'video_gen', title: 'Text-to-Video (Gen-4.5)', description: 'Text-to-video with Gen-4.5', price_usd: '1.00', provider_key: 'runway', provider_model: 't2v_gen45' },
-    { id: 'svc_official_luma_dream', agent_id: 'agent_atelier_luma', category: 'video_gen', title: 'Dream Machine 5s', description: '5-second video with Dream Machine', price_usd: '2.50', provider_key: 'luma', provider_model: 'dream_5s' },
-    { id: 'svc_official_luma_i2v', agent_id: 'agent_atelier_luma', category: 'video_gen', title: 'Image-to-Video', description: 'Animate images with Luma', price_usd: '2.50', provider_key: 'luma', provider_model: 'i2v' },
-    { id: 'svc_official_luma_remix', agent_id: 'agent_atelier_luma', category: 'video_gen', title: 'Video Remix', description: 'Remix existing videos with new prompts', price_usd: '3.00', provider_key: 'luma', provider_model: 'remix' },
-    { id: 'svc_official_higgs_turbo', agent_id: 'agent_atelier_higgsfield', category: 'video_gen', title: 'DoP Turbo', description: 'Fast cinematic video generation', price_usd: '1.50', provider_key: 'higgsfield', provider_model: 'dop_turbo' },
-    { id: 'svc_official_higgs_quality', agent_id: 'agent_atelier_higgsfield', category: 'video_gen', title: 'DoP Quality', description: 'High-quality cinematic video generation', price_usd: '2.50', provider_key: 'higgsfield', provider_model: 'dop_quality' },
-    { id: 'svc_official_higgs_avatar', agent_id: 'agent_atelier_higgsfield', category: 'video_gen', title: 'Talking Avatar', description: 'Create talking avatar videos', price_usd: '2.00', provider_key: 'higgsfield', provider_model: 'talking_avatar' },
-    { id: 'svc_official_higgs_portrait', agent_id: 'agent_atelier_higgsfield', category: 'image_gen', title: 'Soul Portrait', description: 'AI portrait generation', price_usd: '0.50', provider_key: 'higgsfield', provider_model: 'soul_portrait' },
-    { id: 'svc_official_minimax_6s', agent_id: 'agent_atelier_minimax', category: 'video_gen', title: 'Hailuo Video 6s', description: 'Fast 6-second 1080p video', price_usd: '1.00', provider_key: 'minimax', provider_model: 'hailuo_6s' },
-    { id: 'svc_official_minimax_pro', agent_id: 'agent_atelier_minimax', category: 'video_gen', title: 'Hailuo Pro Video', description: 'High-quality 1080p video generation', price_usd: '2.00', provider_key: 'minimax', provider_model: 'hailuo_pro' },
-
-    // AnimeStudio — unlimited anime content for 1 day
     {
       id: 'svc_animestudio_day',
       agent_id: 'agent_atelier_animestudio',

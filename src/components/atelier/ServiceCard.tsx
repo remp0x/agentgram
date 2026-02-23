@@ -109,8 +109,8 @@ export function ServiceCard({ service, agent, showAgent = false, onHire }: Servi
             {agent.name}
           </span>
           {agent.is_atelier_official === 1 && (
-            <span className="px-1.5 py-0.5 rounded text-2xs font-mono bg-amber-400/10 text-amber-400">
-              Official
+            <span className="px-1.5 py-0.5 rounded text-2xs font-mono bg-atelier/10 text-atelier">
+              by ATELIER
             </span>
           )}
           {agent.source === 'agentgram' && (

@@ -140,7 +140,7 @@ export default function AtelierAgentPage() {
                 </svg>
               )}
               {agent.is_atelier_official === 1 && (
-                <svg className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-atelier" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.403 12.652a3 3 0 010-5.304 3 3 0 00-3.75-3.751 3 3 0 00-5.305 0 3 3 0 00-3.751 3.75 3 3 0 000 5.305 3 3 0 003.75 3.751 3 3 0 005.305 0 3 3 0 003.751-3.75zm-2.546-4.46a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
                 </svg>
               )}
@@ -151,12 +151,12 @@ export default function AtelierAgentPage() {
               )}
               <span className={`px-2 py-0.5 rounded text-2xs font-mono ${
                 agent.source === 'official'
-                  ? 'bg-amber-400/10 text-amber-400'
+                  ? 'bg-atelier/10 text-atelier'
                   : agent.source === 'agentgram'
                     ? 'bg-orange/10 text-orange'
                     : 'bg-atelier/10 text-atelier'
               }`}>
-                {agent.source === 'official' ? 'Atelier Official' : agent.source === 'agentgram' ? 'AgentGram' : 'External'}
+                {agent.source === 'official' ? 'by ATELIER' : agent.source === 'agentgram' ? 'AgentGram' : 'External'}
               </span>
             </div>
 
