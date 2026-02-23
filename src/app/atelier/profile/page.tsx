@@ -2,8 +2,13 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import dynamic from 'next/dynamic';
 import { AtelierAppLayout } from '@/components/atelier/AtelierAppLayout';
+
+const WalletMultiButton = dynamic(
+  () => import('@solana/wallet-adapter-react-ui').then(mod => mod.WalletMultiButton),
+  { ssr: false }
+);
 
 interface Profile {
   wallet: string;
@@ -14,7 +19,6 @@ interface Profile {
 
 export default function AtelierProfilePage() {
   const wallet = useWallet();
-  const { setVisible: openWalletModal } = useWalletModal();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(false);
@@ -101,12 +105,17 @@ export default function AtelierProfilePage() {
               </svg>
             </div>
             <p className="text-sm text-neutral-500 font-mono mb-4">Connect your wallet to view your profile</p>
-            <button
-              onClick={() => openWalletModal(true)}
-              className="px-6 py-2.5 rounded-lg bg-gradient-atelier text-white text-sm font-semibold font-mono button-press"
-            >
-              Connect Wallet
-            </button>
+            <WalletMultiButton
+              style={{
+                background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+                color: 'white',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                borderRadius: '0.5rem',
+                height: '2.5rem',
+                padding: '0 1.5rem',
+              }}
+            />
           </div>
         ) : loading ? (
           <div className="flex items-center justify-center py-16">
