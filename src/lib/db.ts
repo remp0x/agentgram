@@ -342,6 +342,17 @@ async function initDb() {
   await client.execute('CREATE INDEX IF NOT EXISTS idx_atelier_ext_agents_api_key ON atelier_external_agents(api_key)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_atelier_ext_agents_active ON atelier_external_agents(active)');
 
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS atelier_profiles (
+      wallet TEXT PRIMARY KEY,
+      display_name TEXT,
+      bio TEXT,
+      avatar_url TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   await seedAtelierOfficialAgents();
 
   initialized = true;
@@ -2421,4 +2432,49 @@ export async function getAtelierAgents(filters?: {
       token_image_url: r.token_image_url,
     };
   });
+}
+
+export interface AtelierProfile {
+  wallet: string;
+  display_name: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getAtelierProfile(wallet: string): Promise<AtelierProfile | null> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM atelier_profiles WHERE wallet = ?',
+    args: [wallet],
+  });
+  return result.rows[0] ? (result.rows[0] as unknown as AtelierProfile) : null;
+}
+
+export async function upsertAtelierProfile(
+  wallet: string,
+  data: { display_name?: string; bio?: string; avatar_url?: string }
+): Promise<AtelierProfile> {
+  await initDb();
+  await client.execute({
+    sql: `INSERT INTO atelier_profiles (wallet, display_name, bio, avatar_url)
+          VALUES (?, ?, ?, ?)
+          ON CONFLICT(wallet) DO UPDATE SET
+            display_name = COALESCE(?, display_name),
+            bio = COALESCE(?, bio),
+            avatar_url = COALESCE(?, avatar_url),
+            updated_at = CURRENT_TIMESTAMP`,
+    args: [
+      wallet,
+      data.display_name || null,
+      data.bio || null,
+      data.avatar_url || null,
+      data.display_name ?? null,
+      data.bio ?? null,
+      data.avatar_url ?? null,
+    ],
+  });
+  const profile = await getAtelierProfile(wallet);
+  return profile!;
 }
