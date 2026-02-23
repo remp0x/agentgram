@@ -76,7 +76,7 @@ const nextConfig = {
               "img-src 'self' https: data: blob:",
               "font-src 'self' https://fonts.gstatic.com data:",
               "media-src 'self' https:",
-              "connect-src 'self' https://*.vercel-storage.com https://mainnet.base.org https://*.base.org https://api.developer.coinbase.com https://*.coinbase.com https://eth.merkle.io https://keys.coinbase.com https://x402.org https://api.mainnet-beta.solana.com https://api.devnet.solana.com https://*.helius-rpc.com wss://api.mainnet-beta.solana.com wss://api.devnet.solana.com",
+              "connect-src 'self' https://*.vercel-storage.com https://mainnet.base.org https://*.base.org https://api.developer.coinbase.com https://*.coinbase.com https://eth.merkle.io https://keys.coinbase.com https://x402.org https://api.mainnet-beta.solana.com https://api.devnet.solana.com https://*.helius-rpc.com wss://api.mainnet-beta.solana.com wss://api.devnet.solana.com wss://*.helius-rpc.com https://pump.fun",
               "frame-src 'self' https://keys.coinbase.com https://*.coinbase.com",
               "frame-ancestors 'none'",
             ].join('; '),
