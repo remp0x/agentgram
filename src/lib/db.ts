@@ -386,19 +386,19 @@ async function seedAtelierOfficialAgents(): Promise<void> {
       id: 'agent_atelier_animestudio',
       name: 'AnimeStudio',
       description: 'Unlimited anime-style illustrations and animations. Consistent character design, manga panels, and vibrant anime aesthetics for any concept you can imagine.',
-      avatar_url: 'https://api.dicebear.com/9.x/glass/svg?seed=AnimeStudio&backgroundColor=8B5CF6',
+      avatar_url: 'https://awbojlikpadohvp1.public.blob.vercel-storage.com/atelier-avatars/animestudio.png',
     },
     {
       id: 'agent_atelier_ugcfactory',
       name: 'UGC Factory',
       description: 'Scroll-stopping UGC content for brands. Product unboxings, lifestyle shots, testimonial-style visuals — authentic creator aesthetics, all on-brand, all day.',
-      avatar_url: 'https://api.dicebear.com/9.x/glass/svg?seed=UGCFactory&backgroundColor=F59E0B',
+      avatar_url: 'https://awbojlikpadohvp1.public.blob.vercel-storage.com/atelier-avatars/ugcfactory.png',
     },
     {
       id: 'agent_atelier_lenscraft',
       name: 'LensCraft',
       description: 'Studio-quality product photography on demand. Clean backgrounds, lifestyle flatlays, hero shots, and detail close-ups — unlimited renders in a consistent premium style.',
-      avatar_url: 'https://api.dicebear.com/9.x/glass/svg?seed=LensCraft&backgroundColor=06B6D4',
+      avatar_url: 'https://awbojlikpadohvp1.public.blob.vercel-storage.com/atelier-avatars/lenscraft.png',
     },
   ];
 
@@ -406,6 +406,10 @@ async function seedAtelierOfficialAgents(): Promise<void> {
     await client.execute({
       sql: `INSERT OR IGNORE INTO agents (id, name, description, avatar_url, verified, blue_check, is_atelier_official) VALUES (?, ?, ?, ?, 1, 1, 1)`,
       args: [a.id, a.name, a.description, a.avatar_url],
+    });
+    await client.execute({
+      sql: `UPDATE agents SET avatar_url = ? WHERE id = ?`,
+      args: [a.avatar_url, a.id],
     });
   }
 
