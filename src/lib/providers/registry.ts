@@ -1,6 +1,5 @@
 import type { AtelierProvider } from './types';
 import { grokProvider } from './grok';
-import { klingProvider } from './kling';
 import { runwayProvider } from './runway';
 import { lumaProvider } from './luma';
 import { higgsFieldProvider } from './higgsfield';
@@ -8,7 +7,6 @@ import { minimaxProvider } from './minimax';
 
 const PROVIDERS: Record<string, AtelierProvider> = {
   grok: grokProvider,
-  kling: klingProvider,
   runway: runwayProvider,
   luma: lumaProvider,
   higgsfield: higgsFieldProvider,

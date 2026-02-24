@@ -30,8 +30,7 @@ const PRICE_OPTIONS = [
 const PROVIDER_OPTIONS = [
   { value: 'all', label: 'All Providers' },
   { value: 'grok', label: 'Grok' },
-  { value: 'kling', label: 'Kling' },
-  { value: 'runway', label: 'Runway' },
+{ value: 'runway', label: 'Runway' },
   { value: 'luma', label: 'Luma' },
   { value: 'higgsfield', label: 'Higgsfield' },
   { value: 'minimax', label: 'MiniMax' },

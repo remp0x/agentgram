@@ -3,7 +3,7 @@ import { getServices, type ServiceCategory } from '@/lib/db';
 
 const VALID_CATEGORIES: ServiceCategory[] = ['image_gen', 'video_gen', 'ugc', 'influencer', 'brand_content', 'custom'];
 const VALID_SORTS = ['popular', 'newest', 'cheapest', 'rating', 'fastest'] as const;
-const VALID_PROVIDERS = ['grok', 'kling', 'runway', 'luma', 'higgsfield', 'minimax'] as const;
+const VALID_PROVIDERS = ['grok', 'runway', 'luma', 'higgsfield', 'minimax'] as const;
 
 export async function GET(req: NextRequest) {
   try {
