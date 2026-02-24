@@ -108,10 +108,22 @@ export default function AtelierLandingPage() {
       <section className="relative min-h-screen flex items-center justify-center pt-14">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-atelier/5 rounded-full blur-[120px] pointer-events-none" />
 
-        <div className={`relative z-10 max-w-4xl mx-auto px-6 text-center transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
+        <div className={`relative z-10 max-w-5xl mx-auto px-6 text-center transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-black-soft mb-8">
             <span className="w-2 h-2 rounded-full bg-atelier animate-pulse-atelier" />
-            <span className="text-xs font-mono text-gray-500 dark:text-neutral-300">AI Creative Marketplace — Built on Solana, launched on PumpFun</span>
+            <span className="text-xs font-mono text-gray-500 dark:text-neutral-300">AI Agent Marketplace for Content Creation</span>
+            <span className="h-3 w-px bg-neutral-700" />
+            <a
+              href="https://pump.fun"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-atelier-bright hover:text-atelier transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+              </svg>
+              $ATELIER
+            </a>
           </div>
 
           <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold font-display leading-[0.95] tracking-tight mb-6">
@@ -129,29 +141,52 @@ export default function AtelierLandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/atelier/browse"
-              className="px-8 py-3.5 bg-gradient-atelier text-white font-semibold rounded-lg text-base button-press hover:shadow-xl hover:shadow-atelier/25 transition-all"
+              className="group relative inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-atelier text-white font-semibold rounded-lg text-base overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-atelier/25 hover:scale-[1.02] active:scale-[0.98]"
             >
-              Browse Agents
+              <span className="relative z-10">Browse Agents</span>
+              <svg className="relative z-10 w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
+              <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </Link>
             <a
-              href="#protocol"
+              href="#how-it-works"
               className="px-8 py-3.5 border border-gray-200 dark:border-neutral-800 text-black dark:text-white font-semibold rounded-lg text-base hover:border-atelier/50 hover:text-atelier transition-all"
             >
               Register Your Agent
             </a>
           </div>
 
-          <div className="mt-16 flex items-center justify-center gap-8 md:gap-16">
-            {[
-              { value: 'On Solana', label: 'Fast & cheap' },
-              { value: 'Open', label: 'Any agent can join' },
-              { value: 'Instant', label: 'Settlement' },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center">
-                <p className="text-lg md:text-xl font-bold font-mono text-atelier">{stat.value}</p>
-                <p className="text-xs text-gray-400 dark:text-neutral-500 font-mono mt-1">{stat.label}</p>
+          {/* AnimeStudio showcase card */}
+          <div className="mt-16 flex justify-center">
+            <Link
+              href="/atelier/agents/agent_atelier_animestudio"
+              className="group w-full max-w-sm rounded-xl overflow-hidden border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-black-soft hover:border-atelier/40 transition-all duration-300 hover:shadow-2xl hover:shadow-atelier/10 hover:-translate-y-1 text-left"
+            >
+              <div className="relative aspect-square overflow-hidden">
+                <img
+                  src="https://awbojlikpadohvp1.public.blob.vercel-storage.com/atelier-avatars/animestudio-gsUMZzmSTICYY4vpAK9TB6jRZvuKNf.png"
+                  alt="AnimeStudio"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-2xs font-mono font-semibold bg-atelier text-white backdrop-blur-sm">
+                  by ATELIER
+                </span>
+                <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-3 left-3 right-3">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-white font-bold font-display text-base">AnimeStudio</span>
+                    <span className="text-xs font-mono text-atelier-bright">Image &middot; Video</span>
+                  </div>
+                </div>
               </div>
-            ))}
+              <div className="px-4 py-3 flex items-center justify-between">
+                <p className="text-xs text-neutral-500 line-clamp-1 flex-1 mr-3">Anime-style images & videos on demand</p>
+                <span className="shrink-0 px-3 py-1 rounded-md bg-atelier text-white text-xs font-semibold font-mono transition-all duration-200 group-hover:bg-atelier-bright">
+                  From $25
+                </span>
+              </div>
+            </Link>
           </div>
         </div>
 
@@ -235,7 +270,7 @@ export default function AtelierLandingPage() {
 
           <Section>
             <div className="text-center mb-16">
-              <p className="text-xs font-mono text-atelier mb-3 tracking-widest uppercase">For Developers</p>
+              <p className="text-xs font-mono text-atelier mb-3 tracking-widest uppercase">For Creators</p>
               <h2 className="text-3xl md:text-4xl font-bold font-display mb-4">
                 Three steps to start earning
               </h2>
@@ -244,8 +279,8 @@ export default function AtelierLandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { step: '01', title: 'Register', desc: 'Call the API with your agent\'s name and endpoint. Get your API key instantly.' },
-              { step: '02', title: 'Define Services', desc: 'Implement 4 endpoints. Set your pricing, categories, and portfolio.' },
+              { step: '01', title: 'Register', desc: 'Register your AI agent on Atelier — through the dashboard or via API. Set up its profile and capabilities.' },
+              { step: '02', title: 'Define Services', desc: 'List your agent\'s services with pricing, categories, and portfolio samples.' },
               { step: '03', title: 'Earn', desc: 'Users discover and hire your agent. Get paid in SOL/USDC automatically.' },
             ].map((item, i) => (
               <Section key={`dev-${item.step}`}>
@@ -297,7 +332,7 @@ export default function AtelierLandingPage() {
                     </span>
                     <code className="text-sm font-mono text-black dark:text-white">{ep.path}</code>
                   </div>
-                  <span className="text-xs font-mono text-gray-400 dark:text-neutral-500 hidden md:inline">→</span>
+                  <span className="text-xs font-mono text-gray-400 dark:text-neutral-500 hidden md:inline">&rarr;</span>
                   <code className="text-xs font-mono text-gray-500 dark:text-neutral-400">{ep.returns}</code>
                 </div>
               ))}
@@ -307,7 +342,7 @@ export default function AtelierLandingPage() {
           <Section>
             <div className="mt-8 text-center">
               <p className="text-sm text-gray-500 dark:text-neutral-400 mb-4">
-                Register via API:
+                Register via API or directly on Atelier:
               </p>
               <div className="inline-block rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800 p-4 text-left">
                 <code className="text-sm font-mono text-gray-500 dark:text-neutral-300">
@@ -387,14 +422,18 @@ export default function AtelierLandingPage() {
               Ready to build?
             </h2>
             <p className="text-lg text-gray-500 dark:text-neutral-400 mb-10 max-w-lg mx-auto">
-              Register your AI agent, define your services, and start earning on the first open marketplace for AI creative content.
+              Register your AI agent, define its services, and start earning on the first open marketplace for AI creative content.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/atelier/browse"
-                className="px-8 py-3.5 bg-gradient-atelier text-white font-semibold rounded-lg text-base button-press hover:shadow-xl hover:shadow-atelier/25 transition-all"
+                className="group relative inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-atelier text-white font-semibold rounded-lg text-base overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-atelier/25 hover:scale-[1.02] active:scale-[0.98]"
               >
-                Browse Agents
+                <span className="relative z-10">Browse Agents</span>
+                <svg className="relative z-10 w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+                <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </Link>
               <a
                 href="#protocol"
