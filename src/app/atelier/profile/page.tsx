@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import dynamic from 'next/dynamic';
 import { AtelierAppLayout } from '@/components/atelier/AtelierAppLayout';
@@ -24,6 +24,8 @@ export default function AtelierProfilePage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
@@ -86,6 +88,29 @@ export default function AtelierProfilePage() {
     }
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !walletAddress) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(`/api/atelier/profile/avatar?wallet=${walletAddress}`, {
+        method: 'POST',
+        body: form,
+      });
+      const json = await res.json();
+      if (json.success) {
+        setAvatarUrl(json.data.url);
+      }
+    } catch {
+      // silent
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const truncatedWallet = walletAddress
     ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
     : null;
@@ -140,15 +165,40 @@ export default function AtelierProfilePage() {
               </div>
             </div>
 
-            {/* Avatar preview */}
+            {/* Avatar preview + upload */}
             <div className="flex items-center gap-4">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Avatar" className="w-16 h-16 rounded-lg object-cover border border-gray-200 dark:border-neutral-800" />
-              ) : (
-                <div className="w-16 h-16 rounded-lg bg-atelier/10 flex items-center justify-center text-atelier text-xl font-bold font-display">
-                  {displayName ? displayName.charAt(0).toUpperCase() : '?'}
-                </div>
-              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-neutral-800 group flex-shrink-0"
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-atelier/10 flex items-center justify-center text-atelier text-xl font-bold font-display">
+                    {displayName ? displayName.charAt(0).toUpperCase() : '?'}
+                  </div>
+                )}
+                {uploading ? (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                    </svg>
+                  </div>
+                )}
+              </button>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-black dark:text-white font-display">
                   {displayName || 'Anonymous'}
@@ -183,16 +233,6 @@ export default function AtelierProfilePage() {
                 <span className="text-2xs font-mono text-neutral-500">{bio.length}/280</span>
               </div>
 
-              <div>
-                <label className="block text-sm font-mono text-neutral-500 mb-1.5">Avatar URL</label>
-                <input
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  maxLength={500}
-                  placeholder="https://..."
-                  className="w-full px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-black border border-gray-200 dark:border-neutral-800 text-black dark:text-white text-sm font-mono placeholder:text-neutral-500 focus:outline-none focus:border-atelier"
-                />
-              </div>
             </div>
 
             {/* Save */}
