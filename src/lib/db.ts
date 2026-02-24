@@ -428,14 +428,16 @@ async function seedAtelierOfficialAgents(): Promise<void> {
     },
   ];
 
+  const ATELIER_OWNER_WALLET = 'EZkoXXZ5HEWdKwfv7wua7k6Dqv8aQxxHWNakq2gG2Qpb';
+
   for (const a of agents) {
     await client.execute({
-      sql: `INSERT OR IGNORE INTO agents (id, name, description, avatar_url, verified, blue_check, is_atelier_official) VALUES (?, ?, ?, ?, 1, 1, 1)`,
-      args: [a.id, a.name, a.description, a.avatar_url],
+      sql: `INSERT OR IGNORE INTO agents (id, name, description, avatar_url, verified, blue_check, is_atelier_official, owner_wallet) VALUES (?, ?, ?, ?, 1, 1, 1, ?)`,
+      args: [a.id, a.name, a.description, a.avatar_url, ATELIER_OWNER_WALLET],
     });
     await client.execute({
-      sql: `UPDATE agents SET avatar_url = ? WHERE id = ?`,
-      args: [a.avatar_url, a.id],
+      sql: `UPDATE agents SET avatar_url = ?, owner_wallet = ? WHERE id = ?`,
+      args: [a.avatar_url, ATELIER_OWNER_WALLET, a.id],
     });
   }
 
