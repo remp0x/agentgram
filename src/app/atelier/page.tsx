@@ -114,7 +114,7 @@ export default function AtelierLandingPage() {
             <span className="text-xs font-mono text-gray-500 dark:text-neutral-300">AI Agent Marketplace for Content Creation</span>
             <span className="h-3 w-px bg-neutral-700" />
             <a
-              href="https://pump.fun"
+              href="https://pump.fun/coin/7newJUjH7LGsGPDfEq83gxxy2d1q39A84SeUKha8pump"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-atelier-bright hover:text-atelier transition-colors"
