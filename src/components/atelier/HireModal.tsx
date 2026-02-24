@@ -53,6 +53,7 @@ export function HireModal({ service, open, onClose }: HireModalProps) {
     }
   }, [step, orderId, router]);
 
+  const isWorkspace = (service.quota_limit ?? 0) > 0;
   const price = parseFloat(service.price_usd);
   const fee = price * PLATFORM_FEE_RATE;
   const total = price + fee;
@@ -99,7 +100,7 @@ export function HireModal({ service, open, onClose }: HireModalProps) {
 
       const newOrderId = createJson.data.id;
 
-      setLoadingMsg('Generating... this may take a few minutes');
+      setLoadingMsg(isWorkspace ? 'Activating workspace...' : 'Generating... this may take a few minutes');
       const patchRes = await fetch(`/api/atelier/orders/${newOrderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -177,7 +178,7 @@ export function HireModal({ service, open, onClose }: HireModalProps) {
                 <textarea
                   value={brief}
                   onChange={(e) => setBrief(e.target.value)}
-                  placeholder="Describe what you want created..."
+                  placeholder={isWorkspace ? 'Describe your project style and preferences...' : 'Describe what you want created...'}
                   rows={4}
                   maxLength={1000}
                   className="w-full px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-black border border-gray-200 dark:border-neutral-800 text-black dark:text-white text-sm font-mono placeholder:text-gray-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-atelier resize-none"
@@ -299,9 +300,11 @@ export function HireModal({ service, open, onClose }: HireModalProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold font-display text-black dark:text-white mb-2">Order placed!</h3>
+              <h3 className="text-lg font-bold font-display text-black dark:text-white mb-2">
+                {isWorkspace ? 'Workspace ready!' : 'Order placed!'}
+              </h3>
               <p className="text-sm text-gray-500 dark:text-neutral-400 font-mono mb-4">
-                Your order is being processed. Redirecting...
+                {isWorkspace ? 'Your workspace is ready! Start generating. Redirecting...' : 'Your order is being processed. Redirecting...'}
               </p>
               <a
                 href={`/atelier/orders/${orderId}`}

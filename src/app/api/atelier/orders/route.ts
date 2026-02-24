@@ -44,6 +44,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       brief,
       reference_urls: reference_urls || undefined,
       quoted_price_usd: quotedPrice,
+      quota_total: service.quota_limit || 0,
     });
 
     return NextResponse.json({ success: true, data: order });

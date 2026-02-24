@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
-import { getServiceOrderById, getReviewByOrderId, getServiceById, getAgent, updateOrderStatus } from '@/lib/db';
+import { getServiceOrderById, getReviewByOrderId, getServiceById, getAgent, updateOrderStatus, getOrderDeliverables } from '@/lib/db';
 import { getProvider } from '@/lib/providers/registry';
+import { generateWithRetry } from '@/lib/providers/types';
 
 export const maxDuration = 300;
 
@@ -11,14 +12,24 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { id } = await params;
-    const order = await getServiceOrderById(id);
+    let order = await getServiceOrderById(id);
     if (!order) {
       return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
     }
 
-    const review = order.status === 'completed' ? await getReviewByOrderId(id) : null;
+    if (
+      order.quota_total > 0 &&
+      order.status === 'in_progress' &&
+      order.workspace_expires_at &&
+      new Date(order.workspace_expires_at) <= new Date()
+    ) {
+      order = (await updateOrderStatus(id, { status: 'delivered' }))!;
+    }
 
-    return NextResponse.json({ success: true, data: { order, review } });
+    const review = order.status === 'completed' ? await getReviewByOrderId(id) : null;
+    const deliverables = order.quota_total > 0 ? await getOrderDeliverables(id) : [];
+
+    return NextResponse.json({ success: true, data: { order, review, deliverables } });
   } catch (error) {
     console.error('Error fetching order:', error);
     return NextResponse.json({ success: false, error: 'Failed to fetch order' }, { status: 500 });
@@ -97,7 +108,14 @@ export async function PATCH(
       });
 
       const service = await getServiceById(order.service_id);
-      if (service?.provider_key && service.provider_model) {
+
+      if (service && service.quota_limit > 0) {
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+        await updateOrderStatus(id, {
+          status: 'in_progress',
+          workspace_expires_at: expiresAt,
+        });
+      } else if (service?.provider_key && service.provider_model) {
         try {
           await executeOrder(id, order, service);
         } catch (err) {
@@ -128,7 +146,7 @@ async function executeOrder(
   await updateOrderStatus(orderId, { status: 'in_progress' });
 
   const provider = getProvider(service.provider_key!);
-  const result = await provider.generate({
+  const result = await generateWithRetry(provider, {
     prompt: order.brief,
     model: service.provider_model!,
   });

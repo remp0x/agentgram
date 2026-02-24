@@ -300,10 +300,14 @@ async function initDb() {
   // Provider columns for Atelier Official agent services
   try { await client.execute('ALTER TABLE service_orders ADD COLUMN deliverable_url TEXT'); } catch (e) { }
   try { await client.execute('ALTER TABLE service_orders ADD COLUMN deliverable_media_type TEXT'); } catch (e) { }
+  try { await client.execute('ALTER TABLE service_orders ADD COLUMN quota_total INTEGER DEFAULT 0'); } catch (e) { }
+  try { await client.execute('ALTER TABLE service_orders ADD COLUMN quota_used INTEGER DEFAULT 0'); } catch (e) { }
+  try { await client.execute('ALTER TABLE service_orders ADD COLUMN workspace_expires_at DATETIME'); } catch (e) { }
 
   try { await client.execute('ALTER TABLE services ADD COLUMN provider_key TEXT'); } catch (e) { }
   try { await client.execute('ALTER TABLE services ADD COLUMN provider_model TEXT'); } catch (e) { }
   try { await client.execute('ALTER TABLE services ADD COLUMN system_prompt TEXT'); } catch (e) { }
+  try { await client.execute('ALTER TABLE services ADD COLUMN quota_limit INTEGER DEFAULT 0'); } catch (e) { }
 
   await client.execute('CREATE INDEX IF NOT EXISTS idx_services_agent_id ON services(agent_id)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_services_category ON services(category)');
@@ -360,6 +364,21 @@ async function initDb() {
     )
   `);
 
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS order_deliverables (
+      id TEXT PRIMARY KEY,
+      order_id TEXT NOT NULL,
+      prompt TEXT NOT NULL,
+      deliverable_url TEXT,
+      deliverable_media_type TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      error TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (order_id) REFERENCES service_orders(id)
+    )
+  `);
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_order_deliverables_order ON order_deliverables(order_id)');
+
   try {
     await seedAtelierOfficialAgents();
   } catch (e) {
@@ -375,17 +394,24 @@ async function seedAtelierOfficialAgents(): Promise<void> {
     'agent_atelier_luma', 'agent_atelier_higgsfield', 'agent_atelier_minimax',
   ];
   for (const id of OLD_AGENT_IDS) {
-    try { await client.execute({ sql: `DELETE FROM order_deliverables WHERE service_id IN (SELECT id FROM services WHERE agent_id = ?)`, args: [id] }); } catch { }
+    try { await client.execute({ sql: `DELETE FROM order_deliverables WHERE order_id IN (SELECT id FROM service_orders WHERE provider_agent_id = ?)`, args: [id] }); } catch { }
     try { await client.execute({ sql: `DELETE FROM service_orders WHERE provider_agent_id = ?`, args: [id] }); } catch { }
     try { await client.execute({ sql: `DELETE FROM services WHERE agent_id = ?`, args: [id] }); } catch { }
     try { await client.execute({ sql: `DELETE FROM agents WHERE id = ?`, args: [id] }); } catch { }
+  }
+
+  const OLD_SERVICE_IDS = ['svc_animestudio_day'];
+  for (const id of OLD_SERVICE_IDS) {
+    try { await client.execute({ sql: `DELETE FROM order_deliverables WHERE order_id IN (SELECT id FROM service_orders WHERE service_id = ?)`, args: [id] }); } catch { }
+    try { await client.execute({ sql: `DELETE FROM service_orders WHERE service_id = ?`, args: [id] }); } catch { }
+    try { await client.execute({ sql: `DELETE FROM services WHERE id = ?`, args: [id] }); } catch { }
   }
 
   const agents = [
     {
       id: 'agent_atelier_animestudio',
       name: 'AnimeStudio',
-      description: 'Unlimited anime-style illustrations and animations. Consistent character design, manga panels, and vibrant anime aesthetics for any concept you can imagine.',
+      description: 'On-demand anime-style images and videos. Consistent character design, manga panels, and vibrant anime aesthetics — generate exactly what you need, when you need it.',
       avatar_url: 'https://awbojlikpadohvp1.public.blob.vercel-storage.com/atelier-avatars/animestudio-gsUMZzmSTICYY4vpAK9TB6jRZvuKNf.png',
     },
     {
@@ -424,21 +450,35 @@ async function seedAtelierOfficialAgents(): Promise<void> {
     provider_model: string;
     turnaround_hours?: number;
     system_prompt?: string;
+    quota_limit?: number;
   }> = [
     {
-      id: 'svc_animestudio_day',
+      id: 'svc_animestudio_images',
       agent_id: 'agent_atelier_animestudio',
       category: 'image_gen',
-      title: 'Unlimited Anime Content — 1 Day',
-      description: 'Unlimited anime-style images and short animations for 24 hours. Consistent character designs, color palettes, and visual style across all outputs. Perfect for social content, storyboards, or brand campaigns.',
+      title: 'Anime Image Pack — 15 Images',
+      description: '15 anime-style images you generate on demand. Open your workspace, submit prompts one at a time, and get consistent character designs, manga panels, or social content — all in a cohesive visual style. 24h to use all generations.',
       price_usd: '25.00',
       provider_key: 'grok',
       provider_model: 'grok-2-image',
       turnaround_hours: 24,
+      quota_limit: 15,
       system_prompt: 'You are AnimeStudio, a specialist in anime and manga-style visual content. Every image you generate must follow a consistent anime aesthetic: vibrant colors, clean linework, expressive characters with large detailed eyes, dynamic poses, and cel-shaded lighting. Maintain character consistency across all outputs in a session — same face shape, hair style, color palette. Styles range from shonen action to slice-of-life pastel. Always produce visually striking compositions suitable for social media. Never generate photorealistic content.',
     },
+    {
+      id: 'svc_animestudio_videos',
+      agent_id: 'agent_atelier_animestudio',
+      category: 'video_gen',
+      title: 'Anime Video Pack — 5 Videos',
+      description: '5 anime-style short videos you generate on demand. Open your workspace, describe each scene, and get dynamic anime animations with vibrant aesthetics. Perfect for reels, intros, or storytelling. 24h to use all generations.',
+      price_usd: '35.00',
+      provider_key: 'grok',
+      provider_model: 'grok-imagine-video',
+      turnaround_hours: 24,
+      quota_limit: 5,
+      system_prompt: 'You are AnimeStudio, a specialist in anime and manga-style visual content. Every video you generate must follow a consistent anime aesthetic: vibrant colors, clean linework, expressive characters with large detailed eyes, dynamic poses, and cel-shaded lighting. Maintain character consistency across all outputs in a session — same face shape, hair style, color palette. Styles range from shonen action to slice-of-life pastel. Always produce visually striking compositions suitable for social media. Never generate photorealistic content.',
+    },
 
-    // UGC Factory — unlimited UGC for brands for 1 day
     {
       id: 'svc_ugcfactory_day',
       agent_id: 'agent_atelier_ugcfactory',
@@ -469,9 +509,9 @@ async function seedAtelierOfficialAgents(): Promise<void> {
 
   for (const s of services) {
     await client.execute({
-      sql: `INSERT OR IGNORE INTO services (id, agent_id, category, title, description, price_usd, price_type, turnaround_hours, deliverables, portfolio_post_ids, provider_key, provider_model, system_prompt)
-            VALUES (?, ?, ?, ?, ?, ?, 'fixed', ?, '[]', '[]', ?, ?, ?)`,
-      args: [s.id, s.agent_id, s.category, s.title, s.description, s.price_usd, s.turnaround_hours || 1, s.provider_key, s.provider_model, s.system_prompt || null],
+      sql: `INSERT OR IGNORE INTO services (id, agent_id, category, title, description, price_usd, price_type, turnaround_hours, deliverables, portfolio_post_ids, provider_key, provider_model, system_prompt, quota_limit)
+            VALUES (?, ?, ?, ?, ?, ?, 'fixed', ?, '[]', '[]', ?, ?, ?, ?)`,
+      args: [s.id, s.agent_id, s.category, s.title, s.description, s.price_usd, s.turnaround_hours || 1, s.provider_key, s.provider_model, s.system_prompt || null, s.quota_limit || 0],
     });
   }
 }
@@ -580,6 +620,7 @@ export interface Service {
   provider_key: string | null;
   provider_model: string | null;
   system_prompt: string | null;
+  quota_limit: number;
   is_atelier_official: number;
   created_at: string;
 }
@@ -604,9 +645,23 @@ export interface ServiceOrder {
   deliverable_post_id: number | null;
   deliverable_url: string | null;
   deliverable_media_type: 'image' | 'video' | null;
+  quota_total: number;
+  quota_used: number;
+  workspace_expires_at: string | null;
   delivered_at: string | null;
   review_deadline: string | null;
   completed_at: string | null;
+  created_at: string;
+}
+
+export interface OrderDeliverable {
+  id: string;
+  order_id: string;
+  prompt: string;
+  deliverable_url: string | null;
+  deliverable_media_type: 'image' | 'video' | null;
+  status: 'pending' | 'generating' | 'completed' | 'failed';
+  error: string | null;
   created_at: string;
 }
 
@@ -2023,6 +2078,7 @@ export async function createServiceOrder(data: {
   brief: string;
   reference_urls?: string[];
   quoted_price_usd?: string;
+  quota_total?: number;
 }): Promise<ServiceOrder> {
   await initDb();
   const id = `ord_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -2030,9 +2086,9 @@ export async function createServiceOrder(data: {
   const platformFee = data.quoted_price_usd ? (parseFloat(data.quoted_price_usd) * 0.10).toFixed(2) : null;
 
   await client.execute({
-    sql: `INSERT INTO service_orders (id, service_id, client_agent_id, client_wallet, provider_agent_id, brief, reference_urls, quoted_price_usd, platform_fee_usd, status)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    args: [id, data.service_id, data.client_agent_id || null, data.client_wallet || null, data.provider_agent_id, data.brief, data.reference_urls ? JSON.stringify(data.reference_urls) : null, data.quoted_price_usd || null, platformFee, status],
+    sql: `INSERT INTO service_orders (id, service_id, client_agent_id, client_wallet, provider_agent_id, brief, reference_urls, quoted_price_usd, platform_fee_usd, status, quota_total)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [id, data.service_id, data.client_agent_id || null, data.client_wallet || null, data.provider_agent_id, data.brief, data.reference_urls ? JSON.stringify(data.reference_urls) : null, data.quoted_price_usd || null, platformFee, status, data.quota_total || 0],
   });
 
   await client.execute({
@@ -2093,6 +2149,7 @@ export async function updateOrderStatus(
     deliverable_post_id?: number;
     deliverable_url?: string;
     deliverable_media_type?: string;
+    workspace_expires_at?: string;
   }
 ): Promise<ServiceOrder | null> {
   await initDb();
@@ -2107,6 +2164,7 @@ export async function updateOrderStatus(
   if (updates.deliverable_post_id !== undefined) { setClauses.push('deliverable_post_id = ?'); args.push(updates.deliverable_post_id); }
   if (updates.deliverable_url !== undefined) { setClauses.push('deliverable_url = ?'); args.push(updates.deliverable_url); }
   if (updates.deliverable_media_type !== undefined) { setClauses.push('deliverable_media_type = ?'); args.push(updates.deliverable_media_type); }
+  if (updates.workspace_expires_at !== undefined) { setClauses.push('workspace_expires_at = ?'); args.push(updates.workspace_expires_at); }
 
   if (updates.status === 'delivered') {
     setClauses.push("delivered_at = CURRENT_TIMESTAMP");
@@ -2153,6 +2211,53 @@ export async function getOrdersByWallet(wallet: string): Promise<ServiceOrder[]>
     args: [wallet],
   });
   return result.rows as unknown as ServiceOrder[];
+}
+
+// ---- Workspace: Order Deliverables ----
+
+export async function createOrderDeliverable(orderId: string, prompt: string): Promise<OrderDeliverable> {
+  await initDb();
+  const id = `del_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  await client.execute({
+    sql: `INSERT INTO order_deliverables (id, order_id, prompt, status) VALUES (?, ?, ?, 'pending')`,
+    args: [id, orderId, prompt],
+  });
+  const result = await client.execute({ sql: 'SELECT * FROM order_deliverables WHERE id = ?', args: [id] });
+  return result.rows[0] as unknown as OrderDeliverable;
+}
+
+export async function getOrderDeliverables(orderId: string): Promise<OrderDeliverable[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM order_deliverables WHERE order_id = ? ORDER BY created_at DESC',
+    args: [orderId],
+  });
+  return result.rows as unknown as OrderDeliverable[];
+}
+
+export async function updateOrderDeliverable(
+  id: string,
+  updates: { status?: string; deliverable_url?: string; deliverable_media_type?: string; error?: string }
+): Promise<void> {
+  await initDb();
+  const setClauses: string[] = [];
+  const args: (string | null)[] = [];
+  if (updates.status !== undefined) { setClauses.push('status = ?'); args.push(updates.status); }
+  if (updates.deliverable_url !== undefined) { setClauses.push('deliverable_url = ?'); args.push(updates.deliverable_url); }
+  if (updates.deliverable_media_type !== undefined) { setClauses.push('deliverable_media_type = ?'); args.push(updates.deliverable_media_type); }
+  if (updates.error !== undefined) { setClauses.push('error = ?'); args.push(updates.error); }
+  if (setClauses.length === 0) return;
+  args.push(id);
+  await client.execute({ sql: `UPDATE order_deliverables SET ${setClauses.join(', ')} WHERE id = ?`, args });
+}
+
+export async function incrementOrderQuotaUsed(orderId: string): Promise<number> {
+  await initDb();
+  const result = await client.execute({
+    sql: `UPDATE service_orders SET quota_used = quota_used + 1 WHERE id = ? AND quota_used < quota_total`,
+    args: [orderId],
+  });
+  return result.rowsAffected;
 }
 
 // ---- Marketplace: Reviews ----

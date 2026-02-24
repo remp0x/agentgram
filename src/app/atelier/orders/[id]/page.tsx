@@ -1,14 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { AtelierLayout } from '@/components/atelier/AtelierLayout';
-import type { ServiceOrder, ServiceReview, OrderStatus } from '@/lib/db';
+import type { ServiceOrder, ServiceReview, OrderStatus, OrderDeliverable } from '@/lib/db';
 
 interface OrderData {
   order: ServiceOrder;
   review: ServiceReview | null;
+  deliverables: OrderDeliverable[];
 }
 
 type StepState = 'done' | 'active' | 'pending';
@@ -61,6 +63,15 @@ function formatDate(iso: string | null): string {
 
 function truncateId(id: string): string {
   return id.length > 16 ? `${id.slice(0, 8)}...${id.slice(-6)}` : id;
+}
+
+function formatTimeRemaining(expiresAt: string): string {
+  const diff = new Date(expiresAt).getTime() - Date.now();
+  if (diff <= 0) return 'Expired';
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  if (hours > 0) return `${hours}h ${minutes}m remaining`;
+  return `${minutes}m remaining`;
 }
 
 function buildTimeline(order: ServiceOrder, review: ServiceReview | null): TimelineStep[] {
@@ -213,30 +224,246 @@ function TimelineDot({ state, isTerminal }: { state: StepState; isTerminal: bool
   );
 }
 
+function WorkspaceView({ data, onRefresh }: { data: OrderData; onRefresh: () => void }) {
+  const { order, deliverables: initialDeliverables } = data;
+  const wallet = useWallet();
+  const [prompt, setPrompt] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
+  const [deliverables, setDeliverables] = useState<OrderDeliverable[]>(initialDeliverables);
+  const [quotaUsed, setQuotaUsed] = useState(order.quota_used);
+  const [timeRemaining, setTimeRemaining] = useState(
+    order.workspace_expires_at ? formatTimeRemaining(order.workspace_expires_at) : '',
+  );
+  const [approving, setApproving] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval>>();
+
+  const isActive = order.status === 'in_progress';
+  const isExpired = order.workspace_expires_at
+    ? new Date(order.workspace_expires_at) <= new Date()
+    : false;
+  const quotaRemaining = order.quota_total - quotaUsed;
+  const canGenerate = isActive && !isExpired && quotaRemaining > 0 && !generating;
+
+  useEffect(() => {
+    if (!order.workspace_expires_at) return;
+
+    const tick = () => {
+      const remaining = formatTimeRemaining(order.workspace_expires_at!);
+      setTimeRemaining(remaining);
+      if (remaining === 'Expired' && order.status === 'in_progress') {
+        onRefresh();
+      }
+    };
+
+    tick();
+    timerRef.current = setInterval(tick, 60_000);
+    return () => clearInterval(timerRef.current);
+  }, [order.workspace_expires_at, order.status, onRefresh]);
+
+  const handleGenerate = useCallback(async () => {
+    if (!canGenerate || !wallet.publicKey || !prompt.trim()) return;
+
+    setGenerating(true);
+    setGenError(null);
+
+    try {
+      const res = await fetch(`/api/atelier/orders/${order.id}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wallet: wallet.publicKey.toBase58(),
+          prompt: prompt.trim(),
+        }),
+      });
+      const json = await res.json();
+
+      if (!json.success) {
+        setGenError(json.error || 'Generation failed');
+        if (json.data?.deliverable) {
+          setDeliverables((prev) => [json.data.deliverable, ...prev]);
+        }
+        return;
+      }
+
+      setDeliverables((prev) => [json.data.deliverable, ...prev]);
+      setQuotaUsed(json.data.quota_used);
+      setPrompt('');
+
+      if (json.data.quota_used >= order.quota_total) {
+        onRefresh();
+      }
+    } catch {
+      setGenError('Network error');
+    } finally {
+      setGenerating(false);
+    }
+  }, [canGenerate, wallet.publicKey, prompt, order.id, order.quota_total, onRefresh]);
+
+  const handleApprove = useCallback(async () => {
+    if (!wallet.publicKey) return;
+    setApproving(true);
+    try {
+      const res = await fetch(`/api/atelier/orders/${order.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: wallet.publicKey.toBase58(), action: 'approve' }),
+      });
+      const json = await res.json();
+      if (json.success) onRefresh();
+    } finally {
+      setApproving(false);
+    }
+  }, [wallet.publicKey, order.id, onRefresh]);
+
+  return (
+    <div className="space-y-6">
+      {/* Stats bar */}
+      <div className="flex items-center justify-between p-4 rounded-lg bg-black border border-neutral-800">
+        <div className="font-mono text-sm">
+          <span className="text-white font-bold">{quotaRemaining}</span>
+          <span className="text-neutral-400"> / {order.quota_total} remaining</span>
+        </div>
+        <div className="font-mono text-sm">
+          {isExpired ? (
+            <span className="text-red-400">Expired</span>
+          ) : (
+            <span className="text-neutral-400">{timeRemaining}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Prompt input */}
+      {canGenerate && (
+        <div className="space-y-3">
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="Describe what you want generated..."
+            rows={3}
+            maxLength={1000}
+            className="w-full px-4 py-3 rounded-lg bg-black border border-neutral-800 text-white text-sm font-mono placeholder:text-neutral-600 focus:outline-none focus:border-atelier resize-none"
+          />
+          {genError && <p className="text-sm text-red-400 font-mono">{genError}</p>}
+          <button
+            onClick={handleGenerate}
+            disabled={!prompt.trim() || generating}
+            className="w-full py-2.5 rounded-lg bg-gradient-atelier text-white text-sm font-semibold font-mono disabled:opacity-40 disabled:cursor-not-allowed button-press transition-opacity flex items-center justify-center gap-2"
+          >
+            {generating ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                Generating...
+              </>
+            ) : (
+              'Generate'
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Approve button for delivered workspace orders */}
+      {order.status === 'delivered' && wallet.publicKey && order.client_wallet === wallet.publicKey.toBase58() && (
+        <button
+          onClick={handleApprove}
+          disabled={approving}
+          className="w-full py-2.5 rounded-lg bg-emerald-500 text-white text-sm font-semibold font-mono disabled:opacity-60 button-press transition-opacity flex items-center justify-center gap-2"
+        >
+          {approving ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              Approving...
+            </>
+          ) : (
+            'Approve & Complete'
+          )}
+        </button>
+      )}
+
+      {/* Gallery */}
+      {deliverables.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-mono text-neutral-400">
+            Gallery ({deliverables.length})
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {deliverables.map((d) => (
+              <div
+                key={d.id}
+                className="relative rounded-lg border border-neutral-800 overflow-hidden bg-black"
+              >
+                {d.status === 'completed' && d.deliverable_url ? (
+                  d.deliverable_media_type === 'video' ? (
+                    <video
+                      src={d.deliverable_url}
+                      controls
+                      playsInline
+                      className="w-full aspect-square object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={d.deliverable_url}
+                      alt={d.prompt}
+                      className="w-full aspect-square object-cover"
+                    />
+                  )
+                ) : (
+                  <div className="w-full aspect-square flex items-center justify-center">
+                    {d.status === 'generating' || d.status === 'pending' ? (
+                      <div className="w-5 h-5 border-2 border-atelier border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    )}
+                  </div>
+                )}
+                <div className="p-2">
+                  <p className="text-2xs text-neutral-400 font-mono line-clamp-2">{d.prompt}</p>
+                  {d.status === 'failed' && d.error && (
+                    <p className="text-2xs text-red-400 font-mono mt-1 line-clamp-1">{d.error}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {deliverables.length === 0 && isActive && (
+        <div className="text-center py-12">
+          <p className="text-sm text-neutral-500 font-mono">
+            No generations yet. Submit a prompt to get started.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AtelierOrderPage() {
   const params = useParams();
   const [data, setData] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch(`/api/atelier/orders/${params.id}`);
-        const json = await res.json();
-        if (!json.success) {
-          setError(json.error || 'Order not found');
-          return;
-        }
-        setData(json.data);
-      } catch {
-        setError('Failed to load order');
-      } finally {
-        setLoading(false);
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/atelier/orders/${params.id}`);
+      const json = await res.json();
+      if (!json.success) {
+        setError(json.error || 'Order not found');
+        return;
       }
+      setData(json.data);
+    } catch {
+      setError('Failed to load order');
+    } finally {
+      setLoading(false);
     }
-    load();
   }, [params.id]);
+
+  useEffect(() => { load(); }, [load]);
 
   if (loading) {
     return (
@@ -262,8 +489,9 @@ export default function AtelierOrderPage() {
   }
 
   const { order, review } = data;
+  const isWorkspace = order.quota_total > 0;
   const isTerminal = order.status === 'cancelled' || order.status === 'disputed';
-  const steps = buildTimeline(order, review);
+  const showWorkspace = isWorkspace && ['in_progress', 'delivered', 'completed'].includes(order.status);
 
   return (
     <AtelierLayout>
@@ -306,50 +534,51 @@ export default function AtelierOrderPage() {
           </div>
         </div>
 
-        {/* Timeline */}
-        <div className="relative">
-          {steps.map((step, i) => {
-            const isLast = i === steps.length - 1;
-            const isTerminalStep = isTerminal && isLast;
+        {showWorkspace ? (
+          <WorkspaceView data={data} onRefresh={load} />
+        ) : (
+          <div className="relative">
+            {buildTimeline(order, review).map((step, i, arr) => {
+              const isLast = i === arr.length - 1;
+              const isTerminalStep = isTerminal && isLast;
 
-            return (
-              <div key={step.label} className="relative flex gap-4">
-                {/* Vertical line + dot */}
-                <div className="flex flex-col items-center">
-                  <TimelineDot
-                    state={step.state}
-                    isTerminal={isTerminalStep}
-                  />
-                  {!isLast && (
-                    <div className={`w-px flex-1 min-h-[2rem] ${
-                      step.state === 'done' ? 'bg-emerald-400/30' :
-                      step.state === 'active' ? 'bg-atelier/30' :
-                      'bg-neutral-800'
-                    }`} />
-                  )}
-                </div>
-
-                {/* Content */}
-                <div className={`pb-8 ${isLast ? 'pb-0' : ''}`}>
-                  <div className="flex items-center gap-3 -mt-0.5">
-                    <h3 className={`text-sm font-medium ${
-                      isTerminalStep ? 'text-red-400' :
-                      step.state === 'done' ? 'text-white' :
-                      step.state === 'active' ? 'text-atelier-bright' :
-                      'text-neutral-500'
-                    }`}>
-                      {step.label}
-                    </h3>
-                    {step.timestamp && (
-                      <span className="text-2xs text-neutral-400 font-mono">{formatDate(step.timestamp)}</span>
+              return (
+                <div key={step.label} className="relative flex gap-4">
+                  <div className="flex flex-col items-center">
+                    <TimelineDot
+                      state={step.state}
+                      isTerminal={isTerminalStep}
+                    />
+                    {!isLast && (
+                      <div className={`w-px flex-1 min-h-[2rem] ${
+                        step.state === 'done' ? 'bg-emerald-400/30' :
+                        step.state === 'active' ? 'bg-atelier/30' :
+                        'bg-neutral-800'
+                      }`} />
                     )}
                   </div>
-                  {step.content && <div className="mt-2">{step.content}</div>}
+
+                  <div className={`pb-8 ${isLast ? 'pb-0' : ''}`}>
+                    <div className="flex items-center gap-3 -mt-0.5">
+                      <h3 className={`text-sm font-medium ${
+                        isTerminalStep ? 'text-red-400' :
+                        step.state === 'done' ? 'text-white' :
+                        step.state === 'active' ? 'text-atelier-bright' :
+                        'text-neutral-500'
+                      }`}>
+                        {step.label}
+                      </h3>
+                      {step.timestamp && (
+                        <span className="text-2xs text-neutral-400 font-mono">{formatDate(step.timestamp)}</span>
+                      )}
+                    </div>
+                    {step.content && <div className="mt-2">{step.content}</div>}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </AtelierLayout>
   );
