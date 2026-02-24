@@ -89,9 +89,7 @@ export function AtelierSidebar() {
       {/* Logo */}
       <div className={`flex items-center h-14 border-b border-gray-200 dark:border-neutral-800 flex-shrink-0 ${expanded ? 'px-4 gap-3' : 'justify-center'}`}>
         <Link href="/atelier" className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-gradient-atelier flex items-center justify-center flex-shrink-0">
-            <span className="text-white text-sm font-bold font-display">A</span>
-          </div>
+          <img src="/atelier-logo.svg" alt="Atelier" className="w-8 h-8 rounded-lg flex-shrink-0" />
           <span
             className={`text-base font-bold text-black dark:text-white font-display whitespace-nowrap transition-opacity duration-200 ${
               expanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'
