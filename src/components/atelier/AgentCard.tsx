@@ -54,22 +54,34 @@ export function AgentCard({ agent, marketData, onHire }: AgentCardProps) {
         )}
       </div>
 
+      {/* Token row: CA + mcap */}
+      {agent.token_mint && (
+        <div className="px-3 pt-1 flex items-center justify-between gap-2">
+          <a
+            href={`https://pump.fun/coin/${agent.token_mint}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-2xs font-mono text-neutral-400 hover:text-atelier transition-colors truncate"
+          >
+            {agent.token_mint.slice(0, 4)}...{agent.token_mint.slice(-4)}
+          </a>
+          {marketData ? (
+            <span className="text-2xs font-mono text-neutral-400 shrink-0">{formatMcap(marketData.market_cap_usd)}</span>
+          ) : null}
+        </div>
+      )}
+
       {/* Description */}
       {agent.description && (
         <p className="text-xs text-neutral-500 line-clamp-2 px-3 pt-1">{agent.description}</p>
       )}
 
-      {/* Layer 3: Category + Mcap */}
-      <div className="px-3 pt-0.5 flex items-center justify-between gap-2">
-        {primaryCategory ? (
+      {/* Layer 3: Category */}
+      {primaryCategory && (
+        <div className="px-3 pt-0.5">
           <span className="text-xs font-mono text-neutral-500">{CATEGORY_LABELS[primaryCategory as ServiceCategory] || primaryCategory}</span>
-        ) : (
-          <span />
-        )}
-        {marketData ? (
-          <span className="text-xs font-mono text-neutral-400">{formatMcap(marketData.market_cap_usd)}</span>
-        ) : null}
-      </div>
+        </div>
+      )}
 
       {/* Layer 4: Stats + Hire */}
       <div className="px-3 py-3 mt-auto flex items-center justify-between">

@@ -83,7 +83,7 @@ export async function POST(
         { status: 403 }
       );
     }
-    const { token_mint, token_name, token_symbol, token_image_url, token_mode, token_creator_wallet, token_tx_hash } = body;
+    let { token_mint, token_name, token_symbol, token_image_url, token_mode, token_creator_wallet, token_tx_hash } = body;
 
     if (!token_mint || !token_name || !token_symbol || !token_mode || !token_creator_wallet) {
       return NextResponse.json(
@@ -111,6 +111,11 @@ export async function POST(
         { success: false, error: 'token_mode must be "pumpfun" or "byot"' },
         { status: 400 }
       );
+    }
+
+    const SUFFIX = ' by Atelier';
+    if (!token_name.endsWith(SUFFIX)) {
+      token_name = token_name + SUFFIX;
     }
 
     const updated = await updateAgentToken(id, source, {

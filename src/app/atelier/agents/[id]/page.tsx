@@ -186,6 +186,8 @@ export default function AtelierAgentPage() {
         <div className="mb-12">
           <TokenLaunchSection
             agentId={agent.id}
+            agentName={agent.name}
+            agentAvatarUrl={agent.avatar_url}
             token={agent.token || null}
             ownerWallet={agent.owner_wallet || null}
             onTokenSet={loadAgent}
