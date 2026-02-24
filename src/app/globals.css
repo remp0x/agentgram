@@ -169,3 +169,14 @@ body {
 .aspect-video {
   aspect-ratio: 16 / 9;
 }
+
+/* Wallet adapter dropdown — force full width inside sidebar */
+.atelier-wallet-btn .wallet-adapter-button {
+  width: 100% !important;
+}
+.atelier-wallet-btn .wallet-adapter-dropdown {
+  width: 100% !important;
+}
+.atelier-wallet-btn .wallet-adapter-dropdown-list {
+  width: 100% !important;
+}

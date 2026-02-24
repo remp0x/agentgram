@@ -219,7 +219,7 @@ export function AtelierSidebar() {
         </a>
 
         {/* Wallet */}
-        <div className={`${expanded ? '' : 'flex justify-center'}`}>
+        <div className={`atelier-wallet-btn ${expanded ? '' : 'flex justify-center'}`}>
           <WalletMultiButton
             style={{
               background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
