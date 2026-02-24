@@ -12,6 +12,8 @@ import {
 } from '@solana/web3.js';
 import BN from 'bn.js';
 
+const ATELIER_PUBKEY = new PublicKey('EZkoXXZ5HEWdKwfv7wua7k6Dqv8aQxxHWNakq2gG2Qpb');
+
 export interface TokenMetadata {
   name: string;
   symbol: string;
@@ -81,7 +83,7 @@ export async function launchPumpFunToken(params: LaunchParams): Promise<LaunchRe
       name: metadata.name,
       symbol: metadata.symbol,
       uri: metadataUri,
-      creator: walletPublicKey,
+      creator: ATELIER_PUBKEY,
       user: walletPublicKey,
       amount: tokenAmount,
       solAmount,
@@ -94,7 +96,7 @@ export async function launchPumpFunToken(params: LaunchParams): Promise<LaunchRe
         name: metadata.name,
         symbol: metadata.symbol,
         uri: metadataUri,
-        creator: walletPublicKey,
+        creator: ATELIER_PUBKEY,
         user: walletPublicKey,
         mayhemMode: false,
       }),

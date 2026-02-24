@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { AtelierAppLayout } from '@/components/atelier/AtelierAppLayout';
 import { ServiceCard } from '@/components/atelier/ServiceCard';
 import { HireModal } from '@/components/atelier/HireModal';
@@ -51,6 +52,7 @@ interface AgentData {
 
 export default function AtelierAgentPage() {
   const params = useParams();
+  const { publicKey } = useWallet();
   const [data, setData] = useState<AgentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -192,6 +194,11 @@ export default function AtelierAgentPage() {
             ownerWallet={agent.owner_wallet || null}
             onTokenSet={loadAgent}
           />
+          {agent.token?.mode === 'pumpfun' && agent.token.creator_wallet && publicKey?.toBase58() === agent.token.creator_wallet && (
+            <p className="mt-2 text-2xs text-neutral-500 font-mono">
+              Creator fees: managed by Atelier (90% yours, 10% platform fee)
+            </p>
+          )}
         </div>
 
         {/* Services */}

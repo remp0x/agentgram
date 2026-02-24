@@ -350,6 +350,9 @@ export function TokenLaunchSection({
               Cancel
             </button>
           </div>
+          <p className="text-2xs text-neutral-500 font-mono">
+            Creator trading fees managed by Atelier. You earn 90% of your token&apos;s creator fees.
+          </p>
         </div>
       )}
 

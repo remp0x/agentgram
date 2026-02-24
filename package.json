@@ -43,6 +43,7 @@
   },
   "devDependencies": {
     "@types/bn.js": "^5.2.0",
+    "@types/bs58": "^4.0.4",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^18",

@@ -379,6 +379,32 @@ async function initDb() {
   `);
   await client.execute('CREATE INDEX IF NOT EXISTS idx_order_deliverables_order ON order_deliverables(order_id)');
 
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS creator_fee_sweeps (
+      id TEXT PRIMARY KEY,
+      amount_lamports INTEGER NOT NULL,
+      tx_hash TEXT NOT NULL,
+      swept_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS creator_fee_payouts (
+      id TEXT PRIMARY KEY,
+      recipient_wallet TEXT NOT NULL,
+      agent_id TEXT NOT NULL,
+      token_mint TEXT NOT NULL,
+      amount_lamports INTEGER NOT NULL,
+      tx_hash TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      paid_at DATETIME
+    )
+  `);
+
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_fee_payouts_wallet ON creator_fee_payouts(recipient_wallet)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_fee_payouts_agent ON creator_fee_payouts(agent_id)');
+
   try {
     await seedAtelierOfficialAgents();
   } catch (e) {
@@ -2710,4 +2736,92 @@ export async function upsertAtelierProfile(
   });
   const profile = await getAtelierProfile(wallet);
   return profile!;
+}
+
+// --- Creator Fee Tracking ---
+
+export async function recordFeeSweep(amountLamports: number, txHash: string): Promise<string> {
+  await initDb();
+  const id = `sweep_${randomBytes(12).toString('hex')}`;
+  await client.execute({
+    sql: 'INSERT INTO creator_fee_sweeps (id, amount_lamports, tx_hash) VALUES (?, ?, ?)',
+    args: [id, amountLamports, txHash],
+  });
+  return id;
+}
+
+export async function getFeeSweeps(limit = 50): Promise<{ id: string; amount_lamports: number; tx_hash: string; swept_at: string }[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM creator_fee_sweeps ORDER BY swept_at DESC LIMIT ?',
+    args: [limit],
+  });
+  return result.rows as unknown as { id: string; amount_lamports: number; tx_hash: string; swept_at: string }[];
+}
+
+export async function createFeePayout(
+  recipientWallet: string,
+  agentId: string,
+  tokenMint: string,
+  amountLamports: number,
+): Promise<string> {
+  await initDb();
+  const id = `payout_${randomBytes(12).toString('hex')}`;
+  await client.execute({
+    sql: 'INSERT INTO creator_fee_payouts (id, recipient_wallet, agent_id, token_mint, amount_lamports) VALUES (?, ?, ?, ?, ?)',
+    args: [id, recipientWallet, agentId, tokenMint, amountLamports],
+  });
+  return id;
+}
+
+export async function completeFeePayout(id: string, txHash: string): Promise<void> {
+  await initDb();
+  await client.execute({
+    sql: "UPDATE creator_fee_payouts SET status = 'paid', tx_hash = ?, paid_at = CURRENT_TIMESTAMP WHERE id = ?",
+    args: [txHash, id],
+  });
+}
+
+export async function getPayoutsForWallet(wallet: string): Promise<{
+  id: string; recipient_wallet: string; agent_id: string; token_mint: string;
+  amount_lamports: number; tx_hash: string | null; status: string; created_at: string; paid_at: string | null;
+}[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM creator_fee_payouts WHERE recipient_wallet = ? ORDER BY created_at DESC',
+    args: [wallet],
+  });
+  return result.rows as unknown as {
+    id: string; recipient_wallet: string; agent_id: string; token_mint: string;
+    amount_lamports: number; tx_hash: string | null; status: string; created_at: string; paid_at: string | null;
+  }[];
+}
+
+export async function getTotalSwept(): Promise<number> {
+  await initDb();
+  const result = await client.execute('SELECT COALESCE(SUM(amount_lamports), 0) as total FROM creator_fee_sweeps');
+  return Number(result.rows[0]?.total ?? 0);
+}
+
+export async function getTotalPaidOut(): Promise<number> {
+  await initDb();
+  const result = await client.execute(
+    "SELECT COALESCE(SUM(amount_lamports), 0) as total FROM creator_fee_payouts WHERE status = 'paid'",
+  );
+  return Number(result.rows[0]?.total ?? 0);
+}
+
+export async function getAllPayouts(limit = 100): Promise<{
+  id: string; recipient_wallet: string; agent_id: string; token_mint: string;
+  amount_lamports: number; tx_hash: string | null; status: string; created_at: string; paid_at: string | null;
+}[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM creator_fee_payouts ORDER BY created_at DESC LIMIT ?',
+    args: [limit],
+  });
+  return result.rows as unknown as {
+    id: string; recipient_wallet: string; agent_id: string; token_mint: string;
+    amount_lamports: number; tx_hash: string | null; status: string; created_at: string; paid_at: string | null;
+  }[];
 }
