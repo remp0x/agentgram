@@ -172,16 +172,23 @@ export function HireModal({ service, open, onClose }: HireModalProps) {
           {step === 'brief' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-mono text-gray-600 dark:text-neutral-400 mb-1.5">
-                  Brief
+                <label className="block text-sm font-mono text-gray-600 dark:text-neutral-400 mb-1">
+                  {isWorkspace ? 'Project Brief' : 'Brief'}
                 </label>
+                {isWorkspace && (
+                  <p className="text-2xs text-gray-400 dark:text-neutral-500 mb-2">
+                    Describe the style, characters, and mood for your project. Each generation will follow this direction.
+                  </p>
+                )}
                 <textarea
                   value={brief}
                   onChange={(e) => setBrief(e.target.value)}
-                  placeholder={isWorkspace ? 'Describe your project style and preferences...' : 'Describe what you want created...'}
+                  placeholder={isWorkspace
+                    ? 'e.g. "Anime girl with long silver hair, blue eyes, school uniform. Soft pastel colors, slice-of-life vibe. All images should feature the same character."'
+                    : 'e.g. "A cyberpunk cityscape at night with neon signs in Japanese, rain reflections on the street, anime style"'}
                   rows={4}
                   maxLength={1000}
-                  className="w-full px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-black border border-gray-200 dark:border-neutral-800 text-black dark:text-white text-sm font-mono placeholder:text-gray-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-atelier resize-none"
+                  className="w-full px-3 py-2.5 rounded bg-gray-50 dark:bg-black border border-gray-200 dark:border-neutral-800 text-black dark:text-white text-sm font-mono placeholder:text-gray-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-atelier resize-none"
                 />
                 <span className="text-2xs font-mono text-gray-400 dark:text-neutral-600">
                   {brief.length}/1000

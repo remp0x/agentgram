@@ -4,6 +4,7 @@ import {
   getServiceOrderById,
   getServiceById,
   getAgent,
+  getOrderDeliverables,
   updateOrderStatus,
   createOrderDeliverable,
   updateOrderDeliverable,
@@ -80,9 +81,23 @@ export async function POST(
     try {
       await updateOrderDeliverable(deliverable.id, { status: 'generating' });
 
-      const fullPrompt = service.system_prompt
-        ? `${service.system_prompt}\n\nUser request: ${prompt}`
-        : prompt;
+      const previousDeliverables = await getOrderDeliverables(orderId);
+      const prevPrompts = previousDeliverables
+        .filter((d) => d.id !== deliverable.id && d.status === 'completed')
+        .reverse()
+        .map((d) => d.prompt);
+
+      const parts: string[] = [];
+      if (service.system_prompt) parts.push(service.system_prompt);
+      if (order.brief) parts.push(`Project brief: ${order.brief}`);
+      if (prevPrompts.length > 0) {
+        parts.push(
+          `Previous generations in this session (maintain visual consistency — same characters, same style):\n${prevPrompts.map((p, i) => `${i + 1}. "${p}"`).join('\n')}`
+        );
+      }
+      parts.push(`Current request: ${prompt}`);
+
+      const fullPrompt = parts.join('\n\n');
 
       const provider = getProvider(service.provider_key);
       const result = await generateWithRetry(provider, {

@@ -318,8 +318,16 @@ function WorkspaceView({ data, onRefresh }: { data: OrderData; onRefresh: () => 
 
   return (
     <div className="space-y-6">
+      {/* Brief context */}
+      {order.brief && (
+        <div className="p-3 rounded bg-atelier/5 border border-atelier/10">
+          <p className="text-2xs font-mono text-neutral-500 mb-1">Project brief</p>
+          <p className="text-sm text-neutral-300">{order.brief}</p>
+        </div>
+      )}
+
       {/* Stats bar */}
-      <div className="flex items-center justify-between p-4 rounded-lg bg-black border border-neutral-800">
+      <div className="flex items-center justify-between p-4 rounded bg-black border border-neutral-800">
         <div className="font-mono text-sm">
           <span className="text-white font-bold">{quotaRemaining}</span>
           <span className="text-neutral-400"> / {order.quota_total} remaining</span>
@@ -339,10 +347,12 @@ function WorkspaceView({ data, onRefresh }: { data: OrderData; onRefresh: () => 
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Describe what you want generated..."
+            placeholder={deliverables.length === 0
+              ? 'Describe your first scene or image...'
+              : 'Describe the next generation (characters and style will stay consistent)...'}
             rows={3}
             maxLength={1000}
-            className="w-full px-4 py-3 rounded-lg bg-black border border-neutral-800 text-white text-sm font-mono placeholder:text-neutral-600 focus:outline-none focus:border-atelier resize-none"
+            className="w-full px-4 py-3 rounded bg-black border border-neutral-800 text-white text-sm font-mono placeholder:text-neutral-600 focus:outline-none focus:border-atelier resize-none"
           />
           {genError && <p className="text-sm text-red-400 font-mono">{genError}</p>}
           <button

@@ -141,13 +141,17 @@ export async function PATCH(
 async function executeOrder(
   orderId: string,
   order: { brief: string; service_id: string; provider_agent_id: string },
-  service: { provider_key: string | null; provider_model: string | null },
+  service: { provider_key: string | null; provider_model: string | null; system_prompt?: string | null },
 ): Promise<void> {
   await updateOrderStatus(orderId, { status: 'in_progress' });
 
+  const fullPrompt = service.system_prompt
+    ? `${service.system_prompt}\n\nUser request: ${order.brief}`
+    : order.brief;
+
   const provider = getProvider(service.provider_key!);
   const result = await generateWithRetry(provider, {
-    prompt: order.brief,
+    prompt: fullPrompt,
     model: service.provider_model!,
   });
 
