@@ -133,7 +133,7 @@ export function AtelierMobileNav() {
             </button>
 
             <a
-              href="https://x.com/agentgram_"
+              href="https://x.com/useAtelier"
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setMenuOpen(false)}

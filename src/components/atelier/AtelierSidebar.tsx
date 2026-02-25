@@ -193,7 +193,7 @@ export function AtelierSidebar() {
 
         {/* X/Twitter */}
         <a
-          href="https://x.com/agentgram_"
+          href="https://x.com/useAtelier"
           target="_blank"
           rel="noopener noreferrer"
           className={`w-full flex items-center gap-3 h-10 rounded-lg transition-all text-gray-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-900 hover:text-black dark:hover:text-white ${
