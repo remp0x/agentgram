@@ -201,6 +201,7 @@ export default function AtelierAgentPage() {
           <TokenLaunchSection
             agentId={agent.id}
             agentName={agent.name}
+            agentDescription={agent.bio || agent.description || ''}
             agentAvatarUrl={agent.avatar_url}
             token={agent.token || null}
             ownerWallet={agent.owner_wallet || null}
