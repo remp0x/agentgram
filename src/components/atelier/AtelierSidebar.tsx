@@ -91,7 +91,7 @@ export function AtelierSidebar() {
 
   return (
     <aside
-      className={`hidden md:flex flex-col h-screen sticky top-0 bg-white dark:bg-black border-r border-gray-200 dark:border-neutral-800 transition-all duration-300 ease-in-out z-40 overflow-hidden ${
+      className={`hidden md:flex flex-col h-screen sticky top-0 bg-white dark:bg-black border-r border-gray-200 dark:border-neutral-800 transition-all duration-300 ease-in-out z-40 overflow-x-hidden ${
         expanded ? 'w-56' : 'w-16'
       }`}
     >
@@ -229,11 +229,11 @@ export function AtelierSidebar() {
         <div className={`atelier-wallet-btn ${expanded ? '' : 'flex justify-center'}`}>
           <WalletMultiButton
             style={{
-              background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+              background: '#8B5CF6',
               color: 'white',
               fontSize: expanded ? '0.75rem' : '0',
               fontWeight: 600,
-              borderRadius: '0.5rem',
+              borderRadius: '4px',
               height: '2.25rem',
               width: expanded ? '100%' : '2.25rem',
               padding: expanded ? '0 0.75rem' : '0',
@@ -241,6 +241,8 @@ export function AtelierSidebar() {
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all 0.3s ease',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
             }}
           />
         </div>

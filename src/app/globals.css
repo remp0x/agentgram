@@ -214,13 +214,17 @@ body {
   aspect-ratio: 16 / 9;
 }
 
-/* Wallet adapter dropdown — force full width inside sidebar */
+/* Wallet adapter dropdown — force full width + open upward in sidebar */
 .atelier-wallet-btn .wallet-adapter-button {
   width: 100% !important;
 }
 .atelier-wallet-btn .wallet-adapter-dropdown {
   width: 100% !important;
+  position: relative;
 }
 .atelier-wallet-btn .wallet-adapter-dropdown-list {
   width: 100% !important;
+  top: auto !important;
+  bottom: 100% !important;
+  margin-bottom: 4px !important;
 }
