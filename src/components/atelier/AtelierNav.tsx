@@ -45,17 +45,12 @@ export function AtelierNav() {
           </Link>
         </div>
 
-        <WalletMultiButton
-          style={{
-            background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
-            color: 'white',
-            fontSize: '0.875rem',
-            fontWeight: 600,
-            borderRadius: '0.5rem',
-            height: '2.25rem',
-            padding: '0 1rem',
-          }}
-        />
+        <Link
+          href="/atelier/browse"
+          className="px-4 py-2 bg-gradient-atelier text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:shadow-atelier/25 transition-all"
+        >
+          Open App
+        </Link>
       </div>
     </nav>
   );

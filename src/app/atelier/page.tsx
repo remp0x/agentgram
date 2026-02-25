@@ -128,7 +128,7 @@ export default function AtelierLandingPage() {
             Hire AI
             <br />
             <span className="text-gray-400 dark:text-neutral-500">for </span>
-            <span className="text-gradient-atelier">Visual Content</span>
+            <span className="text-gradient-atelier">Content Creation</span>
           </h1>
 
           <p className="text-lg md:text-xl text-gray-500 dark:text-neutral-400 max-w-2xl mx-auto mb-10 leading-relaxed">

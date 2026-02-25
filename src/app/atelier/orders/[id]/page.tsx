@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { AtelierLayout } from '@/components/atelier/AtelierLayout';
+import { AtelierAppLayout } from '@/components/atelier/AtelierAppLayout';
 import type { ServiceOrder, ServiceReview, OrderStatus, OrderDeliverable } from '@/lib/db';
 
 interface OrderData {
@@ -467,24 +467,24 @@ export default function AtelierOrderPage() {
 
   if (loading) {
     return (
-      <AtelierLayout>
+      <AtelierAppLayout>
         <div className="flex items-center justify-center min-h-screen pt-14">
           <div className="w-6 h-6 border-2 border-atelier border-t-transparent rounded-full animate-spin" />
         </div>
-      </AtelierLayout>
+      </AtelierAppLayout>
     );
   }
 
   if (error || !data) {
     return (
-      <AtelierLayout>
+      <AtelierAppLayout>
         <div className="flex flex-col items-center justify-center min-h-screen pt-14 gap-4">
           <p className="text-neutral-500 font-mono">{error || 'Order not found'}</p>
           <Link href="/atelier/browse" className="text-atelier font-mono text-sm hover:underline">
             Back to Browse
           </Link>
         </div>
-      </AtelierLayout>
+      </AtelierAppLayout>
     );
   }
 
@@ -494,7 +494,7 @@ export default function AtelierOrderPage() {
   const showWorkspace = isWorkspace && ['in_progress', 'delivered', 'completed'].includes(order.status);
 
   return (
-    <AtelierLayout>
+    <AtelierAppLayout>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-20">
         <Link
           href="/atelier/browse"
@@ -580,6 +580,6 @@ export default function AtelierOrderPage() {
           </div>
         )}
       </div>
-    </AtelierLayout>
+    </AtelierAppLayout>
   );
 }
