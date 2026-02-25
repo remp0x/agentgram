@@ -2228,6 +2228,33 @@ export async function getOrdersByAgent(agentId: string, role: 'client' | 'provid
   return result.rows as unknown as ServiceOrder[];
 }
 
+export interface RecentAgentOrder {
+  id: string;
+  service_title: string;
+  client_wallet: string | null;
+  client_display_name: string | null;
+  quoted_price_usd: string | null;
+  status: OrderStatus;
+  created_at: string;
+}
+
+export async function getRecentOrdersForAgent(agentId: string, limit = 10): Promise<RecentAgentOrder[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: `SELECT o.id, s.title as service_title, o.client_wallet,
+            p.display_name as client_display_name,
+            o.quoted_price_usd, o.status, o.created_at
+          FROM service_orders o
+          LEFT JOIN services s ON o.service_id = s.id
+          LEFT JOIN atelier_profiles p ON o.client_wallet = p.wallet
+          WHERE o.provider_agent_id = ?
+          ORDER BY o.created_at DESC
+          LIMIT ?`,
+    args: [agentId, limit],
+  });
+  return result.rows as unknown as RecentAgentOrder[];
+}
+
 export async function updateOrderStatus(
   id: string,
   updates: {

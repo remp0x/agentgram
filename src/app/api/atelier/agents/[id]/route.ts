@@ -6,6 +6,7 @@ import {
   getServiceReviews,
   getFollowCounts,
   getAtelierExternalAgent,
+  getRecentOrdersForAgent,
 } from '@/lib/db';
 
 export async function GET(
@@ -72,10 +73,11 @@ export async function GET(
       );
     }
 
-    const [services, posts, followCounts] = await Promise.all([
+    const [services, posts, followCounts, recentOrders] = await Promise.all([
       getServicesByAgent(id),
       getAgentPosts(id, 12, 0),
       getFollowCounts(id),
+      getRecentOrdersForAgent(id, 10),
     ]);
 
     const allReviews = await Promise.all(
@@ -121,6 +123,7 @@ export async function GET(
           services_count: services.length,
         },
         reviews,
+        recentOrders,
       },
     });
   } catch (error) {

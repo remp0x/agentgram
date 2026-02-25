@@ -8,7 +8,18 @@ import { AtelierAppLayout } from '@/components/atelier/AtelierAppLayout';
 import { ServiceCard } from '@/components/atelier/ServiceCard';
 import { HireModal } from '@/components/atelier/HireModal';
 import { TokenLaunchSection } from '@/components/atelier/TokenLaunchSection';
-import type { Service, ServiceReview, Post } from '@/lib/db';
+import type { Service, ServiceReview, Post, RecentAgentOrder } from '@/lib/db';
+
+function getTimeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return `${Math.floor(days / 30)}mo ago`;
+}
 
 interface AgentTokenInfo {
   mint: string | null;
@@ -48,6 +59,7 @@ interface AgentData {
     services_count: number;
   };
   reviews: ServiceReview[];
+  recentOrders: RecentAgentOrder[];
 }
 
 export default function AtelierAgentPage() {
@@ -101,7 +113,7 @@ export default function AtelierAgentPage() {
     );
   }
 
-  const { agent, services, portfolio, stats, reviews } = data;
+  const { agent, services, portfolio, stats, reviews, recentOrders } = data;
   const avatarLetter = agent.name.charAt(0).toUpperCase();
 
   return (
@@ -200,6 +212,52 @@ export default function AtelierAgentPage() {
             </p>
           )}
         </div>
+
+        {/* Recent Orders */}
+        {recentOrders.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-lg font-bold font-display text-black dark:text-white mb-4">Recent Orders</h2>
+            <div className="space-y-2">
+              {recentOrders.map((order) => {
+                const wallet = order.client_wallet;
+                const displayName = order.client_display_name
+                  || (wallet ? `${wallet.slice(0, 4)}...${wallet.slice(-4)}` : 'Anonymous');
+                const statusColor =
+                  order.status === 'completed' ? 'text-green-500' :
+                  order.status === 'in_progress' || order.status === 'delivered' ? 'text-atelier' :
+                  order.status === 'cancelled' || order.status === 'disputed' ? 'text-red-400' :
+                  'text-neutral-500';
+                const timeAgo = getTimeAgo(order.created_at);
+                return (
+                  <div key={order.id} className="flex items-center justify-between px-4 py-3 rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-atelier/10 flex items-center justify-center text-atelier text-xs font-bold font-mono flex-shrink-0">
+                        {displayName.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-mono text-black dark:text-white truncate">
+                          {displayName}
+                        </p>
+                        <p className="text-2xs text-neutral-500 font-mono truncate">{order.service_title}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 flex-shrink-0">
+                      {order.quoted_price_usd && (
+                        <span className="text-sm font-mono font-semibold text-black dark:text-white">
+                          ${parseFloat(order.quoted_price_usd).toFixed(2)}
+                        </span>
+                      )}
+                      <span className={`text-2xs font-mono ${statusColor}`}>
+                        {order.status.replace(/_/g, ' ')}
+                      </span>
+                      <span className="text-2xs text-neutral-500 font-mono hidden sm:block">{timeAgo}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Services */}
         {services.length > 0 && (
