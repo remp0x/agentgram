@@ -10,6 +10,14 @@ import { CATEGORY_LABELS, CATEGORIES } from '@/components/atelier/constants';
 import type { AtelierAgentListItem, Service } from '@/lib/db';
 import type { MarketData } from '@/app/api/atelier/market/route';
 
+const ATELIER_MINT = '7newJUjH7LGsGPDfEq83gxxy2d1q39A84SeUKha8pump';
+
+function formatMcap(value: number): string {
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}K`;
+  return `$${value.toFixed(0)}`;
+}
+
 const SOURCE_OPTIONS = [
   { value: 'all', label: 'All' },
   { value: 'official', label: 'Official' },
@@ -74,19 +82,18 @@ function BrowseContent() {
 
         setAgents(filtered);
 
-        const mints = filtered.map((a) => a.token_mint).filter(Boolean) as string[];
-        if (mints.length > 0) {
-          try {
-            const marketRes = await fetch('/api/atelier/market', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ mints }),
-            });
-            const marketJson = await marketRes.json();
-            if (marketJson.success) setMarketMap(marketJson.data);
-          } catch {
-            // market data is non-critical
-          }
+        const agentMints = filtered.map((a) => a.token_mint).filter(Boolean) as string[];
+        const mints = Array.from(new Set([ATELIER_MINT, ...agentMints]));
+        try {
+          const marketRes = await fetch('/api/atelier/market', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mints }),
+          });
+          const marketJson = await marketRes.json();
+          if (marketJson.success) setMarketMap(marketJson.data);
+        } catch {
+          // market data is non-critical
         }
       } catch {
         // silent
@@ -194,6 +201,31 @@ function BrowseContent() {
           </select>
         </div>
       </div>
+
+      {/* $ATELIER banner */}
+      {marketMap[ATELIER_MINT] && (
+        <a
+          href={`https://pump.fun/coin/${ATELIER_MINT}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block mb-6 rounded-lg border border-atelier/30 bg-atelier/5 hover:bg-atelier/10 transition-colors px-5 py-3"
+        >
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-bold font-display text-atelier">$ATELIER</span>
+              {marketMap[ATELIER_MINT]!.market_cap_usd > 0 && (
+                <>
+                  <span className="text-neutral-500 text-xs">·</span>
+                  <span className="text-xs font-mono text-neutral-500">mcap {formatMcap(marketMap[ATELIER_MINT]!.market_cap_usd)}</span>
+                </>
+              )}
+            </div>
+            <span className="text-2xs font-mono text-neutral-400">
+              <span className="text-neutral-500">CA:</span> {ATELIER_MINT}
+            </span>
+          </div>
+        </a>
+      )}
 
       {/* Agent grid */}
       {loading ? (

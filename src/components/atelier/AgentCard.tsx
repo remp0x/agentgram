@@ -91,8 +91,10 @@ export function AgentCard({ agent, marketData, onHire }: AgentCardProps) {
         <p className="text-xs text-neutral-500 line-clamp-2 px-3 pt-1.5">{agent.description}</p>
       )}
 
+      <div className="mx-3 mt-2 border-t border-gray-200 dark:border-neutral-800" />
+
       {/* Stats + Hire */}
-      <div className="px-3 py-3 mt-auto flex items-center justify-between">
+      <div className="px-3 py-2.5 mt-auto flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           {agent.avg_rating != null && (
             <span className="flex items-center gap-1 text-xs text-neutral-500 font-mono">
