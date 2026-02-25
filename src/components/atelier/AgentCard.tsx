@@ -22,7 +22,7 @@ export function AgentCard({ agent, marketData, onHire }: AgentCardProps) {
 
   return (
     <div className="overflow-hidden rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800 hover:border-atelier/40 dark:hover:border-atelier/40 transition-all duration-200 hover:shadow-lg hover:shadow-atelier/5 flex flex-col">
-      {/* Layer 1: Image */}
+      {/* Image */}
       <Link href={`/atelier/agents/${agent.id}`} className="relative block aspect-square bg-neutral-900 overflow-hidden">
         {imageSrc ? (
           <img
@@ -35,39 +35,46 @@ export function AgentCard({ agent, marketData, onHire }: AgentCardProps) {
             <span className="text-4xl font-bold font-display text-atelier/60">{avatarLetter}</span>
           </div>
         )}
-        {agent.is_atelier_official === 1 && (
-          <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-2xs font-mono font-semibold bg-atelier text-white">
-            by ATELIER
-          </span>
-        )}
+        <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
+          {primaryCategory && (
+            <span className="px-2 py-0.5 rounded-full text-2xs font-mono font-semibold bg-black/60 text-white backdrop-blur-sm">
+              {CATEGORY_LABELS[primaryCategory as ServiceCategory] || primaryCategory}
+            </span>
+          )}
+          {agent.is_atelier_official === 1 && (
+            <span className="px-2 py-0.5 rounded-full text-2xs font-mono font-semibold bg-atelier text-white ml-auto">
+              by ATELIER
+            </span>
+          )}
+        </div>
       </Link>
 
-      {/* Layer 2: Name + Ticker */}
-      <div className="px-3 pt-3 flex items-baseline justify-between gap-2">
+      {/* Name + Ticker + Mcap */}
+      <div className="px-3 pt-3 flex items-center justify-between gap-2">
         <Link href={`/atelier/agents/${agent.id}`} className="font-bold font-display text-sm text-black dark:text-white truncate hover:text-atelier transition-colors">
           {agent.name}
         </Link>
-        {agent.token_symbol ? (
-          <span className="text-xs font-mono text-atelier shrink-0">${agent.token_symbol}</span>
-        ) : (
-          <span className="text-xs font-mono text-neutral-400 shrink-0">No token</span>
+        {agent.token_symbol && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-xs font-mono font-semibold text-atelier">${agent.token_symbol}</span>
+            {marketData && (
+              <span className="text-2xs font-mono text-neutral-400">{formatMcap(marketData.market_cap_usd)}</span>
+            )}
+          </div>
         )}
       </div>
 
-      {/* Token row: CA + mcap */}
+      {/* CA link */}
       {agent.token_mint && (
-        <div className="px-3 pt-1 flex items-center justify-between gap-2">
+        <div className="px-3 pt-0.5">
           <a
             href={`https://pump.fun/coin/${agent.token_mint}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-2xs font-mono text-neutral-400 hover:text-atelier transition-colors truncate"
+            className="text-2xs font-mono text-neutral-400 hover:text-atelier transition-colors"
           >
             {agent.token_mint.slice(0, 4)}...{agent.token_mint.slice(-4)}
           </a>
-          {marketData ? (
-            <span className="text-2xs font-mono text-neutral-400 shrink-0">{formatMcap(marketData.market_cap_usd)}</span>
-          ) : null}
         </div>
       )}
 
@@ -76,14 +83,7 @@ export function AgentCard({ agent, marketData, onHire }: AgentCardProps) {
         <p className="text-xs text-neutral-500 line-clamp-2 px-3 pt-1">{agent.description}</p>
       )}
 
-      {/* Layer 3: Category */}
-      {primaryCategory && (
-        <div className="px-3 pt-0.5">
-          <span className="text-xs font-mono text-neutral-500">{CATEGORY_LABELS[primaryCategory as ServiceCategory] || primaryCategory}</span>
-        </div>
-      )}
-
-      {/* Layer 4: Stats + Hire */}
+      {/* Stats + Hire */}
       <div className="px-3 py-3 mt-auto flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           {agent.avg_rating != null && (
