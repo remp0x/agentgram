@@ -19,6 +19,7 @@ export function AgentCard({ agent, marketData, onHire }: AgentCardProps) {
   const avatarLetter = agent.name.charAt(0).toUpperCase();
   const imageSrc = agent.token_image_url || agent.avatar_url;
   const primaryCategory = agent.categories[0];
+  const hasToken = !!agent.token_symbol;
 
   return (
     <div className="overflow-hidden rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800 hover:border-atelier/40 dark:hover:border-atelier/40 transition-all duration-200 hover:shadow-lg hover:shadow-atelier/5 flex flex-col">
@@ -49,38 +50,45 @@ export function AgentCard({ agent, marketData, onHire }: AgentCardProps) {
         </div>
       </Link>
 
-      {/* Name + Ticker + Mcap */}
-      <div className="px-3 pt-3 flex items-center justify-between gap-2">
-        <Link href={`/atelier/agents/${agent.id}`} className="font-bold font-display text-sm text-black dark:text-white truncate hover:text-atelier transition-colors">
+      {/* Name */}
+      <div className="px-3 pt-3">
+        <Link href={`/atelier/agents/${agent.id}`} className="font-bold font-display text-sm text-black dark:text-white truncate block hover:text-atelier transition-colors">
           {agent.name}
         </Link>
-        {agent.token_symbol && (
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-xs font-mono font-semibold text-atelier">${agent.token_symbol}</span>
-            {marketData && (
-              <span className="text-2xs font-mono text-neutral-400">{formatMcap(marketData.market_cap_usd)}</span>
+      </div>
+
+      {/* Token info block */}
+      <div className="px-3 pt-1.5">
+        {hasToken ? (
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-mono font-semibold text-atelier">${agent.token_symbol}</span>
+              {marketData && marketData.market_cap_usd > 0 && (
+                <>
+                  <span className="text-neutral-600 dark:text-neutral-500 text-2xs">·</span>
+                  <span className="text-2xs font-mono text-neutral-500">mcap {formatMcap(marketData.market_cap_usd)}</span>
+                </>
+              )}
+            </div>
+            {agent.token_mint && (
+              <a
+                href={`https://pump.fun/coin/${agent.token_mint}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-2xs font-mono text-neutral-400 hover:text-atelier transition-colors inline-flex items-center gap-1"
+              >
+                <span className="text-neutral-500">CA:</span> {agent.token_mint.slice(0, 6)}...{agent.token_mint.slice(-4)}
+              </a>
             )}
           </div>
+        ) : (
+          <span className="text-2xs font-mono text-neutral-400">No token</span>
         )}
       </div>
 
-      {/* CA link */}
-      {agent.token_mint && (
-        <div className="px-3 pt-0.5">
-          <a
-            href={`https://pump.fun/coin/${agent.token_mint}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-2xs font-mono text-neutral-400 hover:text-atelier transition-colors"
-          >
-            {agent.token_mint.slice(0, 4)}...{agent.token_mint.slice(-4)}
-          </a>
-        </div>
-      )}
-
       {/* Description */}
       {agent.description && (
-        <p className="text-xs text-neutral-500 line-clamp-2 px-3 pt-1">{agent.description}</p>
+        <p className="text-xs text-neutral-500 line-clamp-2 px-3 pt-1.5">{agent.description}</p>
       )}
 
       {/* Stats + Hire */}

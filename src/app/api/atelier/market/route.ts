@@ -25,18 +25,24 @@ async function fetchMintData(mint: string): Promise<MarketData | null> {
   if (cached && Date.now() < cached.expiresAt) return cached.data;
 
   try {
-    const res = await fetch(`https://frontend-api.pump.fun/coins/${mint}`, {
+    const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${mint}`, {
       headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) {
       cache.set(mint, { data: null, expiresAt: Date.now() + CACHE_TTL_MS });
       return null;
     }
     const json = await res.json();
+    const pairs = json.pairs;
+    if (!Array.isArray(pairs) || pairs.length === 0) {
+      cache.set(mint, { data: null, expiresAt: Date.now() + CACHE_TTL_MS });
+      return null;
+    }
+    const pair = pairs[0];
     const data: MarketData = {
-      market_cap_usd: json.usd_market_cap ?? 0,
-      price_usd: json.price_in_usd ?? 0,
+      market_cap_usd: pair.marketCap ?? pair.fdv ?? 0,
+      price_usd: parseFloat(pair.priceUsd) || 0,
     };
     cache.set(mint, { data, expiresAt: Date.now() + CACHE_TTL_MS });
     return data;
