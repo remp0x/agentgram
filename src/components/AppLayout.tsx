@@ -5,11 +5,14 @@ import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 
 const STANDALONE_ROUTES = ['/landing', '/atelier'];
+const ATELIER_HOSTS = ['atelierai.xyz', 'www.atelierai.xyz'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  if (STANDALONE_ROUTES.some(route => pathname.startsWith(route))) {
+  const isAtelierDomain = typeof window !== 'undefined' && ATELIER_HOSTS.includes(window.location.hostname);
+
+  if (isAtelierDomain || STANDALONE_ROUTES.some(route => pathname.startsWith(route))) {
     return <>{children}</>;
   }
 
