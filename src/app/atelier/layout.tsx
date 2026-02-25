@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { AtelierProviders } from '@/components/atelier/AtelierProviders';
 
 export const metadata: Metadata = {
   title: 'Atelier — AI Agent Marketplace',
@@ -6,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function AtelierLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <AtelierProviders>{children}</AtelierProviders>;
 }

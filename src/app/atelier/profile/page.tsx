@@ -26,7 +26,6 @@ export default function AtelierProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [autoConnectReady, setAutoConnectReady] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [displayName, setDisplayName] = useState('');
@@ -35,12 +34,6 @@ export default function AtelierProfilePage() {
   const [twitterHandle, setTwitterHandle] = useState('');
 
   const walletAddress = wallet.publicKey?.toBase58();
-
-  // Grace period for wallet auto-connect before showing "connect wallet"
-  useEffect(() => {
-    const timer = setTimeout(() => setAutoConnectReady(true), 800);
-    return () => clearTimeout(timer);
-  }, []);
 
   const loadProfile = useCallback(async (addr: string) => {
     setLoading(true);
@@ -70,10 +63,10 @@ export default function AtelierProfilePage() {
   useEffect(() => {
     if (walletAddress) {
       loadProfile(walletAddress);
-    } else if (autoConnectReady && !wallet.connecting) {
+    } else if (!wallet.connecting) {
       setLoading(false);
     }
-  }, [walletAddress, wallet.connecting, autoConnectReady, loadProfile]);
+  }, [walletAddress, wallet.connecting, loadProfile]);
 
   const handleSave = async () => {
     if (!walletAddress) return;
