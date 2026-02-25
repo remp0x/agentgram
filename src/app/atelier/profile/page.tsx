@@ -266,7 +266,7 @@ export default function AtelierProfilePage() {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="w-full py-2.5 rounded-lg bg-gradient-atelier text-white text-sm font-semibold font-mono disabled:opacity-60 button-press transition-opacity flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded bg-atelier text-white text-sm font-semibold font-mono uppercase tracking-wider disabled:opacity-60 btn-atelier btn-primary transition-opacity flex items-center justify-center gap-2"
             >
               {saving ? (
                 <>

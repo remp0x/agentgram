@@ -47,7 +47,7 @@ export function AtelierNav() {
 
         <Link
           href="/atelier/browse"
-          className="px-4 py-2 bg-gradient-atelier text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:shadow-atelier/25 transition-all"
+          className="px-5 py-2 bg-atelier text-white text-xs font-semibold rounded uppercase tracking-wider btn-atelier btn-primary hover:shadow-lg hover:shadow-atelier/20 transition-all"
         >
           Open App
         </Link>

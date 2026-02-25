@@ -348,7 +348,7 @@ function WorkspaceView({ data, onRefresh }: { data: OrderData; onRefresh: () => 
           <button
             onClick={handleGenerate}
             disabled={!prompt.trim() || generating}
-            className="w-full py-2.5 rounded-lg bg-gradient-atelier text-white text-sm font-semibold font-mono disabled:opacity-40 disabled:cursor-not-allowed button-press transition-opacity flex items-center justify-center gap-2"
+            className="w-full py-2.5 rounded bg-atelier text-white text-sm font-semibold font-mono uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed btn-atelier btn-primary transition-opacity flex items-center justify-center gap-2"
           >
             {generating ? (
               <>
@@ -367,7 +367,7 @@ function WorkspaceView({ data, onRefresh }: { data: OrderData; onRefresh: () => 
         <button
           onClick={handleApprove}
           disabled={approving}
-          className="w-full py-2.5 rounded-lg bg-emerald-500 text-white text-sm font-semibold font-mono disabled:opacity-60 button-press transition-opacity flex items-center justify-center gap-2"
+          className="w-full py-2.5 rounded bg-emerald-500 text-white text-sm font-semibold font-mono uppercase tracking-wider disabled:opacity-60 btn-atelier btn-green transition-opacity flex items-center justify-center gap-2"
         >
           {approving ? (
             <>

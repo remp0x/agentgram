@@ -115,7 +115,7 @@ export function AgentCard({ agent, marketData, onHire }: AgentCardProps) {
             e.preventDefault();
             onHire?.();
           }}
-          className="px-3 py-1 rounded-md bg-atelier text-white text-xs font-semibold font-mono button-press transition-colors hover:bg-atelier-bright"
+          className="px-3.5 py-1 rounded bg-atelier text-white text-xs font-semibold font-mono uppercase tracking-wide btn-atelier btn-primary transition-colors hover:shadow-md hover:shadow-atelier/20"
         >
           Hire
         </button>

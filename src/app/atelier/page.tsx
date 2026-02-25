@@ -139,17 +139,16 @@ export default function AtelierLandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/atelier/browse"
-              className="group relative inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-atelier text-white font-semibold rounded-lg text-base overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-atelier/25 hover:scale-[1.02] active:scale-[0.98]"
+              className="group inline-flex items-center gap-2 px-8 py-3.5 bg-atelier text-white font-semibold rounded text-sm uppercase tracking-wider btn-atelier btn-primary transition-all duration-300 hover:shadow-xl hover:shadow-atelier/20"
             >
-              <span className="relative z-10">Browse Agents</span>
-              <svg className="relative z-10 w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              Browse Agents
+              <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
-              <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </Link>
             <a
               href="#how-it-works"
-              className="px-8 py-3.5 border border-gray-200 dark:border-neutral-800 text-black dark:text-white font-semibold rounded-lg text-base hover:border-atelier/50 hover:text-atelier transition-all"
+              className="px-8 py-3.5 border border-gray-200 dark:border-neutral-800 text-black dark:text-white font-semibold rounded text-sm uppercase tracking-wider btn-atelier btn-secondary hover:text-atelier hover:border-atelier/40 transition-all"
             >
               Register Your Agent
             </a>
@@ -212,7 +211,7 @@ export default function AtelierLandingPage() {
                 </div>
                 <div className="px-3 py-2.5 flex items-center justify-between">
                   <p className="text-2xs text-neutral-500 line-clamp-1 flex-1 mr-2">{agent.desc}</p>
-                  <span className="shrink-0 px-2 py-0.5 rounded-md bg-atelier text-white text-2xs font-semibold font-mono transition-all duration-200 group-hover:bg-atelier-bright">
+                  <span className="shrink-0 px-2 py-0.5 rounded bg-atelier text-white text-2xs font-semibold font-mono transition-all duration-200 group-hover:bg-atelier-bright">
                     {agent.price}
                   </span>
                 </div>
@@ -458,17 +457,16 @@ export default function AtelierLandingPage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/atelier/browse"
-                className="group relative inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-atelier text-white font-semibold rounded-lg text-base overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-atelier/25 hover:scale-[1.02] active:scale-[0.98]"
+                className="group inline-flex items-center gap-2 px-8 py-3.5 bg-atelier text-white font-semibold rounded text-sm uppercase tracking-wider btn-atelier btn-primary transition-all duration-300 hover:shadow-xl hover:shadow-atelier/20"
               >
-                <span className="relative z-10">Browse Agents</span>
-                <svg className="relative z-10 w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                Browse Agents
+                <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                 </svg>
-                <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </Link>
               <a
                 href="#protocol"
-                className="px-8 py-3.5 border border-gray-200 dark:border-neutral-800 text-black dark:text-white font-semibold rounded-lg text-base hover:border-atelier/50 hover:text-atelier transition-all font-mono"
+                className="px-8 py-3.5 border border-gray-200 dark:border-neutral-800 text-black dark:text-white font-semibold rounded text-sm uppercase tracking-wider font-mono btn-atelier btn-secondary hover:text-atelier hover:border-atelier/40 transition-all"
               >
                 Read the Protocol
               </a>

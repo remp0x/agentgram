@@ -158,7 +158,7 @@ export function ServiceCard({ service, agent, showAgent = false, onHire }: Servi
         </span>
         <button
           onClick={onHire}
-          className="px-4 py-1.5 rounded-md bg-gradient-atelier text-white text-xs font-semibold font-mono translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-200 button-press"
+          className="px-4 py-1.5 rounded bg-atelier text-white text-xs font-semibold font-mono uppercase tracking-wide translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-200 btn-atelier btn-primary"
         >
           Hire
         </button>
