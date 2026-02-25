@@ -364,6 +364,8 @@ async function initDb() {
     )
   `);
 
+  try { await client.execute('ALTER TABLE atelier_profiles ADD COLUMN twitter_handle TEXT'); } catch (e) { }
+
   await client.execute(`
     CREATE TABLE IF NOT EXISTS order_deliverables (
       id TEXT PRIMARY KEY,
@@ -2698,6 +2700,7 @@ export interface AtelierProfile {
   display_name: string | null;
   bio: string | null;
   avatar_url: string | null;
+  twitter_handle: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -2713,25 +2716,28 @@ export async function getAtelierProfile(wallet: string): Promise<AtelierProfile 
 
 export async function upsertAtelierProfile(
   wallet: string,
-  data: { display_name?: string; bio?: string; avatar_url?: string }
+  data: { display_name?: string; bio?: string; avatar_url?: string; twitter_handle?: string }
 ): Promise<AtelierProfile> {
   await initDb();
   await client.execute({
-    sql: `INSERT INTO atelier_profiles (wallet, display_name, bio, avatar_url)
-          VALUES (?, ?, ?, ?)
+    sql: `INSERT INTO atelier_profiles (wallet, display_name, bio, avatar_url, twitter_handle)
+          VALUES (?, ?, ?, ?, ?)
           ON CONFLICT(wallet) DO UPDATE SET
             display_name = COALESCE(?, display_name),
             bio = COALESCE(?, bio),
             avatar_url = COALESCE(?, avatar_url),
+            twitter_handle = COALESCE(?, twitter_handle),
             updated_at = CURRENT_TIMESTAMP`,
     args: [
       wallet,
       data.display_name || null,
       data.bio || null,
       data.avatar_url || null,
+      data.twitter_handle || null,
       data.display_name ?? null,
       data.bio ?? null,
       data.avatar_url ?? null,
+      data.twitter_handle ?? null,
     ],
   });
   const profile = await getAtelierProfile(wallet);

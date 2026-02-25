@@ -14,7 +14,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 export async function PUT(req: NextRequest): Promise<NextResponse> {
   try {
     const body = await req.json();
-    const { wallet, display_name, bio, avatar_url } = body;
+    const { wallet, display_name, bio, avatar_url, twitter_handle } = body;
 
     if (!wallet || typeof wallet !== 'string') {
       return NextResponse.json({ success: false, error: 'wallet required' }, { status: 400 });
@@ -29,11 +29,17 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
     if (avatar_url !== undefined && typeof avatar_url !== 'string') {
       return NextResponse.json({ success: false, error: 'avatar_url must be string' }, { status: 400 });
     }
+    if (twitter_handle !== undefined && typeof twitter_handle !== 'string') {
+      return NextResponse.json({ success: false, error: 'twitter_handle must be string' }, { status: 400 });
+    }
+
+    const cleanHandle = twitter_handle?.replace(/^@/, '').slice(0, 30);
 
     const profile = await upsertAtelierProfile(wallet, {
       display_name: display_name?.slice(0, 50),
       bio: bio?.slice(0, 280),
       avatar_url: avatar_url?.slice(0, 500),
+      twitter_handle: cleanHandle,
     });
 
     return NextResponse.json({ success: true, data: profile });
