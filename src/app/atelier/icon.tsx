@@ -11,20 +11,23 @@ export default function Icon() {
           width: 32,
           height: 32,
           borderRadius: 6,
-          background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+          background: '#9a81f2',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
         <svg
-          width="22"
+          width="24"
           height="22"
-          viewBox="0 0 512 512"
-          style={{ transform: 'rotate(-8deg)' }}
+          viewBox="0 0 1152 1043"
         >
-          <path
-            d="M256 85 L420 420 L345 420 L308 330 L204 330 L167 420 L92 420 Z M222 280 L290 280 L256 180 Z"
+          <polygon
+            points="607 151 228 877 331 877 974 156 717 353 607 151"
+            fill="white"
+          />
+          <polygon
+            points="494 773 771 461 993 877 819 877 700 646 494 773"
             fill="white"
           />
         </svg>

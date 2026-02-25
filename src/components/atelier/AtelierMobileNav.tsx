@@ -29,7 +29,7 @@ export function AtelierMobileNav() {
       <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-gray-200 dark:border-neutral-800">
         <div className="flex items-center justify-center h-11">
           <Link href="/atelier" className="flex items-center gap-2">
-            <img src="/atelier-logo.svg" alt="Atelier" className="w-6 h-6 rounded-md" />
+            <img src="/atelier-logo-white-purple.svg" alt="Atelier" className="w-6 h-6 rounded-md" />
             <span className="text-sm font-bold text-black dark:text-white font-display">
               Ate<span className="text-gradient-atelier">lier</span>
             </span>
