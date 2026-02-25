@@ -21,7 +21,7 @@ export default function AtelierProfilePage() {
   const wallet = useWallet();
 
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -57,8 +57,12 @@ export default function AtelierProfilePage() {
   }, []);
 
   useEffect(() => {
-    if (walletAddress) loadProfile(walletAddress);
-  }, [walletAddress, loadProfile]);
+    if (walletAddress) {
+      loadProfile(walletAddress);
+    } else if (!wallet.connecting) {
+      setLoading(false);
+    }
+  }, [walletAddress, wallet.connecting, loadProfile]);
 
   const handleSave = async () => {
     if (!walletAddress) return;
@@ -122,7 +126,11 @@ export default function AtelierProfilePage() {
           Profile
         </h1>
 
-        {!walletAddress ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-6 h-6 border-2 border-atelier border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : !walletAddress ? (
           <div className="text-center py-16">
             <div className="w-16 h-16 rounded-full bg-atelier/10 flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-atelier" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -141,10 +149,6 @@ export default function AtelierProfilePage() {
                 padding: '0 1.5rem',
               }}
             />
-          </div>
-        ) : loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 border-2 border-atelier border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <div className="space-y-6">
