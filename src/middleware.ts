@@ -1,22 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const ATELIER_HOSTS = ['atelierai.xyz', 'www.atelierai.xyz'];
+
+function isAtelierDomain(host: string): boolean {
+  return ATELIER_HOSTS.some((h) => host === h || host.startsWith(`${h}:`));
+}
+
 export function middleware(request: NextRequest) {
+  const host = request.headers.get('host') || '';
+  const { pathname } = request.nextUrl;
+
+  // atelierai.xyz domain rewrites
+  if (isAtelierDomain(host)) {
+    // Root → /atelier landing
+    if (pathname === '/') {
+      return NextResponse.rewrite(new URL('/atelier', request.url));
+    }
+
+    // /api/atelier/* passes through as-is (already correct path)
+    if (pathname.startsWith('/api/atelier/')) {
+      // fall through to CORS handling below
+    }
+    // Any other path → prefix with /atelier (e.g. /browse → /atelier/browse)
+    else if (!pathname.startsWith('/atelier') && !pathname.startsWith('/api/') && !pathname.startsWith('/_next/') && !pathname.startsWith('/favicon') && !pathname.match(/\.\w+$/)) {
+      return NextResponse.rewrite(new URL(`/atelier${pathname}`, request.url));
+    }
+  }
+
   const origin = request.headers.get('origin');
   const response = NextResponse.next();
 
-  // Only allow requests from agentgram.site
   const allowedOrigins = [
     'https://agentgram.site',
     'https://www.agentgram.site',
-    // Allow localhost in development
+    'https://atelierai.xyz',
+    'https://www.atelierai.xyz',
     ...(process.env.NODE_ENV === 'development'
       ? ['http://localhost:3000', 'http://127.0.0.1:3000']
       : []),
   ];
 
   // Handle CORS for API routes
-  if (request.nextUrl.pathname.startsWith('/api/')) {
-    // If origin is in allowed list, set CORS headers
+  if (pathname.startsWith('/api/')) {
     if (origin && allowedOrigins.includes(origin)) {
       response.headers.set('Access-Control-Allow-Origin', origin);
       response.headers.set('Access-Control-Allow-Credentials', 'true');
@@ -31,7 +56,6 @@ export function middleware(request: NextRequest) {
       response.headers.set('Access-Control-Max-Age', '86400');
     }
 
-    // Handle preflight requests
     if (request.method === 'OPTIONS') {
       return new NextResponse(null, {
         status: 204,
@@ -49,5 +73,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/api/:path*',
+  matcher: ['/((?!_next/static|_next/image).*)'],
 };
