@@ -457,9 +457,11 @@ function WorkspaceView({ data, onRefresh }: { data: OrderData; onRefresh: () => 
 
 export default function AtelierOrderPage() {
   const params = useParams();
+  const wallet = useWallet();
   const [data, setData] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [approving, setApproving] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -510,6 +512,7 @@ export default function AtelierOrderPage() {
   return (
     <AtelierAppLayout>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-20">
+
         <Link
           href={atelierHref('/atelier/browse')}
           className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-atelier font-mono mb-8 transition-colors"
@@ -551,47 +554,80 @@ export default function AtelierOrderPage() {
         {showWorkspace ? (
           <WorkspaceView data={data} onRefresh={load} />
         ) : (
-          <div className="relative">
-            {buildTimeline(order, review).map((step, i, arr) => {
-              const isLast = i === arr.length - 1;
-              const isTerminalStep = isTerminal && isLast;
+          <>
+            <div className="relative">
+              {buildTimeline(order, review).map((step, i, arr) => {
+                const isLast = i === arr.length - 1;
+                const isTerminalStep = isTerminal && isLast;
 
-              return (
-                <div key={step.label} className="relative flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <TimelineDot
-                      state={step.state}
-                      isTerminal={isTerminalStep}
-                    />
-                    {!isLast && (
-                      <div className={`w-px flex-1 min-h-[2rem] ${
-                        step.state === 'done' ? 'bg-emerald-400/30' :
-                        step.state === 'active' ? 'bg-atelier/30' :
-                        'bg-neutral-800'
-                      }`} />
-                    )}
-                  </div>
-
-                  <div className={`pb-8 ${isLast ? 'pb-0' : ''}`}>
-                    <div className="flex items-center gap-3 -mt-0.5">
-                      <h3 className={`text-sm font-medium ${
-                        isTerminalStep ? 'text-red-400' :
-                        step.state === 'done' ? 'text-white' :
-                        step.state === 'active' ? 'text-atelier-bright' :
-                        'text-neutral-500'
-                      }`}>
-                        {step.label}
-                      </h3>
-                      {step.timestamp && (
-                        <span className="text-2xs text-neutral-400 font-mono">{formatDate(step.timestamp)}</span>
+                return (
+                  <div key={step.label} className="relative flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <TimelineDot
+                        state={step.state}
+                        isTerminal={isTerminalStep}
+                      />
+                      {!isLast && (
+                        <div className={`w-px flex-1 min-h-[2rem] ${
+                          step.state === 'done' ? 'bg-emerald-400/30' :
+                          step.state === 'active' ? 'bg-atelier/30' :
+                          'bg-neutral-800'
+                        }`} />
                       )}
                     </div>
-                    {step.content && <div className="mt-2">{step.content}</div>}
+
+                    <div className={`pb-8 ${isLast ? 'pb-0' : ''}`}>
+                      <div className="flex items-center gap-3 -mt-0.5">
+                        <h3 className={`text-sm font-medium ${
+                          isTerminalStep ? 'text-red-400' :
+                          step.state === 'done' ? 'text-white' :
+                          step.state === 'active' ? 'text-atelier-bright' :
+                          'text-neutral-500'
+                        }`}>
+                          {step.label}
+                        </h3>
+                        {step.timestamp && (
+                          <span className="text-2xs text-neutral-400 font-mono">{formatDate(step.timestamp)}</span>
+                        )}
+                      </div>
+                      {step.content && <div className="mt-2">{step.content}</div>}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+
+            {order.status === 'delivered' && wallet.publicKey && order.client_wallet === wallet.publicKey.toBase58() && (
+              <button
+                onClick={async () => {
+                  setApproving(true);
+                  try {
+                    const auth = await signWalletAuth(wallet);
+                    const res = await fetch(`/api/atelier/orders/${order.id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ ...auth, action: 'approve' }),
+                    });
+                    const json = await res.json();
+                    if (json.success) load();
+                  } finally {
+                    setApproving(false);
+                  }
+                }}
+                disabled={approving}
+                className="mt-8 w-full py-3 rounded-lg bg-emerald-500 text-white text-sm font-semibold font-mono uppercase tracking-wider disabled:opacity-60 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2"
+              >
+                {approving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    Approving...
+                  </>
+                ) : (
+                  'Approve & Complete'
+                )}
+              </button>
+            )}
+          </>
         )}
       </div>
     </AtelierAppLayout>
