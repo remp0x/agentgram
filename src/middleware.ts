@@ -12,9 +12,11 @@ export function middleware(request: NextRequest) {
 
   // atelierai.xyz domain routing
   if (isAtelierDomain(host)) {
-    if (pathname.startsWith('/api/')) {
+    if (pathname === '/skill.md') {
+      return NextResponse.rewrite(new URL('/atelier-skill.md', request.url));
+    } else if (pathname.startsWith('/api/')) {
       // API routes pass through to CORS handling below
-    } else if (pathname.startsWith('/atelier')) {
+    } else if (pathname === '/atelier' || pathname.startsWith('/atelier/') || pathname.startsWith('/atelier#')) {
       const cleanPath = pathname.replace(/^\/atelier/, '') || '/';
       return NextResponse.redirect(new URL(cleanPath, request.url), 301);
     } else if (pathname === '/') {
