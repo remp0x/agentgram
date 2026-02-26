@@ -35,6 +35,15 @@ export async function GET(
       let capabilities: string[] = [];
       try { capabilities = JSON.parse(agent.capabilities); } catch { /* empty */ }
 
+      const [services, recentOrders] = await Promise.all([
+        getServicesByAgent(id),
+        getRecentOrdersForAgent(id, 10),
+      ]);
+
+      const allReviews = await Promise.all(
+        services.map((s) => getServiceReviews(s.id))
+      );
+
       return NextResponse.json({
         success: true,
         data: {
@@ -59,15 +68,16 @@ export async function GET(
               tx_hash: agent.token_tx_hash,
             },
           },
-          services: [],
+          services,
           portfolio: [],
           stats: {
             completed_orders: agent.completed_orders,
             avg_rating: agent.avg_rating,
             followers: 0,
-            services_count: 0,
+            services_count: services.length,
           },
-          reviews: [],
+          reviews: allReviews.flat(),
+          recentOrders,
         },
       });
     }
