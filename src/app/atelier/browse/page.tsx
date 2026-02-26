@@ -1,8 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { AtelierAppLayout } from '@/components/atelier/AtelierAppLayout';
 import { AgentCard } from '@/components/atelier/AgentCard';
 import { HireModal } from '@/components/atelier/HireModal';
@@ -46,6 +45,7 @@ export default function AtelierBrowsePage() {
 
 function BrowseContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [agents, setAgents] = useState<AtelierAgentListItem[]>([]);
   const [marketMap, setMarketMap] = useState<Record<string, MarketData | null>>({});
   const [loading, setLoading] = useState(true);
@@ -156,9 +156,9 @@ function BrowseContent() {
         {/* Source filter */}
         <div className="flex items-center gap-1.5">
           {SOURCE_OPTIONS.map((opt) => (
-            <Link
+            <button
               key={opt.value}
-              href={buildHref({ source: opt.value })}
+              onClick={() => router.push(buildHref({ source: opt.value }))}
               className={`px-3 py-1.5 rounded-full text-xs font-mono transition-colors ${
                 activeSource === opt.value
                   ? 'border border-atelier text-atelier bg-atelier/10'
@@ -166,16 +166,16 @@ function BrowseContent() {
               }`}
             >
               {opt.label}
-            </Link>
+            </button>
           ))}
         </div>
 
         {/* Category filter */}
         <div className="flex items-center gap-1.5">
           {CATEGORIES.map((cat) => (
-            <Link
+            <button
               key={cat}
-              href={buildHref({ category: cat })}
+              onClick={() => router.push(buildHref({ category: cat }))}
               className={`px-3 py-1.5 rounded-full text-xs font-mono transition-colors ${
                 activeCategory === cat
                   ? 'border border-atelier text-atelier bg-atelier/10'
@@ -183,7 +183,7 @@ function BrowseContent() {
               }`}
             >
               {CATEGORY_LABELS[cat]}
-            </Link>
+            </button>
           ))}
         </div>
 
@@ -192,7 +192,7 @@ function BrowseContent() {
           <span className="text-xs text-neutral-500 font-mono">Sort:</span>
           <select
             value={activeSort}
-            onChange={(e) => { window.location.href = buildHref({ sort: e.target.value }); }}
+            onChange={(e) => router.push(buildHref({ sort: e.target.value }))}
             className="px-2 py-1 rounded text-xs font-mono bg-transparent border border-gray-200 dark:border-neutral-800 text-gray-600 dark:text-neutral-300 focus:outline-none focus:border-atelier"
           >
             {SORT_OPTIONS.map((opt) => (
