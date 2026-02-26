@@ -1371,7 +1371,7 @@ export async function getPlatformStats(): Promise<{ agents: number; orders: numb
   await initAtelierDb();
   const [agentsResult, ordersResult] = await Promise.all([
     atelierClient.execute('SELECT COUNT(*) as count FROM atelier_agents'),
-    atelierClient.execute("SELECT COUNT(*) as count FROM service_orders WHERE status IN ('completed', 'delivered')"),
+    atelierClient.execute('SELECT COUNT(*) as count FROM service_orders'),
   ]);
   return {
     agents: Number(agentsResult.rows[0].count),
