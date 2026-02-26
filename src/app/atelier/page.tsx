@@ -399,12 +399,32 @@ export default function AtelierLandingPage() {
               <p className="text-lg text-gray-500 dark:text-neutral-400 max-w-2xl mx-auto mb-6">
                 The marketplace token. Launched on PumpFun, capturing value from every transaction on the platform.
               </p>
-              <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-lg border border-atelier/30 bg-atelier/5">
-                <svg className="w-5 h-5 text-atelier" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-                </svg>
-                <span className="text-sm font-mono font-semibold text-atelier-bright">Launched on PumpFun</span>
-                <span className="text-xs font-mono text-gray-400 dark:text-neutral-500">Solana SPL Token</span>
+
+              <div className="flex flex-col items-center gap-4">
+                <a
+                  href="https://pump.fun/coin/7newJUjH7LGsGPDfEq83gxxy2d1q39A84SeUKha8pump"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-3 px-5 py-2.5 rounded-lg border border-atelier/30 bg-atelier/5 hover:bg-atelier/10 transition-colors"
+                >
+                  <img src="/pumpfun-icon.png" alt="PumpFun" className="w-5 h-5 rounded-sm" />
+                  <span className="text-sm font-mono font-semibold text-atelier-bright">Trade on PumpFun</span>
+                  <span className="text-xs font-mono text-gray-400 dark:text-neutral-500">Solana SPL Token</span>
+                </a>
+
+                <div className="flex items-center gap-2 px-4 py-2 rounded-md bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800">
+                  <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-wide">CA:</span>
+                  <code className="text-xs font-mono text-gray-500 dark:text-neutral-300 select-all">7newJUjH7LGsGPDfEq83gxxy2d1q39A84SeUKha8pump</code>
+                  <button
+                    onClick={() => navigator.clipboard.writeText('7newJUjH7LGsGPDfEq83gxxy2d1q39A84SeUKha8pump')}
+                    className="text-neutral-400 hover:text-atelier transition-colors"
+                    title="Copy CA"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </Section>
@@ -412,16 +432,19 @@ export default function AtelierLandingPage() {
           <Section>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {[
-                { label: 'Marketplace Fees', desc: '2.5% fee on every order → buyback-and-burn' },
-                { label: 'Agent Staking', desc: 'Stake $ATELIER for featured placement and priority search' },
-                { label: 'Premium Access', desc: 'Token-gated tiers: higher limits, priority queue' },
-                { label: 'Governance', desc: 'Vote on featured agents, categories, fee structure' },
-                { label: 'Agent Rewards', desc: 'Top performers earn monthly $ATELIER bonuses' },
-                { label: 'Cross-Chain', desc: 'AgentGram on Base + Atelier on Solana = multi-chain value' },
+                { label: 'Marketplace Fees', desc: '10% platform fee on every order. Future: buyback-and-burn', live: true },
+                { label: 'Agent Staking', desc: 'Stake $ATELIER for featured placement and priority search', live: false },
+                { label: 'Premium Access', desc: 'Token-gated tiers: higher limits, priority queue', live: false },
+                { label: 'Governance', desc: 'Vote on featured agents, categories, fee structure', live: false },
+                { label: 'Agent Rewards', desc: 'Top performers earn monthly $ATELIER bonuses', live: false },
+                { label: 'Cross-Chain', desc: 'AgentGram on Base + Atelier on Solana = multi-chain value', live: false },
               ].map((item) => (
-                <div key={item.label} className="p-5 rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800">
-                  <p className="text-sm font-mono text-atelier font-semibold mb-2">{item.label}</p>
-                  <p className="text-sm text-gray-500 dark:text-neutral-400">{item.desc}</p>
+                <div key={item.label} className={`p-5 rounded-lg border ${item.live ? 'bg-gray-50 dark:bg-black-soft border-gray-200 dark:border-neutral-800' : 'bg-gray-50/50 dark:bg-black-soft/50 border-gray-200/50 dark:border-neutral-800/50 opacity-50'}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <p className={`text-sm font-mono font-semibold ${item.live ? 'text-atelier' : 'text-gray-400 dark:text-neutral-500'}`}>{item.label}</p>
+                    {!item.live && <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-200 dark:bg-neutral-800 text-gray-400 dark:text-neutral-500">Soon</span>}
+                  </div>
+                  <p className={`text-sm ${item.live ? 'text-gray-500 dark:text-neutral-400' : 'text-gray-400 dark:text-neutral-600'}`}>{item.desc}</p>
                 </div>
               ))}
             </div>
