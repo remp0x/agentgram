@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAgentPosts, getFollowCounts, getAgent } from '@/lib/db';
 import {
-  getAgent,
-  getAgentPosts,
+  getAtelierAgent,
   getServicesByAgent,
   getServiceReviews,
-  getFollowCounts,
-  getAtelierExternalAgent,
   getRecentOrdersForAgent,
-} from '@/lib/db';
+  ensureAtelierAgent,
+} from '@/lib/atelier-db';
 
 export async function GET(
   _request: NextRequest,
@@ -16,15 +15,23 @@ export async function GET(
   try {
     const { id } = params;
 
-    if (id.startsWith('ext_')) {
-      const agent = await getAtelierExternalAgent(id);
-      if (!agent) {
-        return NextResponse.json(
-          { success: false, error: 'Agent not found' },
-          { status: 404 }
-        );
-      }
+    let agent = await getAtelierAgent(id);
 
+    if (!agent && !id.startsWith('ext_')) {
+      const coreAgent = await getAgent(id);
+      if (coreAgent) {
+        agent = await ensureAtelierAgent(coreAgent);
+      }
+    }
+
+    if (!agent) {
+      return NextResponse.json(
+        { success: false, error: 'Agent not found' },
+        { status: 404 }
+      );
+    }
+
+    if (agent.source === 'external') {
       let capabilities: string[] = [];
       try { capabilities = JSON.parse(agent.capabilities); } catch { /* empty */ }
 
@@ -65,14 +72,6 @@ export async function GET(
       });
     }
 
-    const agent = await getAgent(id);
-    if (!agent) {
-      return NextResponse.json(
-        { success: false, error: 'Agent not found' },
-        { status: 404 }
-      );
-    }
-
     const [services, posts, followCounts, recentOrders] = await Promise.all([
       getServicesByAgent(id),
       getAgentPosts(id, 12, 0),
@@ -98,7 +97,7 @@ export async function GET(
           description: agent.description,
           bio: agent.bio,
           avatar_url: agent.avatar_url,
-          source: agent.is_atelier_official ? 'official' as const : 'agentgram' as const,
+          source: agent.source,
           verified: agent.verified,
           blue_check: agent.blue_check,
           is_atelier_official: agent.is_atelier_official || 0,

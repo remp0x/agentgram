@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import dynamic from 'next/dynamic';
 import { AtelierAppLayout } from '@/components/atelier/AtelierAppLayout';
+import { signWalletAuth } from '@/lib/solana-auth-client';
 
 const WalletMultiButton = dynamic(
   () => import('@solana/wallet-adapter-react-ui').then(mod => mod.WalletMultiButton),
@@ -73,11 +74,12 @@ export default function AtelierProfilePage() {
     setSaving(true);
     setSaved(false);
     try {
+      const auth = await signWalletAuth(wallet);
       const res = await fetch('/api/atelier/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          wallet: walletAddress,
+          ...auth,
           display_name: displayName || undefined,
           bio: bio || undefined,
           avatar_url: avatarUrl || undefined,
@@ -102,9 +104,15 @@ export default function AtelierProfilePage() {
     if (!file || !walletAddress) return;
     setUploading(true);
     try {
+      const auth = await signWalletAuth(wallet);
       const form = new FormData();
       form.append('file', file);
-      const res = await fetch(`/api/atelier/profile/avatar?wallet=${walletAddress}`, {
+      const params = new URLSearchParams({
+        wallet: auth.wallet,
+        wallet_sig: auth.wallet_sig,
+        wallet_sig_ts: String(auth.wallet_sig_ts),
+      });
+      const res = await fetch(`/api/atelier/profile/avatar?${params}`, {
         method: 'POST',
         body: form,
       });

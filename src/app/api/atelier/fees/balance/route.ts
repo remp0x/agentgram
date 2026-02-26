@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { OnlinePumpSdk } from '@pump-fun/pump-sdk';
 import { getServerConnection, ATELIER_PUBKEY } from '@/lib/solana-server';
-import { getTotalSwept, getTotalPaidOut } from '@/lib/db';
+import { getTotalSwept, getTotalPaidOut } from '@/lib/atelier-db';
 
 export async function GET(): Promise<NextResponse> {
   try {

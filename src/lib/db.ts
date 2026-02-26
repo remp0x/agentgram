@@ -2067,9 +2067,16 @@ export async function getServices(filters?: {
   args.push(limit, offset);
 
   const result = await client.execute({
-    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet, COALESCE(a.is_atelier_official, 0) as is_atelier_official
+    sql: `SELECT s.*,
+            COALESCE(a.name, ea.name) as agent_name,
+            COALESCE(a.avatar_url, ea.avatar_url) as agent_avatar_url,
+            COALESCE(a.verified, ea.verified, 0) as verified,
+            COALESCE(a.blue_check, 0) as blue_check,
+            (a.bankr_wallet IS NOT NULL) as has_bankr_wallet,
+            COALESCE(a.is_atelier_official, 0) as is_atelier_official
           FROM services s
           LEFT JOIN agents a ON s.agent_id = a.id
+          LEFT JOIN atelier_external_agents ea ON s.agent_id = ea.id
           WHERE ${conditions.join(' AND ')}
           ORDER BY ${orderBy}
           LIMIT ? OFFSET ?`,
@@ -2081,9 +2088,15 @@ export async function getServices(filters?: {
 export async function getFeaturedServices(limit = 6): Promise<Service[]> {
   await initDb();
   const result = await client.execute({
-    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
+    sql: `SELECT s.*,
+            COALESCE(a.name, ea.name) as agent_name,
+            COALESCE(a.avatar_url, ea.avatar_url) as agent_avatar_url,
+            COALESCE(a.verified, ea.verified, 0) as verified,
+            COALESCE(a.blue_check, 0) as blue_check,
+            (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
           FROM services s
           LEFT JOIN agents a ON s.agent_id = a.id
+          LEFT JOIN atelier_external_agents ea ON s.agent_id = ea.id
           WHERE s.active = 1
           ORDER BY s.completed_orders DESC, s.avg_rating DESC
           LIMIT ?`,
@@ -2095,9 +2108,15 @@ export async function getFeaturedServices(limit = 6): Promise<Service[]> {
 export async function getServiceById(id: string): Promise<Service | null> {
   await initDb();
   const result = await client.execute({
-    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
+    sql: `SELECT s.*,
+            COALESCE(a.name, ea.name) as agent_name,
+            COALESCE(a.avatar_url, ea.avatar_url) as agent_avatar_url,
+            COALESCE(a.verified, ea.verified, 0) as verified,
+            COALESCE(a.blue_check, 0) as blue_check,
+            (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
           FROM services s
           LEFT JOIN agents a ON s.agent_id = a.id
+          LEFT JOIN atelier_external_agents ea ON s.agent_id = ea.id
           WHERE s.id = ?`,
     args: [id],
   });
@@ -2107,9 +2126,15 @@ export async function getServiceById(id: string): Promise<Service | null> {
 export async function getServicesByAgent(agentId: string): Promise<Service[]> {
   await initDb();
   const result = await client.execute({
-    sql: `SELECT s.*, a.name as agent_name, a.avatar_url as agent_avatar_url, a.verified, a.blue_check, (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
+    sql: `SELECT s.*,
+            COALESCE(a.name, ea.name) as agent_name,
+            COALESCE(a.avatar_url, ea.avatar_url) as agent_avatar_url,
+            COALESCE(a.verified, ea.verified, 0) as verified,
+            COALESCE(a.blue_check, 0) as blue_check,
+            (a.bankr_wallet IS NOT NULL) as has_bankr_wallet
           FROM services s
           LEFT JOIN agents a ON s.agent_id = a.id
+          LEFT JOIN atelier_external_agents ea ON s.agent_id = ea.id
           WHERE s.agent_id = ? AND s.active = 1
           ORDER BY s.created_at DESC`,
     args: [agentId],
@@ -2194,11 +2219,14 @@ export async function getServiceOrderById(id: string): Promise<ServiceOrder | nu
   await initDb();
   const result = await client.execute({
     sql: `SELECT o.*, s.title as service_title,
-            ca.name as client_name, pa.name as provider_name
+            COALESCE(ca.name, eca.name) as client_name,
+            COALESCE(pa.name, epa.name) as provider_name
           FROM service_orders o
           LEFT JOIN services s ON o.service_id = s.id
           LEFT JOIN agents ca ON o.client_agent_id = ca.id
+          LEFT JOIN atelier_external_agents eca ON o.client_agent_id = eca.id
           LEFT JOIN agents pa ON o.provider_agent_id = pa.id
+          LEFT JOIN atelier_external_agents epa ON o.provider_agent_id = epa.id
           WHERE o.id = ?`,
     args: [id],
   });
@@ -2216,11 +2244,14 @@ export async function getOrdersByAgent(agentId: string, role: 'client' | 'provid
 
   const result = await client.execute({
     sql: `SELECT o.*, s.title as service_title,
-            ca.name as client_name, pa.name as provider_name
+            COALESCE(ca.name, eca.name) as client_name,
+            COALESCE(pa.name, epa.name) as provider_name
           FROM service_orders o
           LEFT JOIN services s ON o.service_id = s.id
           LEFT JOIN agents ca ON o.client_agent_id = ca.id
+          LEFT JOIN atelier_external_agents eca ON o.client_agent_id = eca.id
           LEFT JOIN agents pa ON o.provider_agent_id = pa.id
+          LEFT JOIN atelier_external_agents epa ON o.provider_agent_id = epa.id
           WHERE ${condition}
           ORDER BY o.created_at DESC`,
     args,
@@ -2319,11 +2350,14 @@ export async function getOrdersByWallet(wallet: string): Promise<ServiceOrder[]>
   await initDb();
   const result = await client.execute({
     sql: `SELECT o.*, s.title as service_title,
-            ca.name as client_name, pa.name as provider_name
+            COALESCE(ca.name, eca.name) as client_name,
+            COALESCE(pa.name, epa.name) as provider_name
           FROM service_orders o
           LEFT JOIN services s ON o.service_id = s.id
           LEFT JOIN agents ca ON o.client_agent_id = ca.id
+          LEFT JOIN atelier_external_agents eca ON o.client_agent_id = eca.id
           LEFT JOIN agents pa ON o.provider_agent_id = pa.id
+          LEFT JOIN atelier_external_agents epa ON o.provider_agent_id = epa.id
           WHERE o.client_wallet = ?
           ORDER BY o.created_at DESC`,
     args: [wallet],
@@ -2517,6 +2551,46 @@ export async function getAtelierExternalAgentByApiKey(apiKey: string): Promise<A
   return result.rows[0] ? (result.rows[0] as unknown as AtelierExternalAgent) : null;
 }
 
+export async function getExternalAgentsByWallet(ownerWallet: string): Promise<AtelierExternalAgent[]> {
+  await initDb();
+  const result = await client.execute({
+    sql: 'SELECT * FROM atelier_external_agents WHERE owner_wallet = ? AND active = 1',
+    args: [ownerWallet],
+  });
+  return result.rows as unknown as AtelierExternalAgent[];
+}
+
+export async function updateExternalAgent(
+  id: string,
+  updates: Partial<Pick<AtelierExternalAgent, 'name' | 'description' | 'avatar_url' | 'endpoint_url' | 'capabilities'>>
+): Promise<AtelierExternalAgent | null> {
+  await initDb();
+  const setClauses: string[] = [];
+  const args: (string | null)[] = [];
+
+  const fields: (keyof typeof updates)[] = ['name', 'description', 'avatar_url', 'endpoint_url', 'capabilities'];
+  for (const field of fields) {
+    if (updates[field] !== undefined) {
+      setClauses.push(`${field} = ?`);
+      args.push(updates[field] as string | null);
+    }
+  }
+
+  if (setClauses.length === 0) {
+    const result = await client.execute({ sql: 'SELECT * FROM atelier_external_agents WHERE id = ? AND active = 1', args: [id] });
+    return result.rows[0] ? (result.rows[0] as unknown as AtelierExternalAgent) : null;
+  }
+
+  args.push(id);
+  await client.execute({
+    sql: `UPDATE atelier_external_agents SET ${setClauses.join(', ')} WHERE id = ? AND active = 1`,
+    args,
+  });
+
+  const result = await client.execute({ sql: 'SELECT * FROM atelier_external_agents WHERE id = ? AND active = 1', args: [id] });
+  return result.rows[0] ? (result.rows[0] as unknown as AtelierExternalAgent) : null;
+}
+
 export interface AgentTokenInfo {
   token_mint: string | null;
   token_name: string | null;
@@ -2635,13 +2709,14 @@ export async function getAtelierAgents(filters?: {
         'external' as source,
         e.verified, 0 as blue_check,
         0 as is_atelier_official,
-        0 as services_count,
+        COUNT(DISTINCT s.id) as services_count,
         e.avg_rating,
         e.completed_orders,
         e.capabilities as categories_str,
         e.token_mint, e.token_symbol, e.token_name, e.token_image_url,
         e.created_at
       FROM atelier_external_agents e
+      LEFT JOIN services s ON s.agent_id = e.id AND s.active = 1
       WHERE e.active = 1
     `;
 
@@ -2655,6 +2730,7 @@ export async function getAtelierAgents(filters?: {
       args.push(searchPattern, searchPattern);
     }
 
+    extQuery += ` GROUP BY e.id`;
     parts.push(extQuery);
   }
 

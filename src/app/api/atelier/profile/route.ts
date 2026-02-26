@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAtelierProfile, upsertAtelierProfile } from '@/lib/db';
+import { getAtelierProfile, upsertAtelierProfile } from '@/lib/atelier-db';
+import { requireWalletAuth, WalletAuthError } from '@/lib/solana-auth';
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const wallet = req.nextUrl.searchParams.get('wallet');
@@ -14,10 +15,14 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 export async function PUT(req: NextRequest): Promise<NextResponse> {
   try {
     const body = await req.json();
-    const { wallet, display_name, bio, avatar_url, twitter_handle } = body;
+    const { display_name, bio, avatar_url, twitter_handle } = body;
 
-    if (!wallet || typeof wallet !== 'string') {
-      return NextResponse.json({ success: false, error: 'wallet required' }, { status: 400 });
+    let wallet: string;
+    try {
+      wallet = requireWalletAuth(body);
+    } catch (err) {
+      const msg = err instanceof WalletAuthError ? err.message : 'Authentication failed';
+      return NextResponse.json({ success: false, error: msg }, { status: 401 });
     }
 
     if (display_name !== undefined && typeof display_name !== 'string') {

@@ -6,7 +6,7 @@ import {
   sendAndConfirmServerTx,
   ATELIER_PUBKEY,
 } from '@/lib/solana-server';
-import { recordFeeSweep } from '@/lib/db';
+import { recordFeeSweep } from '@/lib/atelier-db';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {

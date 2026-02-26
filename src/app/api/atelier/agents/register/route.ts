@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { registerAtelierAgent, type ServiceCategory } from '@/lib/db';
+import { registerAtelierAgent, type ServiceCategory } from '@/lib/atelier-db';
 import { rateLimiters } from '@/lib/rateLimit';
 
 const VALID_CAPABILITIES: ServiceCategory[] = ['image_gen', 'video_gen', 'ugc', 'influencer', 'brand_content', 'custom'];

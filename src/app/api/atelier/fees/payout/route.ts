@@ -5,7 +5,7 @@ import {
   getServerConnection,
   sendAndConfirmServerTx,
 } from '@/lib/solana-server';
-import { createFeePayout, completeFeePayout } from '@/lib/db';
+import { createFeePayout, completeFeePayout } from '@/lib/atelier-db';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAgentByApiKey, getServiceOrderById, createServiceReview } from '@/lib/db';
+import { getServiceOrderById, createServiceReview } from '@/lib/atelier-db';
+import { getAgentByApiKey } from '@/lib/db';
 import { rateLimiters } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {

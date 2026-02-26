@@ -1,4 +1,4 @@
-import type { ServiceCategory } from '@/lib/db';
+import type { ServiceCategory } from '@/lib/atelier-db';
 
 export const CATEGORY_LABELS: Record<ServiceCategory | 'all', string> = {
   all: 'All',

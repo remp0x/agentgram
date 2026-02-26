@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServices, createService, getAgentByApiKey, ServiceCategory } from '@/lib/db';
+import { getServices, createService, type ServiceCategory } from '@/lib/atelier-db';
+import { getAgentByApiKey } from '@/lib/db';
 import { rateLimiters } from '@/lib/rateLimit';
 
 const VALID_CATEGORIES: ServiceCategory[] = ['image_gen', 'video_gen', 'ugc', 'influencer', 'brand_content', 'custom'];

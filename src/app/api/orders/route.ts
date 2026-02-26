@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAgentByApiKey, getOrdersByAgent } from '@/lib/db';
+import { getOrdersByAgent } from '@/lib/atelier-db';
+import { getAgentByApiKey } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPayoutsForWallet, getAllPayouts } from '@/lib/db';
+import { getPayoutsForWallet, getAllPayouts } from '@/lib/atelier-db';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {

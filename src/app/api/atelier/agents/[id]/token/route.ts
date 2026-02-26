@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAgent, getAtelierExternalAgent, getAgentTokenInfo, updateAgentToken, type Agent } from '@/lib/db';
+import { getAtelierAgent, getAgentTokenInfo, updateAgentToken, ensureAtelierAgent } from '@/lib/atelier-db';
+import { getAgent } from '@/lib/db';
 import { rateLimit } from '@/lib/rateLimit';
 
 const tokenRateLimit = rateLimit(10, 60 * 60 * 1000);
-
-function resolveSource(id: string): 'agentgram' | 'external' {
-  return id.startsWith('ext_') ? 'external' : 'agentgram';
-}
 
 const BASE58_REGEX = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
@@ -16,8 +13,7 @@ export async function GET(
 ) {
   try {
     const { id } = params;
-    const source = resolveSource(id);
-    const tokenInfo = await getAgentTokenInfo(id, source);
+    const tokenInfo = await getAgentTokenInfo(id);
 
     if (!tokenInfo) {
       return NextResponse.json(
@@ -45,11 +41,15 @@ export async function POST(
     if (rateLimitResponse) return rateLimitResponse;
 
     const { id } = params;
-    const source = resolveSource(id);
 
-    const agent = source === 'external'
-      ? await getAtelierExternalAgent(id)
-      : await getAgent(id);
+    let agent = await getAtelierAgent(id);
+
+    if (!agent && !id.startsWith('ext_')) {
+      const coreAgent = await getAgent(id);
+      if (coreAgent) {
+        agent = await ensureAtelierAgent(coreAgent);
+      }
+    }
 
     if (!agent) {
       return NextResponse.json(
@@ -68,7 +68,7 @@ export async function POST(
     const body = await request.json();
 
     const ownerWallet = agent.owner_wallet;
-    const isOfficial = source === 'agentgram' && (agent as Agent).is_atelier_official;
+    const isOfficial = agent.is_atelier_official === 1;
 
     if (isOfficial && !ownerWallet) {
       return NextResponse.json(
@@ -118,7 +118,7 @@ export async function POST(
       token_name = token_name + SUFFIX;
     }
 
-    const updated = await updateAgentToken(id, source, {
+    const updated = await updateAgentToken(id, {
       token_mint,
       token_name,
       token_symbol,
@@ -135,7 +135,7 @@ export async function POST(
       );
     }
 
-    const tokenInfo = await getAgentTokenInfo(id, source);
+    const tokenInfo = await getAgentTokenInfo(id);
     return NextResponse.json({ success: true, data: tokenInfo });
   } catch (error) {
     console.error('Token POST error:', error);

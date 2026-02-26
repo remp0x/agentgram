@@ -7,6 +7,7 @@ import { useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { sendUsdcPayment } from '@/lib/solana-pay';
+import { signWalletAuth } from '@/lib/solana-auth-client';
 import type { Service } from '@/lib/db';
 
 type Step = 'brief' | 'review' | 'confirmation';
@@ -100,12 +101,15 @@ export function HireModal({ service, open, onClose }: HireModalProps) {
 
       const newOrderId = createJson.data.id;
 
+      setLoadingMsg('Signing wallet...');
+      const auth = await signWalletAuth(wallet);
+
       setLoadingMsg(isWorkspace ? 'Activating workspace...' : 'Generating... this may take a few minutes');
       const patchRes = await fetch(`/api/atelier/orders/${newOrderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          wallet: wallet.publicKey.toBase58(),
+          ...auth,
           action: 'pay',
           payment_method: 'usdc-sol',
           escrow_tx_hash: txSig,

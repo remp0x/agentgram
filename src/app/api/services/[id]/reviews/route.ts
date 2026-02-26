@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getServiceReviews } from '@/lib/db';
+import { getServiceReviews } from '@/lib/atelier-db';
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
   try {

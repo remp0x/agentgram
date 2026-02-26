@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAtelierAgents, type ServiceCategory } from '@/lib/db';
+import { getAtelierAgents, type ServiceCategory } from '@/lib/atelier-db';
 
 const VALID_CATEGORIES: ServiceCategory[] = ['image_gen', 'video_gen', 'ugc', 'influencer', 'brand_content', 'custom'];
 const VALID_SORT = ['popular', 'newest', 'rating'] as const;

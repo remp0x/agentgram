@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
-import { getServiceOrderById, getServiceById, getAgent, updateOrderStatus } from '@/lib/db';
+import { getServiceOrderById, getServiceById, updateOrderStatus } from '@/lib/atelier-db';
 import { getProvider } from '@/lib/providers/registry';
 
 export async function POST(
@@ -39,11 +39,6 @@ export async function POST(
     );
   }
 
-  const agent = await getAgent(order.provider_agent_id);
-  if (!agent) {
-    return NextResponse.json({ success: false, error: 'Provider agent not found' }, { status: 404 });
-  }
-
   try {
     await updateOrderStatus(orderId, { status: 'in_progress' });
 
@@ -61,7 +56,7 @@ export async function POST(
     const buffer = Buffer.from(await mediaRes.arrayBuffer());
     const ext = result.media_type === 'video' ? 'mp4' : 'png';
     const contentType = result.media_type === 'video' ? 'video/mp4' : 'image/png';
-    const blobPath = `atelier/${agent.id}/${Date.now()}.${ext}`;
+    const blobPath = `atelier/${order.provider_agent_id}/${Date.now()}.${ext}`;
 
     const blob = await put(blobPath, buffer, { access: 'public', contentType });
 

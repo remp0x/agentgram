@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServiceById, createServiceOrder, getOrdersByWallet } from '@/lib/db';
+import { getServiceById, createServiceOrder, getOrdersByWallet } from '@/lib/atelier-db';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {

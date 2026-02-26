@@ -3,15 +3,15 @@ import { put } from '@vercel/blob';
 import {
   getServiceOrderById,
   getServiceById,
-  getAgent,
   getOrderDeliverables,
   updateOrderStatus,
   createOrderDeliverable,
   updateOrderDeliverable,
   incrementOrderQuotaUsed,
-} from '@/lib/db';
+} from '@/lib/atelier-db';
 import { getProvider } from '@/lib/providers/registry';
 import { generateWithRetry } from '@/lib/providers/types';
+import { requireWalletAuth, WalletAuthError } from '@/lib/solana-auth';
 
 export const maxDuration = 300;
 
@@ -23,11 +23,11 @@ export async function POST(
 
   try {
     const body = await request.json();
-    const { wallet, prompt } = body;
+    const { prompt } = body;
 
-    if (!wallet || !prompt || typeof prompt !== 'string' || prompt.length < 1) {
+    if (!body.wallet || !prompt || typeof prompt !== 'string' || prompt.length < 1) {
       return NextResponse.json(
-        { success: false, error: 'wallet and prompt are required' },
+        { success: false, error: 'wallet, prompt, wallet_sig, and wallet_sig_ts are required' },
         { status: 400 },
       );
     }
@@ -37,8 +37,11 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
     }
 
-    if (order.client_wallet !== wallet) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+    try {
+      requireWalletAuth(body, order.client_wallet);
+    } catch (err) {
+      const msg = err instanceof WalletAuthError ? err.message : 'Authentication failed';
+      return NextResponse.json({ success: false, error: msg }, { status: 401 });
     }
 
     if (order.quota_total <= 0) {
@@ -110,8 +113,7 @@ export async function POST(
         throw new Error(`Failed to download generated media: ${mediaRes.status}`);
       }
 
-      const agent = await getAgent(order.provider_agent_id);
-      const agentId = agent?.id || order.provider_agent_id;
+      const agentId = order.provider_agent_id;
       const buffer = Buffer.from(await mediaRes.arrayBuffer());
       const ext = result.media_type === 'video' ? 'mp4' : 'png';
       const contentType = result.media_type === 'video' ? 'video/mp4' : 'image/png';

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAgentByApiKey, getServiceOrderById, updateOrderStatus } from '@/lib/db';
-import type { OrderStatus } from '@/lib/db';
+import { getServiceOrderById, updateOrderStatus, type OrderStatus } from '@/lib/atelier-db';
+import { getAgentByApiKey } from '@/lib/db';
 import { rateLimiters } from '@/lib/rateLimit';
 
 const VALID_TRANSITIONS: Record<string, { from: OrderStatus[]; role: 'client' | 'provider' | 'both'; to: OrderStatus }> = {

@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { AtelierAppLayout } from '@/components/atelier/AtelierAppLayout';
+import { signWalletAuth } from '@/lib/solana-auth-client';
 import type { ServiceOrder, ServiceReview, OrderStatus, OrderDeliverable } from '@/lib/db';
 
 interface OrderData {
@@ -268,11 +269,12 @@ function WorkspaceView({ data, onRefresh }: { data: OrderData; onRefresh: () => 
     setGenError(null);
 
     try {
+      const auth = await signWalletAuth(wallet);
       const res = await fetch(`/api/atelier/orders/${order.id}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          wallet: wallet.publicKey.toBase58(),
+          ...auth,
           prompt: prompt.trim(),
         }),
       });
@@ -304,17 +306,18 @@ function WorkspaceView({ data, onRefresh }: { data: OrderData; onRefresh: () => 
     if (!wallet.publicKey) return;
     setApproving(true);
     try {
+      const auth = await signWalletAuth(wallet);
       const res = await fetch(`/api/atelier/orders/${order.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet: wallet.publicKey.toBase58(), action: 'approve' }),
+        body: JSON.stringify({ ...auth, action: 'approve' }),
       });
       const json = await res.json();
       if (json.success) onRefresh();
     } finally {
       setApproving(false);
     }
-  }, [wallet.publicKey, order.id, onRefresh]);
+  }, [wallet, order.id, onRefresh]);
 
   return (
     <div className="space-y-6">

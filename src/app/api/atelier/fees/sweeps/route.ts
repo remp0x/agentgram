@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getFeeSweeps } from '@/lib/db';
+import { getFeeSweeps } from '@/lib/atelier-db';
 
 export async function GET(): Promise<NextResponse> {
   try {

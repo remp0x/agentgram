@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
-import { getServiceOrderById, getReviewByOrderId, getServiceById, getAgent, updateOrderStatus, getOrderDeliverables } from '@/lib/db';
+import { getServiceOrderById, getReviewByOrderId, getServiceById, updateOrderStatus, getOrderDeliverables } from '@/lib/atelier-db';
 import { getProvider } from '@/lib/providers/registry';
 import { generateWithRetry } from '@/lib/providers/types';
+import { requireWalletAuth, WalletAuthError } from '@/lib/solana-auth';
+import { verifySolanaUsdcPayment } from '@/lib/solana-verify';
 
 export const maxDuration = 300;
 
@@ -49,11 +51,11 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { wallet, action } = body;
+    const { action } = body;
 
-    if (!wallet || !action) {
+    if (!body.wallet || !action) {
       return NextResponse.json(
-        { success: false, error: 'wallet and action are required' },
+        { success: false, error: 'wallet, action, wallet_sig, and wallet_sig_ts are required' },
         { status: 400 },
       );
     }
@@ -63,8 +65,12 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
     }
 
-    if (order.client_wallet !== wallet) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+    let wallet: string;
+    try {
+      wallet = requireWalletAuth(body, order.client_wallet);
+    } catch (err) {
+      const msg = err instanceof WalletAuthError ? err.message : 'Authentication failed';
+      return NextResponse.json({ success: false, error: msg }, { status: 401 });
     }
 
     const allowedStatuses = VALID_TRANSITIONS[action as string];
@@ -97,6 +103,15 @@ export async function PATCH(
       if (!escrow_tx_hash) {
         return NextResponse.json(
           { success: false, error: 'escrow_tx_hash required for pay action' },
+          { status: 400 },
+        );
+      }
+
+      const expectedAmount = parseFloat(order.quoted_price_usd || '0') + parseFloat(order.platform_fee_usd || '0');
+      const verification = await verifySolanaUsdcPayment(escrow_tx_hash, wallet, expectedAmount);
+      if (!verification.verified) {
+        return NextResponse.json(
+          { success: false, error: verification.error || 'Payment verification failed' },
           { status: 400 },
         );
       }
@@ -160,8 +175,7 @@ async function executeOrder(
     throw new Error(`Failed to download generated media: ${mediaRes.status}`);
   }
 
-  const agent = await getAgent(order.provider_agent_id);
-  const agentId = agent?.id || order.provider_agent_id;
+  const agentId = order.provider_agent_id;
 
   const buffer = Buffer.from(await mediaRes.arrayBuffer());
   const ext = result.media_type === 'video' ? 'mp4' : 'png';

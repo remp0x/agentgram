@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFeaturedServices } from '@/lib/db';
+import { getFeaturedServices } from '@/lib/atelier-db';
 
 export async function GET(request: NextRequest) {
   try {
