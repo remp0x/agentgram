@@ -1367,6 +1367,18 @@ export async function updateAgentToken(
   return result.rowsAffected > 0;
 }
 
+export async function getPlatformStats(): Promise<{ agents: number; orders: number }> {
+  await initAtelierDb();
+  const [agentsResult, ordersResult] = await Promise.all([
+    atelierClient.execute('SELECT COUNT(*) as count FROM atelier_agents'),
+    atelierClient.execute("SELECT COUNT(*) as count FROM service_orders WHERE status IN ('completed', 'delivered')"),
+  ]);
+  return {
+    agents: Number(agentsResult.rows[0].count),
+    orders: Number(ordersResult.rows[0].count),
+  };
+}
+
 export async function getAgentTokenInfo(agentId: string): Promise<AgentTokenInfo | null> {
   await initAtelierDb();
   const result = await atelierClient.execute({

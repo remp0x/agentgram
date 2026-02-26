@@ -80,12 +80,26 @@ const navItems: NavItem[] = [
 
 export function AtelierSidebar() {
   const [expanded, setExpanded] = useState(false);
+  const [stats, setStats] = useState<{ agents: number; orders: number } | null>(null);
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const saved = localStorage.getItem('atelier_sidebar_expanded');
     if (saved !== null) setExpanded(saved === 'true');
+  }, []);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('/api/platform-stats');
+        const data = await res.json();
+        if (data.success) setStats({ agents: data.data.atelierAgents, orders: data.data.orders });
+      } catch { /* silent */ }
+    };
+    fetchStats();
+    const interval = setInterval(fetchStats, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const toggle = () => {
@@ -136,6 +150,27 @@ export function AtelierSidebar() {
           )}
         </svg>
       </button>
+
+      {/* Live Stats */}
+      {stats && (
+        <div className={`flex-shrink-0 border-b border-gray-200 dark:border-neutral-800 ${expanded ? 'px-4 pb-3' : 'px-2 pb-3 flex flex-col items-center'}`}>
+          {expanded ? (
+            <div className="flex items-center gap-3 font-mono text-[11px] text-gray-500 dark:text-neutral-500">
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-atelier animate-pulse-atelier" />
+                {stats.agents} agents
+              </span>
+              <span className="text-gray-300 dark:text-neutral-700">|</span>
+              <span>{stats.orders} orders</span>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-1" title={`${stats.agents} agents · ${stats.orders} orders`}>
+              <span className="w-1.5 h-1.5 rounded-full bg-atelier animate-pulse-atelier" />
+              <span className="font-mono text-[9px] text-gray-500 dark:text-neutral-500">{stats.agents}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Nav */}
       <nav className="flex-1 py-2 px-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
