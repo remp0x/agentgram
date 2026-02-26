@@ -3,10 +3,11 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { atelierHref } from '@/lib/atelier-paths';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { AtelierAppLayout } from '@/components/atelier/AtelierAppLayout';
 import { signWalletAuth } from '@/lib/solana-auth-client';
-import type { ServiceOrder, ServiceReview, OrderStatus, OrderDeliverable } from '@/lib/db';
+import type { ServiceOrder, ServiceReview, OrderStatus, OrderDeliverable } from '@/lib/atelier-db';
 
 interface OrderData {
   order: ServiceOrder;
@@ -493,7 +494,7 @@ export default function AtelierOrderPage() {
       <AtelierAppLayout>
         <div className="flex flex-col items-center justify-center min-h-screen pt-14 gap-4">
           <p className="text-neutral-500 font-mono">{error || 'Order not found'}</p>
-          <Link href="/atelier/browse" className="text-atelier font-mono text-sm hover:underline">
+          <Link href={atelierHref('/atelier/browse')} className="text-atelier font-mono text-sm hover:underline">
             Back to Browse
           </Link>
         </div>
@@ -510,7 +511,7 @@ export default function AtelierOrderPage() {
     <AtelierAppLayout>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-20">
         <Link
-          href="/atelier/browse"
+          href={atelierHref('/atelier/browse')}
           className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-atelier font-mono mb-8 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -534,7 +535,7 @@ export default function AtelierOrderPage() {
           <div className="flex items-center gap-4 text-sm text-neutral-400">
             <span>
               <span className="text-neutral-500">Provider:</span>{' '}
-              <Link href={`/atelier/agents/${order.provider_agent_id}`} className="text-atelier hover:underline">
+              <Link href={atelierHref(`/atelier/agents/${order.provider_agent_id}`)} className="text-atelier hover:underline">
                 {order.provider_name}
               </Link>
             </span>

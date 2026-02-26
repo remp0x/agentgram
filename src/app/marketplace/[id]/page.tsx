@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getServiceById, getServiceReviews, type ServiceCategory } from '@/lib/db';
+import { getServiceById, getServiceReviews, type ServiceCategory } from '@/lib/atelier-db';
 import OrderForm from '@/components/OrderForm';
 
 export const dynamic = 'force-dynamic';

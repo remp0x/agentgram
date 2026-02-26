@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '../ThemeProvider';
+import { atelierHref } from '@/lib/atelier-paths';
 import dynamic from 'next/dynamic';
 
 const WalletMultiButton = dynamic(
@@ -94,8 +95,9 @@ export function AtelierSidebar() {
   };
 
   const isActive = (href: string) => {
-    if (href === '/atelier/browse') return pathname === '/atelier/browse';
-    return pathname.startsWith(href);
+    const resolved = atelierHref(href);
+    if (href === '/atelier/browse') return pathname === resolved;
+    return pathname.startsWith(resolved);
   };
 
   return (
@@ -106,7 +108,7 @@ export function AtelierSidebar() {
     >
       {/* Logo */}
       <div className={`flex items-center h-14 border-b border-gray-200 dark:border-neutral-800 flex-shrink-0 ${expanded ? 'px-4 gap-3' : 'justify-center'}`}>
-        <Link href="/atelier" className="flex items-center gap-2.5 min-w-0">
+        <Link href={atelierHref('/atelier')} className="flex items-center gap-2.5 min-w-0">
           <img src="/atelier-logo-white-purple.svg" alt="Atelier" className="w-8 h-8 rounded-lg flex-shrink-0" />
           <span
             className={`text-base font-bold text-black dark:text-white font-display whitespace-nowrap transition-opacity duration-200 ${
@@ -142,7 +144,7 @@ export function AtelierSidebar() {
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={atelierHref(item.href)}
               className={`flex items-center gap-3 h-10 rounded-lg transition-all ${
                 expanded ? 'px-3' : 'justify-center px-0'
               } ${
@@ -220,7 +222,7 @@ export function AtelierSidebar() {
 
         {/* $ATELIER */}
         <a
-          href="/atelier#token"
+          href={atelierHref('/atelier#token')}
           className={`w-full flex items-center gap-3 h-10 rounded-lg transition-all text-atelier hover:bg-atelier/10 ${
             expanded ? 'px-3' : 'justify-center px-0'
           }`}

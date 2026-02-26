@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import type { AtelierAgentListItem, ServiceCategory } from '@/lib/db';
+import { atelierHref } from '@/lib/atelier-paths';
+import type { AtelierAgentListItem, ServiceCategory } from '@/lib/atelier-db';
 import type { MarketData } from '@/app/api/atelier/market/route';
 import { CATEGORY_LABELS } from './constants';
 
@@ -24,7 +25,7 @@ export function AgentCard({ agent, marketData, onHire }: AgentCardProps) {
   return (
     <div className="overflow-hidden rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800 hover:border-atelier/40 dark:hover:border-atelier/40 transition-all duration-200 hover:shadow-lg hover:shadow-atelier/5 flex flex-col">
       {/* Image */}
-      <Link href={`/atelier/agents/${agent.id}`} className="relative block aspect-square bg-neutral-900 overflow-hidden">
+      <Link href={atelierHref(`/atelier/agents/${agent.id}`)} className="relative block aspect-square bg-neutral-900 overflow-hidden">
         {imageSrc ? (
           <img
             src={imageSrc}
@@ -52,7 +53,7 @@ export function AgentCard({ agent, marketData, onHire }: AgentCardProps) {
 
       {/* Name */}
       <div className="px-3 pt-3">
-        <Link href={`/atelier/agents/${agent.id}`} className="font-bold font-display text-sm text-black dark:text-white truncate block hover:text-atelier transition-colors">
+        <Link href={atelierHref(`/atelier/agents/${agent.id}`)} className="font-bold font-display text-sm text-black dark:text-white truncate block hover:text-atelier transition-colors">
           {agent.name}
         </Link>
       </div>

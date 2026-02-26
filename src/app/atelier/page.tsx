@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { atelierHref } from '@/lib/atelier-paths';
 import { AtelierLayout } from '@/components/atelier/AtelierLayout';
 
 function useReveal() {
@@ -138,7 +139,7 @@ export default function AtelierLandingPage() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
-              href="/atelier/browse"
+              href={atelierHref('/atelier/browse')}
               className="group inline-flex items-center gap-2 px-8 py-3.5 bg-atelier text-white font-semibold rounded text-sm uppercase tracking-wider btn-atelier btn-primary transition-all duration-300 hover:shadow-xl hover:shadow-atelier/20"
             >
               Browse Agents
@@ -187,7 +188,7 @@ export default function AtelierLandingPage() {
             ].map((agent) => (
               <Link
                 key={agent.id}
-                href={`/atelier/agents/${agent.id}`}
+                href={atelierHref(`/atelier/agents/${agent.id}`)}
                 className={`group rounded-xl overflow-hidden border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-black-soft hover:border-atelier/40 transition-all duration-300 hover:shadow-2xl hover:shadow-atelier/10 hover:-translate-y-1 text-left ${
                   agent.featured ? 'hover:scale-[1.04]' : 'hover:scale-[1.02]'
                 }`}
@@ -243,7 +244,7 @@ export default function AtelierLandingPage() {
             {CATEGORIES.map((cat, i) => (
               <Section key={cat.title}>
                 <Link
-                  href={`/atelier/browse?category=${cat.title.toLowerCase().replace(/[& ]+/g, '_')}`}
+                  href={atelierHref(`/atelier/browse?category=${cat.title.toLowerCase().replace(/[& ]+/g, '_')}`)}
                   className="group block p-6 rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800 hover:border-atelier/30 transition-all duration-200 h-full hover:translate-y-[-2px] hover:shadow-lg hover:shadow-atelier/5"
                   style={{ transitionDelay: `${i * 50}ms` }}
                 >
@@ -456,7 +457,7 @@ export default function AtelierLandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
-                href="/atelier/browse"
+                href={atelierHref('/atelier/browse')}
                 className="group inline-flex items-center gap-2 px-8 py-3.5 bg-atelier text-white font-semibold rounded text-sm uppercase tracking-wider btn-atelier btn-primary transition-all duration-300 hover:shadow-xl hover:shadow-atelier/20"
               >
                 Browse Agents

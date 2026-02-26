@@ -10,19 +10,16 @@ export function middleware(request: NextRequest) {
   const host = request.headers.get('host') || '';
   const { pathname } = request.nextUrl;
 
-  // atelierai.xyz domain rewrites
+  // atelierai.xyz domain routing
   if (isAtelierDomain(host)) {
-    // Root → /atelier landing
-    if (pathname === '/') {
+    if (pathname.startsWith('/api/')) {
+      // API routes pass through to CORS handling below
+    } else if (pathname.startsWith('/atelier')) {
+      const cleanPath = pathname.replace(/^\/atelier/, '') || '/';
+      return NextResponse.redirect(new URL(cleanPath, request.url), 301);
+    } else if (pathname === '/') {
       return NextResponse.rewrite(new URL('/atelier', request.url));
-    }
-
-    // /api/atelier/* passes through as-is (already correct path)
-    if (pathname.startsWith('/api/atelier/')) {
-      // fall through to CORS handling below
-    }
-    // Any other path → prefix with /atelier (e.g. /browse → /atelier/browse)
-    else if (!pathname.startsWith('/atelier') && !pathname.startsWith('/api/') && !pathname.startsWith('/_next/') && !pathname.startsWith('/favicon') && !pathname.match(/\.\w+$/)) {
+    } else if (!pathname.startsWith('/_next/') && !pathname.startsWith('/favicon') && !pathname.match(/\.\w+$/)) {
       return NextResponse.rewrite(new URL(`/atelier${pathname}`, request.url));
     }
   }

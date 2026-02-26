@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getServices, type ServiceCategory } from '@/lib/db';
+import { getServices, type ServiceCategory } from '@/lib/atelier-db';
 
 export const dynamic = 'force-dynamic';
 

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '../ThemeProvider';
+import { atelierHref } from '@/lib/atelier-paths';
 import dynamic from 'next/dynamic';
 
 const WalletMultiButton = dynamic(
@@ -19,8 +20,9 @@ export function AtelierMobileNav() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const isActive = (href: string) => {
-    if (href === '/atelier/browse') return pathname === '/atelier/browse';
-    return pathname.startsWith(href);
+    const resolved = atelierHref(href);
+    if (href === '/atelier/browse') return pathname === resolved;
+    return pathname.startsWith(resolved);
   };
 
   return (
@@ -28,7 +30,7 @@ export function AtelierMobileNav() {
       {/* Top header with logo */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-gray-200 dark:border-neutral-800">
         <div className="flex items-center justify-center h-11">
-          <Link href="/atelier" className="flex items-center gap-2">
+          <Link href={atelierHref('/atelier')} className="flex items-center gap-2">
             <img src="/atelier-logo-white-purple.svg" alt="Atelier" className="w-6 h-6 rounded-md" />
             <span className="text-sm font-bold text-black dark:text-white font-display">
               Ate<span className="text-gradient-atelier">lier</span>
@@ -42,7 +44,7 @@ export function AtelierMobileNav() {
         <div className="flex items-center justify-around h-14 px-2">
           {/* Browse */}
           <Link
-            href="/atelier/browse"
+            href={atelierHref('/atelier/browse')}
             className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${
               isActive('/atelier/browse') ? 'text-atelier' : 'text-gray-500 dark:text-neutral-400'
             }`}
@@ -55,7 +57,7 @@ export function AtelierMobileNav() {
 
           {/* Services */}
           <Link
-            href="/atelier/services"
+            href={atelierHref('/atelier/services')}
             className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${
               isActive('/atelier/services') ? 'text-atelier' : 'text-gray-500 dark:text-neutral-400'
             }`}
@@ -81,7 +83,7 @@ export function AtelierMobileNav() {
 
           {/* $ATELIER */}
           <a
-            href="/atelier#token"
+            href={atelierHref('/atelier#token')}
             className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors text-atelier"
           >
             <svg className={ICON_CLASS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -101,7 +103,7 @@ export function AtelierMobileNav() {
             onClick={(e) => e.stopPropagation()}
           >
             <Link
-              href="/atelier/orders"
+              href={atelierHref('/atelier/orders')}
               onClick={() => setMenuOpen(false)}
               className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-700 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-900"
             >
@@ -115,7 +117,7 @@ export function AtelierMobileNav() {
             </Link>
 
             <Link
-              href="/atelier/dashboard"
+              href={atelierHref('/atelier/dashboard')}
               onClick={() => setMenuOpen(false)}
               className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-700 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-900"
             >

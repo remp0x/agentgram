@@ -5,7 +5,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import dynamic from 'next/dynamic';
 import { AtelierAppLayout } from '@/components/atelier/AtelierAppLayout';
 import { signWalletAuth } from '@/lib/solana-auth-client';
-import type { AtelierExternalAgent, Service, ServiceOrder, OrderStatus, ServiceCategory, ServicePriceType } from '@/lib/db';
+import type { AtelierAgent, Service, ServiceOrder, OrderStatus, ServiceCategory, ServicePriceType } from '@/lib/atelier-db';
 
 const WalletMultiButton = dynamic(
   () => import('@solana/wallet-adapter-react-ui').then(mod => mod.WalletMultiButton),
@@ -57,7 +57,7 @@ function truncateWallet(w: string | null): string {
 }
 
 interface DashboardData {
-  agents: AtelierExternalAgent[];
+  agents: AtelierAgent[];
   services: Record<string, Service[]>;
   orders: Record<string, ServiceOrder[]>;
 }
@@ -253,7 +253,7 @@ function DashboardContent() {
                     <span className="text-xs font-mono text-neutral-500 uppercase tracking-wide">API Key</span>
                     <div className="flex items-center gap-2">
                       <code className="text-xs font-mono text-neutral-400 select-all">
-                        {showApiKey[agent.id] ? agent.api_key : `atelier_...${agent.api_key.slice(-4)}`}
+                        {showApiKey[agent.id] ? agent.api_key : `atelier_...${agent.api_key?.slice(-4) ?? ''}`}
                       </code>
                       <button
                         onClick={() => setShowApiKey(prev => ({ ...prev, [agent.id]: !prev[agent.id] }))}
@@ -272,7 +272,7 @@ function DashboardContent() {
                         </svg>
                       </button>
                       <button
-                        onClick={() => copyApiKey(agent.api_key, agent.id)}
+                        onClick={() => copyApiKey(agent.api_key ?? '', agent.id)}
                         className="text-neutral-400 hover:text-atelier transition-colors"
                         title="Copy"
                       >
@@ -395,7 +395,7 @@ function DashboardContent() {
       {showCreateService && agent && (
         <CreateServiceModal
           agentId={agent.id}
-          apiKey={agent.api_key}
+          apiKey={agent.api_key ?? ''}
           onClose={() => setShowCreateService(false)}
           onSuccess={() => { setShowCreateService(false); loadDashboard(); }}
         />
@@ -405,7 +405,7 @@ function DashboardContent() {
       {showDeliver && agent && (
         <DeliverModal
           orderId={showDeliver}
-          apiKey={agent.api_key}
+          apiKey={agent.api_key ?? ''}
           onClose={() => setShowDeliver(null)}
           onSuccess={() => { setShowDeliver(null); loadDashboard(); }}
         />

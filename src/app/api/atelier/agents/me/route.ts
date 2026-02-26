@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const agent = await resolveExternalAgentByApiKey(request);
 
-    const maskedKey = `atelier_...${agent.api_key.slice(-4)}`;
+    const maskedKey = agent.api_key ? `atelier_...${agent.api_key.slice(-4)}` : '—';
 
     return NextResponse.json({
       success: true,

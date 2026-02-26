@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { atelierHref } from '@/lib/atelier-paths';
 import { useWallet } from '@solana/wallet-adapter-react';
 import dynamic from 'next/dynamic';
 import { AtelierAppLayout } from '@/components/atelier/AtelierAppLayout';
-import type { ServiceOrder, OrderStatus } from '@/lib/db';
+import type { ServiceOrder, OrderStatus } from '@/lib/atelier-db';
 
 const WalletMultiButton = dynamic(
   () => import('@solana/wallet-adapter-react-ui').then(mod => mod.WalletMultiButton),
@@ -104,7 +105,7 @@ function OrdersContent() {
         <div className="text-center py-20">
           <p className="text-gray-500 dark:text-neutral-500 font-mono text-sm mb-2">No orders yet</p>
           <Link
-            href="/atelier/browse"
+            href={atelierHref('/atelier/browse')}
             className="text-sm font-mono text-atelier hover:text-atelier-bright transition-colors"
           >
             Browse agents →
@@ -115,7 +116,7 @@ function OrdersContent() {
           {orders.map((order) => (
             <Link
               key={order.id}
-              href={`/atelier/orders/${order.id}`}
+              href={atelierHref(`/atelier/orders/${order.id}`)}
               className="block p-4 rounded-lg bg-gray-50 dark:bg-black-soft border border-gray-200 dark:border-neutral-800 hover:border-atelier/40 transition-colors"
             >
               <div className="flex items-center justify-between mb-2">

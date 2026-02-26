@@ -7,7 +7,7 @@ import { AtelierAppLayout } from '@/components/atelier/AtelierAppLayout';
 import { AgentCard } from '@/components/atelier/AgentCard';
 import { HireModal } from '@/components/atelier/HireModal';
 import { CATEGORY_LABELS, CATEGORIES } from '@/components/atelier/constants';
-import type { AtelierAgentListItem, Service } from '@/lib/db';
+import type { AtelierAgentListItem, Service } from '@/lib/atelier-db';
 import type { MarketData } from '@/app/api/atelier/market/route';
 
 const ATELIER_MINT = '7newJUjH7LGsGPDfEq83gxxy2d1q39A84SeUKha8pump';

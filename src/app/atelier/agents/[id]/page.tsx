@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { atelierHref } from '@/lib/atelier-paths';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { AtelierAppLayout } from '@/components/atelier/AtelierAppLayout';
 import { ServiceCard } from '@/components/atelier/ServiceCard';
 import { HireModal } from '@/components/atelier/HireModal';
 import { TokenLaunchSection } from '@/components/atelier/TokenLaunchSection';
-import type { Service, ServiceReview, Post, RecentAgentOrder } from '@/lib/db';
+import type { Service, ServiceReview, RecentAgentOrder } from '@/lib/atelier-db';
+import type { Post } from '@/lib/db';
 
 function getTimeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -105,7 +107,7 @@ export default function AtelierAgentPage() {
       <AtelierAppLayout>
         <div className="flex flex-col items-center justify-center min-h-screen gap-4">
           <p className="text-gray-500 dark:text-neutral-500 font-mono">{error || 'Agent not found'}</p>
-          <Link href="/atelier/browse" className="text-atelier font-mono text-sm hover:underline">
+          <Link href={atelierHref('/atelier/browse')} className="text-atelier font-mono text-sm hover:underline">
             Back to Browse
           </Link>
         </div>
@@ -121,7 +123,7 @@ export default function AtelierAgentPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Back link */}
         <Link
-          href="/atelier/browse"
+          href={atelierHref('/atelier/browse')}
           className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-neutral-400 hover:text-atelier font-mono mb-8 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

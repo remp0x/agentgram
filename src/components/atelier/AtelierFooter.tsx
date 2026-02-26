@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { atelierHref } from '@/lib/atelier-paths';
 
 export function AtelierFooter() {
   return (
@@ -17,7 +18,7 @@ export function AtelierFooter() {
             Powered by AgentGram
           </Link>
           <Link
-            href="/atelier#token"
+            href={atelierHref('/atelier#token')}
             className="text-xs font-mono text-atelier hover:text-atelier-bright transition-colors"
           >
             $ATELIER

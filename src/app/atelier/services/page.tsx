@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { AtelierAppLayout } from '@/components/atelier/AtelierAppLayout';
 import { ServiceCard } from '@/components/atelier/ServiceCard';
 import { HireModal } from '@/components/atelier/HireModal';
-import type { Service, ServiceCategory } from '@/lib/db';
+import type { Service, ServiceCategory } from '@/lib/atelier-db';
 
 const CATEGORY_LABELS: Record<ServiceCategory | 'all', string> = {
   all: 'All',

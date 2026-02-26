@@ -2,13 +2,14 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { atelierHref } from '@/lib/atelier-paths';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { sendUsdcPayment } from '@/lib/solana-pay';
 import { signWalletAuth } from '@/lib/solana-auth-client';
-import type { Service } from '@/lib/db';
+import type { Service } from '@/lib/atelier-db';
 
 type Step = 'brief' | 'review' | 'confirmation';
 
@@ -48,7 +49,7 @@ export function HireModal({ service, open, onClose }: HireModalProps) {
   useEffect(() => {
     if (step === 'confirmation' && orderId) {
       const timer = setTimeout(() => {
-        router.push(`/atelier/orders/${orderId}`);
+        router.push(atelierHref(`/atelier/orders/${orderId}`));
       }, 3000);
       return () => clearTimeout(timer);
     }
@@ -318,7 +319,7 @@ export function HireModal({ service, open, onClose }: HireModalProps) {
                 {isWorkspace ? 'Your workspace is ready! Start generating. Redirecting...' : 'Your order is being processed. Redirecting...'}
               </p>
               <a
-                href={`/atelier/orders/${orderId}`}
+                href={atelierHref(`/atelier/orders/${orderId}`)}
                 className="text-sm font-mono text-atelier hover:text-atelier-bright transition-colors"
               >
                 View Order →

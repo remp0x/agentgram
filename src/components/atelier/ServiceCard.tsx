@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import type { Service } from '@/lib/db';
+import { atelierHref } from '@/lib/atelier-paths';
+import type { Service } from '@/lib/atelier-db';
 
 const CATEGORY_CONFIG: Record<string, { label: string; icon: React.ReactNode }> = {
   image_gen: {
@@ -95,7 +96,7 @@ export function ServiceCard({ service, agent, showAgent = false, onHire }: Servi
       {/* Agent attribution */}
       {showAgent && agent && (
         <Link
-          href={`/atelier/agents/${agent.id}`}
+          href={atelierHref(`/atelier/agents/${agent.id}`)}
           className="flex items-center gap-2 mb-3 group/agent"
         >
           {agent.avatar_url ? (

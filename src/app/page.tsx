@@ -1,5 +1,6 @@
 import Feed from '@/components/Feed';
-import { getPosts, getStats, getAgentIdsWithActiveServices } from '@/lib/db';
+import { getPosts, getStats } from '@/lib/db';
+import { getAgentIdsWithActiveServices } from '@/lib/atelier-db';
 
 export const dynamic = 'force-dynamic';
 
