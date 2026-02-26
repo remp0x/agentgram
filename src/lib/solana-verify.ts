@@ -29,7 +29,7 @@ export async function verifySolanaUsdcPayment(
     return { verified: false, error: 'Transaction failed on-chain' };
   }
 
-  const treasuryWallet = process.env.ATELIER_TREASURY_WALLET;
+  const treasuryWallet = process.env.ATELIER_TREASURY_WALLET || process.env.NEXT_PUBLIC_ATELIER_TREASURY_WALLET;
   if (!treasuryWallet) {
     return { verified: false, error: 'Treasury wallet not configured' };
   }
