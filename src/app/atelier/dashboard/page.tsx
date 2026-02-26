@@ -85,6 +85,10 @@ function DashboardContent() {
   const [showCreateService, setShowCreateService] = useState(false);
   const [showDeliver, setShowDeliver] = useState<string | null>(null);
   const [showRegister, setShowRegister] = useState(false);
+  const [editingPayout, setEditingPayout] = useState(false);
+  const [payoutDraft, setPayoutDraft] = useState('');
+  const [payoutSaving, setPayoutSaving] = useState(false);
+  const [payoutError, setPayoutError] = useState<string | null>(null);
 
   const loadDashboard = useCallback(async () => {
     if (!walletAddress) return;
@@ -124,6 +128,26 @@ function DashboardContent() {
     navigator.clipboard.writeText(key);
     setCopiedKey(agentId);
     setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  const savePayoutWallet = async (agentApiKey: string, value: string | null) => {
+    setPayoutSaving(true);
+    setPayoutError(null);
+    try {
+      const res = await fetch('/api/atelier/agents/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${agentApiKey}` },
+        body: JSON.stringify({ payout_wallet: value }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      setEditingPayout(false);
+      loadDashboard();
+    } catch (e) {
+      setPayoutError(e instanceof Error ? e.message : 'Failed to update payout wallet');
+    } finally {
+      setPayoutSaving(false);
+    }
   };
 
   if (loading) {
@@ -289,6 +313,65 @@ function DashboardContent() {
                     </div>
                   </div>
                   <p className="text-[10px] font-mono text-neutral-500 mt-1">Keep this key secure. Use it in the Authorization header as: Bearer &lt;api_key&gt;</p>
+                </div>
+
+                {/* Payout Wallet */}
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-800">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono text-neutral-500 uppercase tracking-wide">Payout Wallet</span>
+                    {!editingPayout ? (
+                      <div className="flex items-center gap-2">
+                        <code className="text-xs font-mono text-neutral-400">
+                          {agent.payout_wallet
+                            ? truncateWallet(agent.payout_wallet)
+                            : agent.owner_wallet
+                              ? `${truncateWallet(agent.owner_wallet)}`
+                              : '—'}
+                        </code>
+                        {!agent.payout_wallet && agent.owner_wallet && (
+                          <span className="text-[10px] font-mono text-neutral-500">(owner wallet)</span>
+                        )}
+                        <button
+                          onClick={() => { setPayoutDraft(agent.payout_wallet || ''); setEditingPayout(true); setPayoutError(null); }}
+                          className="text-neutral-400 hover:text-atelier transition-colors text-xs font-mono"
+                        >
+                          Edit
+                        </button>
+                        {agent.payout_wallet && (
+                          <button
+                            onClick={() => savePayoutWallet(agent.api_key ?? '', null)}
+                            className="text-neutral-400 hover:text-red-400 transition-colors text-xs font-mono"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={payoutDraft}
+                          onChange={e => setPayoutDraft(e.target.value)}
+                          placeholder="Solana wallet address"
+                          className="px-2 py-1 rounded bg-gray-50 dark:bg-black border border-gray-200 dark:border-neutral-800 text-xs font-mono text-black dark:text-white w-64 focus:outline-none focus:border-atelier"
+                        />
+                        <button
+                          onClick={() => savePayoutWallet(agent.api_key ?? '', payoutDraft || null)}
+                          disabled={payoutSaving}
+                          className="text-xs font-mono font-semibold text-atelier hover:underline disabled:opacity-40"
+                        >
+                          {payoutSaving ? '...' : 'Save'}
+                        </button>
+                        <button
+                          onClick={() => { setEditingPayout(false); setPayoutError(null); }}
+                          className="text-xs font-mono text-neutral-500 hover:underline"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {payoutError && <p className="text-[10px] font-mono text-red-400 mt-1">{payoutError}</p>}
+                  <p className="text-[10px] font-mono text-neutral-500 mt-1">USDC payouts are sent here when orders complete. Defaults to owner wallet if not set.</p>
                 </div>
               </section>
 

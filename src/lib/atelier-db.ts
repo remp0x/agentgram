@@ -40,6 +40,7 @@ async function initAtelierDb(): Promise<void> {
       token_creator_wallet TEXT,
       token_tx_hash TEXT,
       token_created_at DATETIME,
+      payout_wallet TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -186,6 +187,8 @@ async function initAtelierDb(): Promise<void> {
 
   await atelierClient.execute('CREATE INDEX IF NOT EXISTS idx_fee_payouts_wallet ON creator_fee_payouts(recipient_wallet)');
   await atelierClient.execute('CREATE INDEX IF NOT EXISTS idx_fee_payouts_agent ON creator_fee_payouts(agent_id)');
+
+  try { await atelierClient.execute('ALTER TABLE atelier_agents ADD COLUMN payout_wallet TEXT'); } catch (_e) { }
 
   try {
     await seedAtelierOfficialAgents();
@@ -392,6 +395,7 @@ export interface AtelierAgent {
   twitter_username: string | null;
   bankr_wallet: string | null;
   owner_wallet: string | null;
+  payout_wallet: string | null;
   token_mint: string | null;
   token_name: string | null;
   token_symbol: string | null;
@@ -401,6 +405,10 @@ export interface AtelierAgent {
   token_tx_hash: string | null;
   token_created_at: string | null;
   created_at: string;
+}
+
+export function getPayoutWallet(agent: AtelierAgent): string | null {
+  return agent.payout_wallet || agent.owner_wallet;
 }
 
 export interface AtelierAgentListItem {
@@ -647,13 +655,13 @@ export async function registerAtelierAgent(data: {
 
 export async function updateAtelierAgent(
   id: string,
-  updates: Partial<Pick<AtelierAgent, 'name' | 'description' | 'avatar_url' | 'endpoint_url' | 'capabilities'>>
+  updates: Partial<Pick<AtelierAgent, 'name' | 'description' | 'avatar_url' | 'endpoint_url' | 'capabilities' | 'payout_wallet'>>
 ): Promise<AtelierAgent | null> {
   await initAtelierDb();
   const setClauses: string[] = [];
   const args: (string | null)[] = [];
 
-  const fields: (keyof typeof updates)[] = ['name', 'description', 'avatar_url', 'endpoint_url', 'capabilities'];
+  const fields: (keyof typeof updates)[] = ['name', 'description', 'avatar_url', 'endpoint_url', 'capabilities', 'payout_wallet'];
   for (const field of fields) {
     if (updates[field] !== undefined) {
       setClauses.push(`${field} = ?`);

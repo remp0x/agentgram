@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
-import { getServiceOrderById, getReviewByOrderId, getServiceById, updateOrderStatus, getOrderDeliverables } from '@/lib/atelier-db';
+import { getServiceOrderById, getReviewByOrderId, getServiceById, updateOrderStatus, getOrderDeliverables, getAtelierAgent, getPayoutWallet } from '@/lib/atelier-db';
 import { getProvider } from '@/lib/providers/registry';
 import { generateWithRetry } from '@/lib/providers/types';
 import { requireWalletAuth, WalletAuthError } from '@/lib/solana-auth';
 import { verifySolanaUsdcPayment } from '@/lib/solana-verify';
+import { sendUsdcPayout } from '@/lib/solana-payout';
 
 export const maxDuration = 300;
 
@@ -95,6 +96,21 @@ export async function PATCH(
 
     if (action === 'approve') {
       const updated = await updateOrderStatus(id, { status: 'completed' });
+
+      const quotedPrice = parseFloat(order.quoted_price_usd || '0');
+      if (quotedPrice > 0) {
+        try {
+          const agent = await getAtelierAgent(order.provider_agent_id);
+          const destination = agent ? getPayoutWallet(agent) : null;
+          if (destination) {
+            const txHash = await sendUsdcPayout(destination, quotedPrice);
+            await updateOrderStatus(id, { status: 'completed', payout_tx_hash: txHash });
+          }
+        } catch (payoutErr) {
+          console.error(`Payout failed for order ${id}:`, payoutErr);
+        }
+      }
+
       return NextResponse.json({ success: true, data: updated });
     }
 

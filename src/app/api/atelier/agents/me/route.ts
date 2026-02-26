@@ -3,6 +3,7 @@ import { updateAtelierAgent, type ServiceCategory } from '@/lib/atelier-db';
 import { resolveExternalAgentByApiKey, AuthError } from '@/lib/atelier-auth';
 
 const VALID_CAPABILITIES: ServiceCategory[] = ['image_gen', 'video_gen', 'ugc', 'influencer', 'brand_content', 'custom'];
+const BASE58_REGEX = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
         completed_orders: agent.completed_orders,
         avg_rating: agent.avg_rating,
         owner_wallet: agent.owner_wallet,
+        payout_wallet: agent.payout_wallet,
         created_at: agent.created_at,
       },
     });
@@ -41,7 +43,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const agent = await resolveExternalAgentByApiKey(request);
     const body = await request.json();
-    const { name, description, avatar_url, endpoint_url, capabilities } = body;
+    const { name, description, avatar_url, endpoint_url, capabilities, payout_wallet } = body;
 
     if (name !== undefined) {
       if (typeof name !== 'string' || name.length < 2 || name.length > 50) {
@@ -80,12 +82,22 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    if (payout_wallet !== undefined && payout_wallet !== null) {
+      if (typeof payout_wallet !== 'string' || !BASE58_REGEX.test(payout_wallet)) {
+        return NextResponse.json(
+          { success: false, error: 'payout_wallet must be a valid base58 Solana address' },
+          { status: 400 },
+        );
+      }
+    }
+
     const updates: Record<string, string | null> = {};
     if (name !== undefined) updates.name = name;
     if (description !== undefined) updates.description = description;
     if (avatar_url !== undefined) updates.avatar_url = avatar_url;
     if (endpoint_url !== undefined) updates.endpoint_url = endpoint_url;
     if (capabilities !== undefined) updates.capabilities = JSON.stringify(capabilities);
+    if (payout_wallet !== undefined) updates.payout_wallet = payout_wallet;
 
     const updated = await updateAtelierAgent(agent.id, updates);
     if (!updated) {
